@@ -175,6 +175,11 @@ export default function SeriesDetailPage() {
     }
   };
 
+  const handleSuggestionClick = (question) => {
+    setChatInput(question);
+    handleSendMessage(question);
+  };
+
   const formatDateRange = (start, end) => {
     if (!start) return "";
     const options = { month: "short", year: "numeric" };
@@ -218,27 +223,6 @@ export default function SeriesDetailPage() {
             {processedContent}
           </ReactMarkdown>
         </div>
-
-        {Object.keys(citationsMap).length > 0 && (
-          <div className="pt-4 border-t border-white/10">
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(citationsMap).map(([num, data]) => (
-                <a
-                  key={num}
-                  href={data.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-3 py-1.5 bg-[#D4AF37]/10 border border-[#D4AF37]/30 rounded-full text-[11px] font-bold text-[#D4AF37] hover:bg-[#D4AF37]/20 transition-all"
-                  title={`${data.title}: ${data.preview}`}
-                >
-                  <span className="opacity-70">[{num}]</span>
-                  <span>Watch moment</span>
-                  <ExternalLink size={10} />
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     );
   };
@@ -390,14 +374,14 @@ export default function SeriesDetailPage() {
               </div>
 
               {isLastAiMessage && msg.suggestions && msg.suggestions.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2 pl-0 md:pl-12 w-full max-w-[90%] md:max-w-[80%]">
-                  {msg.suggestions.map((suggestion, idx) => (
+                <div className="flex flex-col gap-2 mt-3 w-full max-w-[90%] md:max-w-[80%] pl-0 md:pl-12">
+                  {msg.suggestions.map((question, i) => (
                     <button
-                      key={idx}
-                      onClick={() => handleSendMessage(suggestion)}
-                      className="bg-[#1e2235] text-[#cbd5e1] border border-[#2d3452] rounded-full px-4 py-2 text-sm hover:bg-[#2a2f4c] transition-all text-left"
+                      key={i}
+                      onClick={() => handleSuggestionClick(question)}
+                      className="text-left text-sm px-4 py-2 rounded-full border border-[#2d3452] bg-[#1e2235] text-[#cbd5e1] hover:bg-[#2d3452] transition-colors cursor-pointer"
                     >
-                      {suggestion}
+                      {question}
                     </button>
                   ))}
                 </div>
