@@ -27,7 +27,7 @@ export async function POST(req) {
       .single();
 
     if (error || !series) {
-      return NextResponse.json({ error: 'Series not found' }, { status: 404 });
+      return NextResponse.json({ error: true, message: 'Series not found' }, { status: 404 });
     }
 
     // 2. Build context from transcripts and build segments index
@@ -37,20 +37,25 @@ export async function POST(req) {
 
     let segmentsIndex = [];
     let transcriptContext = `SERMON SERIES: ${series.title}\n\n`;
-    
+
     sortedSermons.forEach((s, idx) => {
-      transcriptContext += `[Sermon ${idx + 1}: ${s.title}]\nTranscript: ${s.transcript || "No transcript available."}\n\n`;
-      
-      // Build segments index (limit to 100 per sermon)
-      const segments = (s.transcript_segments || []).slice(0, 100);
-      segments.forEach(seg => {
-        segmentsIndex.push({
-          text: seg.text,
-          start_seconds: Math.floor(seg.start_seconds),
-          sermon_title: s.title,
-          youtube_video_id: s.youtube_video_id
+      // Limit each sermon transcript to first 3000 characters
+      const transcriptSnippet = (s.transcript || "").substring(0, 3000);
+      transcriptContext += `[Sermon ${idx + 1}: ${s.title}]\nTranscript: ${transcriptSnippet || "No transcript available."}\n\n`;
+
+      // Build segments index (limit to 50 segments total across all sermons)
+      if (segmentsIndex.length < 50) {
+        const remainingSpace = 50 - segmentsIndex.length;
+        const segments = (s.transcript_segments || []).slice(0, remainingSpace);
+        segments.forEach(seg => {
+          segmentsIndex.push({
+            text: seg.text,
+            start_seconds: Math.floor(seg.start_seconds),
+            sermon_title: s.title,
+            youtube_video_id: s.youtube_video_id
+          });
         });
-      });
+      }
     });
 
     // 3. Construct the prompt with segment instructions
@@ -99,7 +104,12 @@ CITATIONS:
     return NextResponse.json({ text: aiResponse });
 
   } catch (error) {
+    // Add try/catch and log the actual error with console.error
     console.error('Chat API Error:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    // If Groq or any part returns an error, return it as JSON
+    return NextResponse.json({
+      error: true,
+      message: error.message || 'Internal Server Error'
+    }, { status: 500 });
   }
 }

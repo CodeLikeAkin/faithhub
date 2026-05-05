@@ -34,6 +34,15 @@ export default function SeriesDetailPage() {
   const chatBottomRef = useRef(null);
 
   useEffect(() => {
+    const nav = document.querySelector('nav') || 
+                document.querySelector('header')
+    if (nav) nav.style.display = 'none'
+    return () => {
+      if (nav) nav.style.display = ''
+    }
+  }, [])
+
+  useEffect(() => {
     if (id) {
       fetchSeriesData();
     }
@@ -135,12 +144,12 @@ export default function SeriesDetailPage() {
       });
 
       const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      if (data.error) throw new Error(data.message || "I encountered an error.");
 
       setChatHistory(prev => [...prev, { role: "ai", text: data.text }]);
     } catch (err) {
       console.error("Chat error:", err);
-      setChatHistory(prev => [...prev, { role: "ai", text: "I'm sorry, I encountered an error. Please try again." }]);
+      setChatHistory(prev => [...prev, { role: "ai", text: `Error: ${err.message}` }]);
     } finally {
       setChatLoading(false);
     }
@@ -287,16 +296,16 @@ export default function SeriesDetailPage() {
           <div className="absolute bottom-[10%] -left-[5%] w-[35%] h-[35%] rounded-full bg-[#D4AF37] opacity-[0.01] blur-[80px]" />
         </div>
 
-        {/* Small Hero Header */}
-        <div className="relative h-48 md:h-56 shrink-0 overflow-hidden border-b border-white/5">
+        {/* Hero Header */}
+        <div className="relative shrink-0 overflow-hidden border-b border-white/5 pb-8">
           <div 
             className="absolute inset-0 bg-cover bg-center opacity-30 blur-sm"
             style={{ backgroundImage: `url(${heroThumb ? `https://img.youtube.com/vi/${heroThumb}/maxresdefault.jpg` : ""})` }}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#121424]" />
           
-          <div className="relative z-10 h-full flex flex-col justify-end p-8">
-            <div className="flex items-center gap-3 mb-3">
+          <div className="relative z-10 h-full flex flex-col justify-end p-8 pt-20">
+            <div className="flex items-center gap-3 mb-4">
               <span className="px-2 py-0.5 bg-[#D4AF37] text-[#0f1129] rounded text-[9px] font-black uppercase tracking-wider">
                 {series.service_type || "Series"}
               </span>
@@ -309,7 +318,21 @@ export default function SeriesDetailPage() {
                 {formatDateRange(series.start_date, series.end_date)}
               </span>
             </div>
-            <h1 className="text-2xl md:text-4xl font-black tracking-tight">{series.title}</h1>
+            <h1 className="text-2xl md:text-5xl font-black tracking-tight mb-4">{series.title}</h1>
+            
+            {/* Summary moved here */}
+            <div className="max-w-3xl">
+              <p className="text-sm md:text-base text-[#cbd5e1] leading-relaxed">
+                {summaryLoading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 size={14} className="animate-spin text-[#D4AF37]" />
+                    Generating series insights...
+                  </span>
+                ) : (
+                  summary || "Explore the deep teachings of this series through transcripts and AI study."
+                )}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -390,23 +413,9 @@ export default function SeriesDetailPage() {
         </div>
       </section>
 
-      {/* RIGHT PANEL - Overview & Declarations */}
+      {/* RIGHT PANEL - Declarations */}
       <aside className="hidden lg:flex w-[260px] flex-col border-l border-white/5 bg-[#0f1129] overflow-y-auto custom-scrollbar">
         <div className="p-6 space-y-8">
-          {/* Overview */}
-          <section>
-            <h3 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4 flex items-center gap-2">
-              <BookOpen size={12} className="text-[#489e3e]" />
-              Series Overview
-            </h3>
-            <div className="p-4 bg-white/5 rounded-2xl border border-white/5 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-[#489e3e]" />
-              <p className="text-xs text-gray-400 leading-relaxed italic">
-                {summaryLoading ? "Generating..." : summary || "No summary available."}
-              </p>
-            </div>
-          </section>
-
           {/* Declarations */}
           <section>
             <h3 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4 flex items-center gap-2">
