@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import Groq from 'groq-sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 export async function POST(req) {
   try {
@@ -39,11 +39,9 @@ export async function POST(req) {
     let transcriptContext = `SERMON SERIES: ${series.title}\n\n`;
 
     sortedSermons.forEach((s, idx) => {
-      // Limit each sermon transcript to first 3000 characters
       const transcriptSnippet = (s.transcript || "").substring(0, 3000);
       transcriptContext += `[Sermon ${idx + 1}: ${s.title}]\nTranscript: ${transcriptSnippet || "No transcript available."}\n\n`;
 
-      // Build segments index (limit to 50 segments total across all sermons)
       if (segmentsIndex.length < 50) {
         const validSegments = (s.transcript_segments || []).filter(seg => {
           const videoId = seg.youtube_video_id || s.youtube_video_id;
@@ -62,7 +60,7 @@ export async function POST(req) {
       }
     });
 
-    // 3. Construct the prompt with segment instructions
+    // 3. System prompt (unchanged)
     const systemPrompt = `You are a Bible study assistant exclusively for Heritage of Faith Church sermon series. You help believers study the EXACT teachings of Rev. Peter Ayoalabi and the Heritage of Faith teaching team.
 
 STRICT SOURCING RULE — THIS IS YOUR MOST IMPORTANT INSTRUCTION:
@@ -100,18 +98,15 @@ FOLLOW-UP SUGGESTIONS:
   SUGGESTIONS:["Question one based on what Rev Peter actually taught?", "Question two based on what Rev Peter actually taught?", "Question three based on what Rev Peter actually taught?"]
 - These must be questions that can be answered FROM THE TRANSCRIPT — do not suggest questions about topics not covered in the series`;
 
-    const conversationHistory = (chatHistory || []).map(m => ({
-      role: m.role === 'ai' ? 'assistant' : m.role,
-      content: m.text
-    }));
+    // 4. Build conversation history — swap 'ai'/'assistant' → 'model', 'user' stays 'user'
+    const conversationHistory = (chatHistory || [])
+      .map(m => ({
+        role: m.role === 'ai' || m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.text || m.content || '' }]
+      }))
+      .filter(m => m.parts[0].text.trim() !== '');
 
-    const cleanMessages = conversationHistory.filter(
-      m => (m.role === 'user' || m.role === 'assistant') &&
-        m.content &&
-        m.content.trim() !== ''
-    );
-
-    const recentMessages = cleanMessages.slice(-6);
+    const recentHistory = conversationHistory.slice(-6);
 
     const userMessageWithContext = `
 TRANSCRIPT SEGMENTS INDEX (use these for citations):
@@ -135,25 +130,22 @@ ${message}
       }))
     );
 
-    // 4. Call Groq
-    const completion = await groq.chat.completions.create({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...recentMessages,
-        { role: 'user', content: userMessageWithContext }
-      ],
-      model: 'llama-3.3-70b-versatile',
-      temperature: 0.1,
-      max_tokens: 2000,
-      stream: true,
+    // 5. Call Gemini with streaming
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      systemInstruction: systemPrompt,
     });
 
+    const chat = model.startChat({ history: recentHistory });
+    const result = await chat.sendMessageStream(userMessageWithContext);
+
+    // 6. Stream the response back exactly as before
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          for await (const chunk of completion) {
-            const content = chunk.choices[0]?.delta?.content || "";
+          for await (const chunk of result.stream) {
+            const content = chunk.text();
             if (content) {
               controller.enqueue(encoder.encode(content));
             }
@@ -175,9 +167,7 @@ ${message}
     });
 
   } catch (error) {
-    // Add try/catch and log the actual error with console.error
     console.error('Chat API Error:', error);
-    // If Groq or any part returns an error, return it as JSON
     return NextResponse.json({
       error: true,
       message: error.message || 'Internal Server Error'

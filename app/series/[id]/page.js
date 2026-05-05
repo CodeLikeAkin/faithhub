@@ -37,6 +37,14 @@ export default function SeriesDetailPage() {
   const [chatLoading, setChatLoading] = useState(false);
   const chatBottomRef = useRef(null);
   const userMessageRefs = useRef({});
+  const [thinkingStep, setThinkingStep] = useState(0);
+
+  const thinkingMessages = [
+    "Searching the sermons...",
+    "Reading Rev. Peter's teaching...",
+    "Finding the right moment...",
+    "Preparing your answer..."
+  ];
 
   useEffect(() => {
     const nav = document.querySelector('nav') ||
@@ -159,6 +167,11 @@ export default function SeriesDetailPage() {
 
     setChatHistory(prev => [...prev, userMessage, aiMessage]);
     setChatLoading(true);
+    setThinkingStep(0);
+
+    const thinkingInterval = setInterval(() => {
+      setThinkingStep(prev => (prev + 1) % thinkingMessages.length);
+    }, 2000);
 
     // Fix 2: Scroll to new user message instantly and pin to top
     setTimeout(() => {
@@ -214,6 +227,9 @@ export default function SeriesDetailPage() {
             ? { ...m, text: displayAiText, suggestions: aiSuggestions, isThinking: false } 
             : m
         ));
+        
+        // Clear interval on first chunk
+        if (typeof thinkingInterval !== 'undefined') clearInterval(thinkingInterval);
       }
     } catch (err) {
       console.error("Chat error:", err);
@@ -227,6 +243,7 @@ export default function SeriesDetailPage() {
       }, 100);
     } finally {
       setChatLoading(false);
+      if (typeof thinkingInterval !== 'undefined') clearInterval(thinkingInterval);
     }
   };
 
