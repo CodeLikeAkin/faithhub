@@ -3,13 +3,13 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { 
-  ArrowLeft, 
-  Play, 
-  Calendar, 
-  List, 
-  Send, 
-  Loader2, 
+import {
+  ArrowLeft,
+  Play,
+  Calendar,
+  List,
+  Send,
+  Loader2,
   ExternalLink,
   MessageSquare,
   BookOpen,
@@ -32,10 +32,11 @@ export default function SeriesDetailPage() {
   const [chatHistory, setChatHistory] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
   const chatBottomRef = useRef(null);
+  const userMessageRefs = useRef({});
 
   useEffect(() => {
-    const nav = document.querySelector('nav') || 
-                document.querySelector('header')
+    const nav = document.querySelector('nav') ||
+      document.querySelector('header')
     if (nav) nav.style.display = 'none'
     return () => {
       if (nav) nav.style.display = ''
@@ -54,9 +55,7 @@ export default function SeriesDetailPage() {
     }
   }, [series, sermons]);
 
-  useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatHistory, chatLoading]);
+
 
   const fetchSeriesData = async () => {
     setLoading(true);
@@ -127,7 +126,8 @@ export default function SeriesDetailPage() {
   const handleSendMessage = async () => {
     if (!chatInput.trim() || chatLoading) return;
 
-    const userMessage = { role: "user", text: chatInput };
+    const messageId = Date.now();
+    const userMessage = { id: messageId, role: "user", text: chatInput };
     setChatHistory(prev => [...prev, userMessage]);
     setChatInput("");
     setChatLoading(true);
@@ -146,10 +146,18 @@ export default function SeriesDetailPage() {
       const data = await res.json();
       if (data.error) throw new Error(data.message || "I encountered an error.");
 
-      setChatHistory(prev => [...prev, { role: "ai", text: data.text }]);
+      setChatHistory(prev => [...prev, { id: Date.now() + 1, role: "ai", text: data.text }]);
+
+      setTimeout(() => {
+        userMessageRefs.current[messageId]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     } catch (err) {
       console.error("Chat error:", err);
-      setChatHistory(prev => [...prev, { role: "ai", text: `Error: ${err.message}` }]);
+      setChatHistory(prev => [...prev, { id: Date.now() + 1, role: "ai", text: `Error: ${err.message}` }]);
+
+      setTimeout(() => {
+        userMessageRefs.current[messageId]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     } finally {
       setChatLoading(false);
     }
@@ -176,7 +184,7 @@ export default function SeriesDetailPage() {
     }
 
     const parts = mainContent.split(/(\[\d+\])/g);
-    
+
     return (
       <div className="space-y-6">
         <div className="text-sm md:text-base leading-relaxed text-gray-200 whitespace-pre-wrap">
@@ -186,7 +194,7 @@ export default function SeriesDetailPage() {
               const citeId = citeMatch[1];
               const citeData = citationsMap[citeId];
               return (
-                <a 
+                <a
                   key={i}
                   href={citeData?.url || "#"}
                   target="_blank"
@@ -256,10 +264,10 @@ export default function SeriesDetailPage() {
           </Link>
           <h2 className="text-lg font-black text-white leading-tight">{series.title}</h2>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
           {sermons.map((sermon) => (
-            <div 
+            <div
               key={sermon.id}
               className="p-4 bg-white/5 border border-white/5 rounded-xl hover:border-[#D4AF37]/30 transition-all group"
             >
@@ -274,9 +282,9 @@ export default function SeriesDetailPage() {
               <h3 className="text-sm font-bold text-white mb-3 line-clamp-2 leading-snug group-hover:text-[#D4AF37] transition-colors">
                 {sermon.title}
               </h3>
-              <a 
-                href={sermon.youtube_url} 
-                target="_blank" 
+              <a
+                href={sermon.youtube_url}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 w-full py-2 bg-white/5 text-[11px] font-bold text-white border border-white/10 rounded-lg hover:bg-white/10 transition-all"
               >
@@ -297,14 +305,14 @@ export default function SeriesDetailPage() {
         </div>
 
         {/* Hero Header */}
-        <div className="relative shrink-0 overflow-hidden border-b border-white/5 pb-8">
-          <div 
+        <div className="relative shrink-0 overflow-hidden border-b border-white/5 pb-6">
+          <div
             className="absolute inset-0 bg-cover bg-center opacity-30 blur-sm"
             style={{ backgroundImage: `url(${heroThumb ? `https://img.youtube.com/vi/${heroThumb}/maxresdefault.jpg` : ""})` }}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#121424]" />
-          
-          <div className="relative z-10 h-full flex flex-col justify-end p-8 pt-20">
+
+          <div className="relative z-10 h-full flex flex-col justify-end p-8 pt-12">
             <div className="flex items-center gap-3 mb-4">
               <span className="px-2 py-0.5 bg-[#D4AF37] text-[#0f1129] rounded text-[9px] font-black uppercase tracking-wider">
                 {series.service_type || "Series"}
@@ -318,58 +326,57 @@ export default function SeriesDetailPage() {
                 {formatDateRange(series.start_date, series.end_date)}
               </span>
             </div>
-            <h1 className="text-2xl md:text-5xl font-black tracking-tight mb-4">{series.title}</h1>
-            
-            {/* Summary moved here */}
-            <div className="max-w-3xl">
-              <p className="text-sm md:text-base text-[#cbd5e1] leading-relaxed">
-                {summaryLoading ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 size={14} className="animate-spin text-[#D4AF37]" />
-                    Generating series insights...
-                  </span>
-                ) : (
-                  summary || "Explore the deep teachings of this series through transcripts and AI study."
-                )}
-              </p>
-            </div>
+            <h1 className="text-2xl md:text-5xl font-black tracking-tight">{series.title}</h1>
           </div>
         </div>
 
         {/* Chat Area */}
         <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
-          {chatHistory.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center p-10 opacity-30">
-              <Sparkles size={48} className="mb-4 text-[#D4AF37]" />
-              <h3 className="text-xl font-bold text-white mb-2">AI Study Assistant</h3>
-              <p className="text-sm font-medium max-w-sm">
-                Ask anything about the teachings in this series. I've analyzed all transcripts and segments for you.
-              </p>
-            </div>
-          ) : (
-            chatHistory.map((msg, i) => (
-              <div 
-                key={i} 
-                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <div className={`max-w-[90%] md:max-w-[80%] ${msg.role === "user" ? "" : "flex gap-4"}`}>
-                  {msg.role === "ai" && (
-                    <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex-shrink-0 flex items-center justify-center mt-1">
-                      <MessageSquare size={14} className="text-[#D4AF37]" />
-                    </div>
+          {/* Series Overview as First AI Message */}
+          <div className="flex justify-start">
+            <div className="flex gap-4 max-w-[90%] md:max-w-[80%]">
+              <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex-shrink-0 flex items-center justify-center mt-1">
+                <Sparkles size={14} className="text-[#D4AF37]" />
+              </div>
+              <div className="p-6 bg-white/[0.03] border border-white/10 rounded-2xl rounded-tl-none shadow-xl">
+                <p className="text-sm md:text-base text-[#cbd5e1] leading-relaxed">
+                  {summaryLoading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 size={14} className="animate-spin text-[#D4AF37]" />
+                      Generating series insights...
+                    </span>
+                  ) : (
+                    summary || "Explore the deep teachings of this series through transcripts and AI study."
                   )}
-                  <div className={`
-                    p-6 rounded-2xl border
-                    ${msg.role === "user" 
-                      ? "bg-[#489e3e]/10 border-[#489e3e]/20 rounded-tr-none text-white" 
-                      : "bg-white/[0.03] border-white/10 rounded-tl-none shadow-xl"}
-                  `}>
-                    {msg.role === "ai" ? renderRichAIResponse(msg.text) : msg.text}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {chatHistory.map((msg, i) => (
+            <div
+              key={msg.id || i}
+              ref={el => { if (msg.role === 'user') userMessageRefs.current[msg.id] = el; }}
+              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+            >
+              <div className={`max-w-[90%] md:max-w-[80%] ${msg.role === "user" ? "" : "flex gap-4"}`}>
+                {msg.role === "ai" && (
+                  <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex-shrink-0 flex items-center justify-center mt-1">
+                    <MessageSquare size={14} className="text-[#D4AF37]" />
                   </div>
+                )}
+                <div className={`
+                    p-6 rounded-2xl border
+                    ${msg.role === "user"
+                    ? "bg-[#489e3e]/10 border-[#489e3e]/20 rounded-tr-none text-white"
+                    : "bg-white/[0.03] border-white/10 rounded-tl-none shadow-xl"}
+                  `}>
+                  {msg.role === "ai" ? renderRichAIResponse(msg.text) : msg.text}
                 </div>
               </div>
-            ))
-          )}
+            </div>
+          ))
+          }
           {chatLoading && (
             <div className="flex justify-start">
               <div className="flex gap-4 max-w-[80%]">
@@ -393,7 +400,7 @@ export default function SeriesDetailPage() {
         <div className="p-8 shrink-0">
           <div className="max-w-4xl mx-auto">
             <div className="relative flex items-center bg-[#181b31] border border-white/10 rounded-3xl focus-within:border-[#D4AF37]/50 transition-all px-2 shadow-2xl">
-              <input 
+              <input
                 type="text"
                 placeholder="Ask anything about this series..."
                 className="w-full bg-transparent border-none outline-none py-6 px-6 text-base text-white placeholder:text-gray-600"
@@ -401,7 +408,7 @@ export default function SeriesDetailPage() {
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
               />
-              <button 
+              <button
                 onClick={handleSendMessage}
                 disabled={!chatInput.trim() || chatLoading}
                 className="p-4 bg-[#D4AF37] text-[#0f1129] rounded-2xl hover:scale-105 transition-transform disabled:opacity-30 disabled:scale-100 mr-2"
@@ -432,7 +439,7 @@ export default function SeriesDetailPage() {
                     <p className="text-[11px] text-gray-300 leading-relaxed mb-4 pt-2">
                       "{decl.declaration_text}"
                     </p>
-                    <a 
+                    <a
                       href={decl.youtube_url_with_timestamp}
                       target="_blank"
                       rel="noopener noreferrer"
