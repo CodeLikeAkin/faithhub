@@ -160,10 +160,13 @@ export default function SeriesDetailPage() {
     setChatHistory(prev => [...prev, userMessage, aiMessage]);
     setChatLoading(true);
 
-    // Fix 2: Scroll to new user message instantly
+    // Fix 2: Scroll to new user message instantly and pin to top
     setTimeout(() => {
-      userMessageRefs.current[messageId]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 50);
+      userMessageRefs.current[messageId]?.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+      });
+    }, 100);
 
     try {
       const historyToSend = chatHistory.map(m => ({ role: m.role, text: m.text }));
@@ -217,7 +220,10 @@ export default function SeriesDetailPage() {
       setChatHistory(prev => [...prev, { id: Date.now() + 1, role: "ai", text: `Error: ${err.message}` }]);
 
       setTimeout(() => {
-        userMessageRefs.current[messageId]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        userMessageRefs.current[messageId]?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
       }, 100);
     } finally {
       setChatLoading(false);
@@ -240,6 +246,9 @@ export default function SeriesDetailPage() {
     const sections = text.split(/CITATIONS:/i);
     const mainContent = sections[0].trim();
     const citationsContent = sections[1]?.trim() || "";
+    
+    // Extract source count for the button
+    const sourceCount = (citationsContent.match(/\[\d+\]/g) || []).length;
 
     const citationsMap = {};
     const citationRegex = /\[(\d+)\]\s+"(.*?)"\s+—\s+(.*?)\s+—\s+(https?:\/\/\S+)/g;
@@ -275,6 +284,15 @@ export default function SeriesDetailPage() {
             {processedContent}
           </ReactMarkdown>
         </div>
+
+        {sourceCount > 0 && (
+          <div className="flex justify-end mt-4">
+            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-gray-400 hover:bg-white/10 hover:text-white transition-all">
+              {sourceCount} {sourceCount === 1 ? 'source' : 'sources'}
+              <ArrowLeft size={10} className="rotate-180" />
+            </button>
+          </div>
+        )}
       </div>
     );
   };
@@ -439,11 +457,12 @@ export default function SeriesDetailPage() {
                         : "w-full text-[15px] text-gray-200 leading-relaxed"
                     }>
                       {msg.role === "ai" && msg.isThinking ? (
-                        <span className="flex items-center text-gray-400 h-6">
-                          <span className="animate-pulse">.</span>
-                          <span className="animate-pulse" style={{ animationDelay: '200ms' }}>.</span>
-                          <span className="animate-pulse" style={{ animationDelay: '400ms' }}>.</span>
-                        </span>
+                        <div className="flex items-center gap-3 text-gray-400 bg-white/5 rounded-2xl px-4 py-2 border border-white/5 animate-in fade-in slide-in-from-bottom-1 duration-500">
+                          <Loader2 size={14} className="animate-spin text-[#D4AF37]" />
+                          <span className="text-sm italic font-medium">
+                            {thinkingMessages[thinkingStep]}
+                          </span>
+                        </div>
                       ) : (
                         msg.role === "ai" ? renderRichAIResponse(msg.text) : msg.text
                       )}
