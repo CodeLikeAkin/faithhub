@@ -30,6 +30,7 @@ export default function SeriesDetailPage() {
   const [summarySuggestions, setSummarySuggestions] = useState([]);
 
   const [summarySuggestionsHidden, setSummarySuggestionsHidden] = useState(false);
+  const [showSources, setShowSources] = useState({}); // Map of messageId -> boolean
 
   // Chat State
   const [chatInput, setChatInput] = useState("");
@@ -275,8 +276,14 @@ export default function SeriesDetailPage() {
     }
 
     let processedContent = mainContent;
-    Object.entries(citationsMap).forEach(([num, data]) => {
-      processedContent = processedContent.replaceAll(`[${num}]`, `[${num}](${data.url})`);
+    
+    // Improved replacement to handle cases like [1, 2] or [1][2]
+    // We match any [number] and check if it exists in our map
+    processedContent = processedContent.replace(/\[(\d+)\]/g, (match, num) => {
+      if (citationsMap[num]) {
+        return `[${num}](${citationsMap[num].url})`;
+      }
+      return match;
     });
 
     return (
@@ -303,11 +310,38 @@ export default function SeriesDetailPage() {
         </div>
 
         {sourceCount > 0 && (
-          <div className="flex justify-end mt-4">
-            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-gray-400 hover:bg-white/10 hover:text-white transition-all">
-              {sourceCount} {sourceCount === 1 ? 'source' : 'sources'}
-              <ArrowLeft size={10} className="rotate-180" />
-            </button>
+          <div className="mt-4">
+            <div className="flex justify-end">
+              <button 
+                onClick={() => setShowSources(prev => ({ ...prev, [text]: !prev[text] }))}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-gray-400 hover:bg-white/10 hover:text-white transition-all"
+              >
+                {sourceCount} {sourceCount === 1 ? 'source' : 'sources'}
+                <ArrowLeft size={10} className={`transition-transform duration-300 ${showSources[text] ? 'rotate-90' : 'rotate-180'}`} />
+              </button>
+            </div>
+            
+            {showSources[text] && (
+              <div className="mt-3 p-4 bg-black/20 border border-white/5 rounded-xl space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Sources Referenced</h4>
+                {Object.entries(citationsMap).map(([num, data]) => (
+                  <div key={num} className="text-[11px] leading-relaxed group">
+                    <span className="text-[#D4AF37] font-bold mr-2">[{num}]</span>
+                    <span className="text-gray-300 italic">"{data.preview}"</span>
+                    <span className="text-gray-500 mx-2">—</span>
+                    <span className="text-gray-400 font-medium">{data.title}</span>
+                    <a 
+                      href={data.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="ml-2 text-[#D4AF37] hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      View moment
+                    </a>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

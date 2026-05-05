@@ -37,26 +37,31 @@ export async function POST(req) {
 
     let segmentsIndex = [];
     let transcriptContext = `SERMON SERIES: ${series.title}\n\n`;
+    const MAX_SEGMENTS = 200;
+    const segmentsPerSermon = Math.floor(MAX_SEGMENTS / (sortedSermons.length || 1));
 
     sortedSermons.forEach((s, idx) => {
-      const transcriptSnippet = (s.transcript || "").substring(0, 3000);
-      transcriptContext += `[Sermon ${idx + 1}: ${s.title}]\nTranscript: ${transcriptSnippet || "No transcript available."}\n\n`;
+      // 1. Full transcript
+      transcriptContext += `[Sermon ${idx + 1}: ${s.title}]\nTranscript: ${s.transcript || "No transcript available."}\n\n`;
 
-      if (segmentsIndex.length < 50) {
-        const validSegments = (s.transcript_segments || []).filter(seg => {
-          const videoId = seg.youtube_video_id || s.youtube_video_id;
-          return videoId && seg.start_seconds !== undefined;
-        });
-        const remainingSpace = 50 - segmentsIndex.length;
-        const segmentsToPush = validSegments.slice(0, remainingSpace);
-        segmentsToPush.forEach(seg => {
+      // 2. Build segments index (spread evenly across the sermon)
+      const validSegments = (s.transcript_segments || []).filter(seg => {
+        const videoId = seg.youtube_video_id || s.youtube_video_id;
+        return videoId && seg.start_seconds !== undefined;
+      });
+
+      if (validSegments.length > 0) {
+        const numToTake = Math.min(validSegments.length, segmentsPerSermon);
+        for (let i = 0; i < numToTake; i++) {
+          const selectIdx = Math.floor(i * (validSegments.length / numToTake));
+          const seg = validSegments[selectIdx];
           segmentsIndex.push({
             text: seg.text,
             start_seconds: Math.floor(seg.start_seconds),
             sermon_title: s.title,
             youtube_video_id: seg.youtube_video_id || s.youtube_video_id
           });
-        });
+        }
       }
     });
 
@@ -108,9 +113,17 @@ FOLLOW-UP SUGGESTIONS:
 
     const recentHistory = conversationHistory.slice(-6);
 
+    const segmentList = segmentsIndex.map((seg, i) => 
+      `--- SEGMENT [${i + 1}] ---
+      Quote: "${seg.text}"
+      Sermon: ${seg.sermon_title}
+      Start Time: ${seg.start_seconds}s
+      Video ID: ${seg.youtube_video_id}`
+    ).join('\n\n');
+
     const userMessageWithContext = `
-TRANSCRIPT SEGMENTS INDEX (use these for citations):
-${JSON.stringify(segmentsIndex, null, 2)}
+TRANSCRIPT SEGMENTS INDEX:
+${segmentList}
 
 FULL SERMON TRANSCRIPTS:
 ${transcriptContext}
@@ -119,21 +132,21 @@ USER QUESTION:
 ${message}
 `;
 
-    console.log('Segments being sent to AI:', JSON.stringify(segmentsIndex.slice(0, 3), null, 2));
     console.log('Total segments count:', segmentsIndex.length);
     console.log('Total transcript length being sent:', transcriptContext.length);
-    console.log('Sermons loaded for this series:',
-      sortedSermons.map(s => ({
-        title: s.title,
-        transcriptLength: s.transcript?.length,
-        segmentCount: s.transcript_segments?.length
-      }))
-    );
 
     // 5. Call Gemini with streaming
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      systemInstruction: systemPrompt,
+      model: 'gemini-2.5-flash',
+      systemInstruction: systemPrompt + `
+      
+      CITATION SYSTEM RULES:
+      - The "TRANSCRIPT SEGMENTS INDEX" contains numbered segments like --- SEGMENT [1] ---.
+      - When you cite a point, you MUST use the bracketed number of the segment, e.g., [1] or [1][5].
+      - NEVER use the "Start Time" (e.g., [4302]) as a citation ID.
+      - NEVER use [Sermon X, Time].
+      - The CITATIONS section at the end MUST list the segments you used, formatted as:
+        [N] "short quote" — Sermon Title — https://youtube.com/watch?v=VideoID&t=StartTime`,
     });
 
     const chat = model.startChat({ history: recentHistory });
