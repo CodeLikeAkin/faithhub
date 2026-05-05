@@ -27,6 +27,9 @@ export default function SeriesDetailPage() {
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState("");
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summarySuggestions, setSummarySuggestions] = useState([]);
+
+  const [summarySuggestionsHidden, setSummarySuggestionsHidden] = useState(false);
 
   // Chat State
   const [chatInput, setChatInput] = useState("");
@@ -117,6 +120,9 @@ export default function SeriesDetailPage() {
       });
       const data = await res.json();
       setSummary(data.summary);
+      if (data.suggestions) {
+        setSummarySuggestions(data.suggestions);
+      }
     } catch (err) {
       console.error("Error generating summary:", err);
     } finally {
@@ -124,45 +130,88 @@ export default function SeriesDetailPage() {
     }
   };
 
-  const handleSendMessage = async (textToSubmit) => {
+  const handleSendMessage = async (textToSubmit, sourceMessageId = null) => {
     const actualText = typeof textToSubmit === 'string' ? textToSubmit : chatInput;
     if (!actualText.trim() || chatLoading) return;
 
     const messageId = Date.now();
     const userMessage = { id: messageId, role: "user", text: actualText };
-    setChatHistory(prev => [...prev, userMessage]);
     
-    // Only clear input if we were sending from the input box
+    // Fix 1 & 6: Hide suggestions instantly with fade out
+    if (sourceMessageId === 'summary') {
+      // Create fade out effect by setting a state
+      setSummarySuggestionsHidden(true);
+      setTimeout(() => setSummarySuggestions([]), 200);
+    } else if (sourceMessageId) {
+      setChatHistory(prev => prev.map(m => m.id === sourceMessageId ? { ...m, suggestionsHidden: true } : m));
+      setTimeout(() => {
+        setChatHistory(prev => prev.map(m => m.id === sourceMessageId ? { ...m, suggestions: [] } : m));
+      }, 200);
+    }
+
+    // Fix 3: Input clears immediately before API responds
     if (typeof textToSubmit !== 'string' || textToSubmit === chatInput) {
       setChatInput("");
     }
-    
+
+    const aiMessageId = messageId + 1;
+    const aiMessage = { id: aiMessageId, role: "ai", text: "", isThinking: true };
+
+    setChatHistory(prev => [...prev, userMessage, aiMessage]);
     setChatLoading(true);
 
+    // Fix 2: Scroll to new user message instantly
+    setTimeout(() => {
+      userMessageRefs.current[messageId]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+
     try {
+      const historyToSend = chatHistory.map(m => ({ role: m.role, text: m.text }));
       const res = await fetch("/api/series-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           seriesId: id,
           message: userMessage.text,
-          chatHistory: chatHistory
+          chatHistory: historyToSend
         })
       });
 
-      const data = await res.json();
-      if (data.error) throw new Error(data.message || "I encountered an error.");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "I encountered an error.");
+      }
 
-      setChatHistory(prev => [...prev, { 
-        id: Date.now() + 1, 
-        role: "ai", 
-        text: data.text,
-        suggestions: data.suggestions
-      }]);
+      // Fix 4: Stream processing
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let aiText = "";
 
-      setTimeout(() => {
-        userMessageRefs.current[messageId]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        aiText += chunk;
+
+        let displayAiText = aiText;
+        let aiSuggestions = [];
+
+        const suggestionsIndex = aiText.lastIndexOf("SUGGESTIONS:");
+        if (suggestionsIndex !== -1) {
+          displayAiText = aiText.substring(0, suggestionsIndex).trim();
+          const suggestionsStr = aiText.substring(suggestionsIndex + "SUGGESTIONS:".length).trim();
+          try {
+            aiSuggestions = JSON.parse(suggestionsStr);
+          } catch(e) {}
+        }
+
+        setChatHistory(prev => prev.map(m => 
+          m.id === aiMessageId 
+            ? { ...m, text: displayAiText, suggestions: aiSuggestions, isThinking: false } 
+            : m
+        ));
+      }
     } catch (err) {
       console.error("Chat error:", err);
       setChatHistory(prev => [...prev, { id: Date.now() + 1, role: "ai", text: `Error: ${err.message}` }]);
@@ -175,9 +224,8 @@ export default function SeriesDetailPage() {
     }
   };
 
-  const handleSuggestionClick = (question) => {
-    setChatInput(question);
-    handleSendMessage(question);
+  const handleSuggestionClick = (question, sourceMessageId) => {
+    handleSendMessage(question, sourceMessageId);
   };
 
   const formatDateRange = (start, end) => {
@@ -202,22 +250,26 @@ export default function SeriesDetailPage() {
 
     let processedContent = mainContent;
     Object.entries(citationsMap).forEach(([num, data]) => {
-      processedContent = processedContent.replaceAll(`[${num}]`, `[[${num}]](${data.url})`);
+      processedContent = processedContent.replaceAll(`[${num}]`, `[${num}](${data.url})`);
     });
 
     return (
       <div className="space-y-6 w-full">
-        <div className="text-sm md:text-base leading-relaxed text-gray-200">
+        <div className="text-[15px] leading-relaxed text-gray-200">
           <ReactMarkdown
             components={{
-              strong: ({node, ...props}) => <strong className="text-white font-bold" {...props} />,
-              ul: ({node, ...props}) => <ul className="list-disc pl-5 space-y-1 my-2" {...props} />,
-              ol: ({node, ...props}) => <ol className="list-decimal pl-5 space-y-1 my-2" {...props} />,
-              p: ({node, ...props}) => <p className="mb-4 last:mb-0" {...props} />,
-              h1: ({node, ...props}) => <h1 className="text-[#D4AF37] text-xl font-bold mt-4 mb-2" {...props} />,
-              h2: ({node, ...props}) => <h2 className="text-[#D4AF37] text-lg font-bold mt-4 mb-2" {...props} />,
-              h3: ({node, ...props}) => <h3 className="text-[#D4AF37] text-base font-bold mt-3 mb-2" {...props} />,
-              a: ({node, ...props}) => <a className="text-[#D4AF37] hover:text-[#e5c158] font-bold text-xs align-top ml-0.5" target="_blank" rel="noopener noreferrer" {...props} />
+              strong: ({ node, ...props }) => <strong className="text-white font-semibold" {...props} />,
+              ul: ({ node, ...props }) => <ul className="list-disc pl-5 space-y-1 my-2" {...props} />,
+              ol: ({ node, ...props }) => <ol className="list-decimal pl-5 space-y-1 my-2" {...props} />,
+              p: ({ node, ...props }) => <p className="mb-3 last:mb-0" {...props} />,
+              h1: ({ node, ...props }) => <h1 className="text-white text-xl font-bold mt-4 mb-2" {...props} />,
+              h2: ({ node, ...props }) => <h2 className="text-white text-lg font-bold mt-4 mb-2" {...props} />,
+              h3: ({ node, ...props }) => <h3 className="text-white text-base font-bold mt-3 mb-2" {...props} />,
+              a: ({ node, ...props }) => (
+                <sup className="text-xs text-gray-400 ml-0.5">
+                  <a className="hover:text-white" target="_blank" rel="noopener noreferrer" {...props} />
+                </sup>
+              )
             }}
           >
             {processedContent}
@@ -299,15 +351,15 @@ export default function SeriesDetailPage() {
         </div>
 
         {/* Hero Header */}
-        <div className="relative shrink-0 overflow-hidden border-b border-white/5 pb-6">
+        <div className="relative shrink-0 overflow-hidden border-b border-white/5 h-28">
           <div
             className="absolute inset-0 bg-cover bg-center opacity-30 blur-sm"
             style={{ backgroundImage: `url(${heroThumb ? `https://img.youtube.com/vi/${heroThumb}/maxresdefault.jpg` : ""})` }}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#121424]" />
 
-          <div className="relative z-10 h-full flex flex-col justify-end p-8 pt-12">
-            <div className="flex items-center gap-3 mb-4">
+          <div className="relative z-10 h-full flex flex-col justify-end px-8 py-4">
+            <div className="flex items-center gap-3 mb-2">
               <span className="px-2 py-0.5 bg-[#D4AF37] text-[#0f1129] rounded text-[9px] font-black uppercase tracking-wider">
                 {series.service_type || "Series"}
               </span>
@@ -320,101 +372,112 @@ export default function SeriesDetailPage() {
                 {formatDateRange(series.start_date, series.end_date)}
               </span>
             </div>
-            <h1 className="text-2xl md:text-5xl font-black tracking-tight">{series.title}</h1>
+            <h1 className="text-2xl font-black tracking-tight">{series.title}</h1>
           </div>
         </div>
 
         {/* Chat Area */}
         <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
           {/* Series Overview as First AI Message */}
-          <div className="flex justify-start">
-            <div className="flex gap-4 max-w-[90%] md:max-w-[80%]">
-              <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex-shrink-0 flex items-center justify-center mt-1">
-                <Sparkles size={14} className="text-[#D4AF37]" />
-              </div>
-              <div className="p-6 bg-white/[0.03] border border-white/10 rounded-2xl rounded-tl-none shadow-xl">
-                <p className="text-sm md:text-base text-[#cbd5e1] leading-relaxed">
+          <div className="flex flex-col items-start mb-6 w-full">
+            <div className="flex justify-start w-full">
+              <div className="flex gap-4 max-w-[90%] md:max-w-[80%]">
+                <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex-shrink-0 flex items-center justify-center mt-1">
+                  <Sparkles size={14} className="text-[#D4AF37]" />
+                </div>
+                <div className="w-full text-[15px] text-gray-200 leading-relaxed">
                   {summaryLoading ? (
                     <span className="flex items-center gap-2">
                       <Loader2 size={14} className="animate-spin text-[#D4AF37]" />
                       Generating series insights...
                     </span>
                   ) : (
-                    summary || "Explore the deep teachings of this series through transcripts and AI study."
+                    <ReactMarkdown
+                      components={{
+                        strong: ({ node, ...props }) => <strong className="text-white font-semibold" {...props} />
+                      }}
+                    >
+                      {summary || "Explore the deep teachings of this series through transcripts and AI study."}
+                    </ReactMarkdown>
                   )}
-                </p>
+                </div>
               </div>
             </div>
+
+            {!summaryLoading && summarySuggestions && summarySuggestions.length > 0 && (
+              <div className={`flex flex-col gap-2 mt-4 w-full pl-0 md:pl-12 transition-opacity duration-200 ${summarySuggestionsHidden ? 'opacity-0' : 'opacity-100'}`}>
+                {summarySuggestions.map((question, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleSuggestionClick(question, 'summary')}
+                    className="w-fit max-w-[90%] md:max-w-[80%] text-left text-sm px-4 py-2 rounded-xl bg-[#1e2235] text-gray-200 hover:bg-[#2a3050] transition-colors cursor-pointer"
+                  >
+                    {question}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {chatHistory.map((msg, i) => {
-            const isLastAiMessage = msg.role === 'ai' && !chatHistory.slice(i + 1).some(m => m.role === 'ai');
             return (
-            <div
-              key={msg.id || i}
-              ref={el => { if (msg.role === 'user') userMessageRefs.current[msg.id] = el; }}
-              className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"} mb-6`}
-            >
-              <div className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} w-full`}>
-                <div className={`max-w-[90%] md:max-w-[80%] ${msg.role === "user" ? "" : "flex gap-4 w-full"}`}>
-                  {msg.role === "ai" && (
-                    <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex-shrink-0 flex items-center justify-center mt-1">
-                      <MessageSquare size={14} className="text-[#D4AF37]" />
+              <div
+                key={msg.id || i}
+                ref={el => { if (msg.role === 'user') userMessageRefs.current[msg.id] = el; }}
+                className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"} mb-6`}
+              >
+                <div className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} w-full`}>
+                  <div className={`w-full ${msg.role === "user" ? "flex justify-end" : "flex gap-4 max-w-[90%] md:max-w-[80%]"}`}>
+                    {msg.role === "ai" && (
+                      <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex-shrink-0 flex items-center justify-center mt-1">
+                        <MessageSquare size={14} className="text-[#D4AF37]" />
+                      </div>
+                    )}
+                    <div className={
+                      msg.role === "user"
+                        ? "bg-[#1e2235] text-sm text-gray-300 rounded-2xl px-4 py-2 max-w-[70%]"
+                        : "w-full text-[15px] text-gray-200 leading-relaxed"
+                    }>
+                      {msg.role === "ai" && msg.isThinking ? (
+                        <span className="flex items-center text-gray-400 h-6">
+                          <span className="animate-pulse">.</span>
+                          <span className="animate-pulse" style={{ animationDelay: '200ms' }}>.</span>
+                          <span className="animate-pulse" style={{ animationDelay: '400ms' }}>.</span>
+                        </span>
+                      ) : (
+                        msg.role === "ai" ? renderRichAIResponse(msg.text) : msg.text
+                      )}
                     </div>
-                  )}
-                  <div className={`
-                      p-6 rounded-2xl border
-                      ${msg.role === "user"
-                      ? "bg-[#489e3e]/10 border-[#489e3e]/20 rounded-tr-none text-white inline-block"
-                      : "bg-white/[0.03] border-white/10 rounded-tl-none shadow-xl w-full"}
-                    `}>
-                    {msg.role === "ai" ? renderRichAIResponse(msg.text) : msg.text}
                   </div>
                 </div>
-              </div>
 
-              {isLastAiMessage && msg.suggestions && msg.suggestions.length > 0 && (
-                <div className="flex flex-col gap-2 mt-3 w-full max-w-[90%] md:max-w-[80%] pl-0 md:pl-12">
-                  {msg.suggestions.map((question, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleSuggestionClick(question)}
-                      className="text-left text-sm px-4 py-2 rounded-full border border-[#2d3452] bg-[#1e2235] text-[#cbd5e1] hover:bg-[#2d3452] transition-colors cursor-pointer"
-                    >
-                      {question}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )})}
-          {chatLoading && (
-            <div className="flex justify-start">
-              <div className="flex gap-4 max-w-[80%]">
-                <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex-shrink-0 flex items-center justify-center">
-                  <Loader2 size={14} className="text-[#D4AF37] animate-spin" />
-                </div>
-                <div className="p-6 bg-white/[0.03] border border-white/10 rounded-2xl rounded-tl-none">
-                  <div className="flex gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-[#D4AF37]/40 animate-bounce" />
-                    <div className="w-2 h-2 rounded-full bg-[#D4AF37]/40 animate-bounce [animation-delay:0.2s]" />
-                    <div className="w-2 h-2 rounded-full bg-[#D4AF37]/40 animate-bounce [animation-delay:0.4s]" />
+                {msg.suggestions && msg.suggestions.length > 0 && (
+                  <div className={`flex flex-col gap-2 mt-4 w-full pl-0 md:pl-12 transition-opacity duration-200 ${msg.suggestionsHidden ? 'opacity-0' : 'opacity-100'}`}>
+                    {msg.suggestions.map((question, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleSuggestionClick(question, msg.id)}
+                        className="w-fit max-w-[90%] md:max-w-[80%] text-left text-sm px-4 py-2 rounded-xl bg-[#1e2235] text-gray-200 hover:bg-[#2a3050] transition-colors cursor-pointer"
+                      >
+                        {question}
+                      </button>
+                    ))}
                   </div>
-                </div>
+                )}
               </div>
-            </div>
-          )}
+            )
+          })}
           <div ref={chatBottomRef} />
         </div>
 
         {/* Chat Input */}
         <div className="p-8 shrink-0">
           <div className="max-w-4xl mx-auto">
-            <div className="relative flex items-center bg-[#181b31] border border-white/10 rounded-3xl focus-within:border-[#D4AF37]/50 transition-all px-2 shadow-2xl">
+            <div className="relative flex items-center bg-[#181b31] border border-[#2d3452] rounded-3xl focus-within:border-gray-500 transition-all px-4 py-2">
               <input
                 type="text"
-                placeholder="Ask anything about this series..."
-                className="w-full bg-transparent border-none outline-none py-6 px-6 text-base text-white placeholder:text-gray-600"
+                placeholder="Start typing..."
+                className="w-full bg-transparent border-none outline-none py-2 px-2 text-sm text-white placeholder:text-gray-500"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
@@ -422,9 +485,9 @@ export default function SeriesDetailPage() {
               <button
                 onClick={handleSendMessage}
                 disabled={!chatInput.trim() || chatLoading}
-                className="p-4 bg-[#D4AF37] text-[#0f1129] rounded-2xl hover:scale-105 transition-transform disabled:opacity-30 disabled:scale-100 mr-2"
+                className="p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-30 disabled:hover:text-gray-400"
               >
-                <Send size={20} />
+                <Send size={16} />
               </button>
             </div>
           </div>

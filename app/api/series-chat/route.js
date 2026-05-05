@@ -106,11 +106,11 @@ FOLLOW-UP SUGGESTIONS:
     }));
 
     const cleanMessages = conversationHistory.filter(
-      m => (m.role === 'user' || m.role === 'assistant') && 
-           m.content && 
-           m.content.trim() !== ''
+      m => (m.role === 'user' || m.role === 'assistant') &&
+        m.content &&
+        m.content.trim() !== ''
     );
-    
+
     const recentMessages = cleanMessages.slice(-6);
 
     const userMessageWithContext = `
@@ -127,11 +127,11 @@ ${message}
     console.log('Segments being sent to AI:', JSON.stringify(segmentsIndex.slice(0, 3), null, 2));
     console.log('Total segments count:', segmentsIndex.length);
     console.log('Total transcript length being sent:', transcriptContext.length);
-    console.log('Sermons loaded for this series:', 
-      sortedSermons.map(s => ({ 
-        title: s.title, 
+    console.log('Sermons loaded for this series:',
+      sortedSermons.map(s => ({
+        title: s.title,
         transcriptLength: s.transcript?.length,
-        segmentCount: s.transcript_segments?.length 
+        segmentCount: s.transcript_segments?.length
       }))
     );
 
@@ -145,25 +145,34 @@ ${message}
       model: 'llama-3.3-70b-versatile',
       temperature: 0.1,
       max_tokens: 2000,
+      stream: true,
     });
 
-    const rawResponse = completion.choices[0]?.message?.content || "I couldn't generate a response.";
-    
-    let aiResponse = rawResponse;
-    let suggestions = [];
-
-    const suggestionsIndex = rawResponse.lastIndexOf("SUGGESTIONS:");
-    if (suggestionsIndex !== -1) {
-      const suggestionsStr = rawResponse.substring(suggestionsIndex + "SUGGESTIONS:".length).trim();
-      try {
-        suggestions = JSON.parse(suggestionsStr);
-        aiResponse = rawResponse.substring(0, suggestionsIndex).trim();
-      } catch (e) {
-        console.error('Failed to parse suggestions', e);
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of completion) {
+            const content = chunk.choices[0]?.delta?.content || "";
+            if (content) {
+              controller.enqueue(encoder.encode(content));
+            }
+          }
+        } catch (err) {
+          controller.error(err);
+        } finally {
+          controller.close();
+        }
       }
-    }
+    });
 
-    return NextResponse.json({ text: aiResponse, suggestions });
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
 
   } catch (error) {
     // Add try/catch and log the actual error with console.error
