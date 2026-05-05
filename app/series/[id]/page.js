@@ -17,6 +17,7 @@ import {
   Quote
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import ReactMarkdown from "react-markdown";
 
 export default function SeriesDetailPage() {
   const { id } = useParams();
@@ -123,13 +124,19 @@ export default function SeriesDetailPage() {
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!chatInput.trim() || chatLoading) return;
+  const handleSendMessage = async (textToSubmit) => {
+    const actualText = typeof textToSubmit === 'string' ? textToSubmit : chatInput;
+    if (!actualText.trim() || chatLoading) return;
 
     const messageId = Date.now();
-    const userMessage = { id: messageId, role: "user", text: chatInput };
+    const userMessage = { id: messageId, role: "user", text: actualText };
     setChatHistory(prev => [...prev, userMessage]);
-    setChatInput("");
+    
+    // Only clear input if we were sending from the input box
+    if (typeof textToSubmit !== 'string' || textToSubmit === chatInput) {
+      setChatInput("");
+    }
+    
     setChatLoading(true);
 
     try {
@@ -146,7 +153,12 @@ export default function SeriesDetailPage() {
       const data = await res.json();
       if (data.error) throw new Error(data.message || "I encountered an error.");
 
-      setChatHistory(prev => [...prev, { id: Date.now() + 1, role: "ai", text: data.text }]);
+      setChatHistory(prev => [...prev, { 
+        id: Date.now() + 1, 
+        role: "ai", 
+        text: data.text,
+        suggestions: data.suggestions
+      }]);
 
       setTimeout(() => {
         userMessageRefs.current[messageId]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -183,30 +195,28 @@ export default function SeriesDetailPage() {
       citationsMap[match[1]] = { preview: match[2], title: match[3], url: match[4] };
     }
 
-    const parts = mainContent.split(/(\[\d+\])/g);
+    let processedContent = mainContent;
+    Object.entries(citationsMap).forEach(([num, data]) => {
+      processedContent = processedContent.replaceAll(`[${num}]`, `[[${num}]](${data.url})`);
+    });
 
     return (
-      <div className="space-y-6">
-        <div className="text-sm md:text-base leading-relaxed text-gray-200 whitespace-pre-wrap">
-          {parts.map((part, i) => {
-            const citeMatch = part.match(/\[(\d+)\]/);
-            if (citeMatch) {
-              const citeId = citeMatch[1];
-              const citeData = citationsMap[citeId];
-              return (
-                <a
-                  key={i}
-                  href={citeData?.url || "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[#D4AF37] hover:text-[#e5c158] font-bold text-xs align-top ml-0.5"
-                >
-                  [{citeId}]
-                </a>
-              );
-            }
-            return part;
-          })}
+      <div className="space-y-6 w-full">
+        <div className="text-sm md:text-base leading-relaxed text-gray-200">
+          <ReactMarkdown
+            components={{
+              strong: ({node, ...props}) => <strong className="text-white font-bold" {...props} />,
+              ul: ({node, ...props}) => <ul className="list-disc pl-5 space-y-1 my-2" {...props} />,
+              ol: ({node, ...props}) => <ol className="list-decimal pl-5 space-y-1 my-2" {...props} />,
+              p: ({node, ...props}) => <p className="mb-4 last:mb-0" {...props} />,
+              h1: ({node, ...props}) => <h1 className="text-[#D4AF37] text-xl font-bold mt-4 mb-2" {...props} />,
+              h2: ({node, ...props}) => <h2 className="text-[#D4AF37] text-lg font-bold mt-4 mb-2" {...props} />,
+              h3: ({node, ...props}) => <h3 className="text-[#D4AF37] text-base font-bold mt-3 mb-2" {...props} />,
+              a: ({node, ...props}) => <a className="text-[#D4AF37] hover:text-[#e5c158] font-bold text-xs align-top ml-0.5" target="_blank" rel="noopener noreferrer" {...props} />
+            }}
+          >
+            {processedContent}
+          </ReactMarkdown>
         </div>
 
         {Object.keys(citationsMap).length > 0 && (
@@ -353,30 +363,47 @@ export default function SeriesDetailPage() {
             </div>
           </div>
 
-          {chatHistory.map((msg, i) => (
+          {chatHistory.map((msg, i) => {
+            const isLastAiMessage = msg.role === 'ai' && !chatHistory.slice(i + 1).some(m => m.role === 'ai');
+            return (
             <div
               key={msg.id || i}
               ref={el => { if (msg.role === 'user') userMessageRefs.current[msg.id] = el; }}
-              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"} mb-6`}
             >
-              <div className={`max-w-[90%] md:max-w-[80%] ${msg.role === "user" ? "" : "flex gap-4"}`}>
-                {msg.role === "ai" && (
-                  <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex-shrink-0 flex items-center justify-center mt-1">
-                    <MessageSquare size={14} className="text-[#D4AF37]" />
+              <div className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} w-full`}>
+                <div className={`max-w-[90%] md:max-w-[80%] ${msg.role === "user" ? "" : "flex gap-4 w-full"}`}>
+                  {msg.role === "ai" && (
+                    <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex-shrink-0 flex items-center justify-center mt-1">
+                      <MessageSquare size={14} className="text-[#D4AF37]" />
+                    </div>
+                  )}
+                  <div className={`
+                      p-6 rounded-2xl border
+                      ${msg.role === "user"
+                      ? "bg-[#489e3e]/10 border-[#489e3e]/20 rounded-tr-none text-white inline-block"
+                      : "bg-white/[0.03] border-white/10 rounded-tl-none shadow-xl w-full"}
+                    `}>
+                    {msg.role === "ai" ? renderRichAIResponse(msg.text) : msg.text}
                   </div>
-                )}
-                <div className={`
-                    p-6 rounded-2xl border
-                    ${msg.role === "user"
-                    ? "bg-[#489e3e]/10 border-[#489e3e]/20 rounded-tr-none text-white"
-                    : "bg-white/[0.03] border-white/10 rounded-tl-none shadow-xl"}
-                  `}>
-                  {msg.role === "ai" ? renderRichAIResponse(msg.text) : msg.text}
                 </div>
               </div>
+
+              {isLastAiMessage && msg.suggestions && msg.suggestions.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2 pl-0 md:pl-12 w-full max-w-[90%] md:max-w-[80%]">
+                  {msg.suggestions.map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleSendMessage(suggestion)}
+                      className="bg-[#1e2235] text-[#cbd5e1] border border-[#2d3452] rounded-full px-4 py-2 text-sm hover:bg-[#2a2f4c] transition-all text-left"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          ))
-          }
+          )})}
           {chatLoading && (
             <div className="flex justify-start">
               <div className="flex gap-4 max-w-[80%]">
