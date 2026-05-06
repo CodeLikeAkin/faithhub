@@ -19,6 +19,69 @@ import {
 import { supabase } from "@/lib/supabase";
 import ReactMarkdown from "react-markdown";
 
+const CitationGroup = ({ nums, citationsMap }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  if (nums.length <= 1) {
+    const num = nums[0];
+    const data = citationsMap[num];
+    if (!data) return null;
+    return (
+      <a 
+        href={data.url} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/10 border border-white/10 text-[9px] font-bold text-gray-400 hover:text-white hover:border-[#D4AF37] transition-all ml-1 -translate-y-0.5 cursor-pointer"
+      >
+        {num}
+      </a>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1 ml-1 -translate-y-0.5">
+      {/* Always show first one */}
+      <a 
+        href={citationsMap[nums[0]]?.url} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/10 border border-white/10 text-[9px] font-bold text-gray-400 hover:text-white hover:border-[#D4AF37] transition-all cursor-pointer"
+      >
+        {nums[0]}
+      </a>
+
+      {isExpanded ? (
+        <>
+          {nums.slice(1).map(num => (
+            <a 
+              key={num}
+              href={citationsMap[num]?.url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/10 border border-white/10 text-[9px] font-bold text-gray-400 hover:text-white hover:border-[#D4AF37] transition-all animate-in fade-in slide-in-from-left-1 duration-200 cursor-pointer"
+            >
+              {num}
+            </a>
+          ))}
+          <button 
+            onClick={(e) => { e.preventDefault(); setIsExpanded(false); }}
+            className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/20 border border-[#D4AF37]/50 text-[9px] font-black text-[#D4AF37] hover:bg-white/30 transition-all cursor-pointer"
+          >
+            <ArrowLeft size={10} />
+          </button>
+        </>
+      ) : (
+        <button 
+          onClick={(e) => { e.preventDefault(); setIsExpanded(true); }}
+          className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/10 border border-white/10 text-[9px] font-bold text-gray-500 hover:text-white hover:bg-white/20 transition-all cursor-pointer"
+        >
+          ...
+        </button>
+      )}
+    </span>
+  );
+};
+
 export default function SeriesDetailPage() {
   const { id } = useParams();
   const [series, setSeries] = useState(null);
@@ -267,6 +330,7 @@ export default function SeriesDetailPage() {
     
     // Extract source count for the button
     const sourceCount = (citationsContent.match(/\[\d+\]/g) || []).length;
+    console.log('Detected sourceCount:', sourceCount);
 
     const citationsMap = {};
     const citationRegex = /\[(\d+)\]\s+"(.*?)"\s+—\s+(.*?)\s+—\s+(https?:\/\/\S+)/g;
@@ -277,13 +341,15 @@ export default function SeriesDetailPage() {
 
     let processedContent = mainContent;
     
-    // Improved replacement to handle cases like [1, 2] or [1][2]
-    // We match any [number] and check if it exists in our map
-    processedContent = processedContent.replace(/\[(\d+)\]/g, (match, num) => {
-      if (citationsMap[num]) {
-        return `[${num}](${citationsMap[num].url})`;
-      }
-      return match;
+    // Pattern to catch citation groups like [1][2] or [1] [2]
+    const citationGroupRegex = /(?:\[(\d+)\]\s*)+/g;
+    processedContent = processedContent.replace(citationGroupRegex, (match) => {
+      const nums = [...match.matchAll(/\[(\d+)\]/g)].map(m => m[1]);
+      const validNums = nums.filter(n => citationsMap[n]);
+      if (validNums.length === 0) return match;
+      
+      // We return a special markdown link that the component will pick up
+      return `[CITATIONS:${validNums.join(',')}](${citationsMap[validNums[0]].url})`;
     });
 
     return (
@@ -298,11 +364,19 @@ export default function SeriesDetailPage() {
               h1: ({ node, ...props }) => <h1 className="text-white text-xl font-bold mt-4 mb-2" {...props} />,
               h2: ({ node, ...props }) => <h2 className="text-white text-lg font-bold mt-4 mb-2" {...props} />,
               h3: ({ node, ...props }) => <h3 className="text-white text-base font-bold mt-3 mb-2" {...props} />,
-              a: ({ node, ...props }) => (
-                <sup className="text-xs text-gray-400 ml-0.5">
-                  <a className="hover:text-white" target="_blank" rel="noopener noreferrer" {...props} />
-                </sup>
-              )
+              a: ({ node, ...props }) => {
+                const textContent = props.children?.[0];
+                console.log('Rendering link/citation:', textContent);
+                if (typeof textContent === 'string' && textContent.startsWith('CITATIONS:')) {
+                  const nums = textContent.replace('CITATIONS:', '').split(',');
+                  return <CitationGroup nums={nums} citationsMap={citationsMap} />;
+                }
+                return (
+                  <sup className="text-xs text-gray-400 ml-0.5">
+                    <a className="hover:text-white" target="_blank" rel="noopener noreferrer" {...props} />
+                  </sup>
+                );
+              }
             }}
           >
             {processedContent}

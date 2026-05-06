@@ -37,7 +37,7 @@ export async function POST(req) {
 
     let segmentsIndex = [];
     let transcriptContext = `SERMON SERIES: ${series.title}\n\n`;
-    const MAX_SEGMENTS = 200;
+    const MAX_SEGMENTS = 100;
     const segmentsPerSermon = Math.floor(MAX_SEGMENTS / (sortedSermons.length || 1));
 
     sortedSermons.forEach((s, idx) => {
@@ -114,15 +114,15 @@ FOLLOW-UP SUGGESTIONS:
     const recentHistory = conversationHistory.slice(-6);
 
     const segmentList = segmentsIndex.map((seg, i) => 
-      `--- SEGMENT [${i + 1}] ---
+      `--- CITATION ID: [${i + 1}] ---
       Quote: "${seg.text}"
       Sermon: ${seg.sermon_title}
-      Start Time: ${seg.start_seconds}s
-      Video ID: ${seg.youtube_video_id}`
+      Location: TimeRef-${seg.start_seconds}s
+      Video: ${seg.youtube_video_id}`
     ).join('\n\n');
 
     const userMessageWithContext = `
-TRANSCRIPT SEGMENTS INDEX:
+TRANSCRIPT SEGMENTS INDEX (ONLY USE THE [CITATION ID] FOR YOUR BRACKETED CITATIONS):
 ${segmentList}
 
 FULL SERMON TRANSCRIPTS:
@@ -141,12 +141,11 @@ ${message}
       systemInstruction: systemPrompt + `
       
       CITATION SYSTEM RULES:
-      - The "TRANSCRIPT SEGMENTS INDEX" contains numbered segments like --- SEGMENT [1] ---.
-      - When you cite a point, you MUST use the bracketed number of the segment, e.g., [1] or [1][5].
-      - NEVER use the "Start Time" (e.g., [4302]) as a citation ID.
-      - NEVER use [Sermon X, Time].
-      - The CITATIONS section at the end MUST list the segments you used, formatted as:
-        [N] "short quote" — Sermon Title — https://youtube.com/watch?v=VideoID&t=StartTime`,
+      1. You are provided with a "TRANSCRIPT SEGMENTS INDEX" containing numbered items like --- CITATION ID: [1] ---.
+      2. When you make a point, you MUST end the bullet or sentence with the ID in brackets, e.g., [1] or [1][3].
+      3. NEVER use "TimeRef" or seconds (e.g., [1455]) as a citation ID.
+      4. The CITATIONS section at the end is MANDATORY and must map the IDs back to full references.
+      Format: [N] "short quote" — Sermon Title — https://youtube.com/watch?v=VideoID&t=StartTime`,
     });
 
     const chat = model.startChat({ history: recentHistory });
