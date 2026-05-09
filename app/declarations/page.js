@@ -315,9 +315,9 @@ export default function DeclarationsPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 38px;
-          height: 38px;
-          border-radius: 10px;
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
           background: rgba(255,255,255,0.05);
           border: 1px solid rgba(255,255,255,0.08);
           color: #489e3e;
@@ -370,9 +370,9 @@ export default function DeclarationsPage() {
         .topics-bar::-webkit-scrollbar { display: none; }
         .topic-chip {
           flex-shrink: 0;
-          padding: 7px 16px;
+          padding: 10px 20px;
           border-radius: 999px;
-          font-size: 0.78rem;
+          font-size: 0.85rem;
           font-weight: 600;
           border: 1px solid rgba(72,158,62,0.25);
           background: rgba(72,158,62,0.06);
@@ -605,7 +605,7 @@ export default function DeclarationsPage() {
           outline: none;
           resize: none;
           color: rgba(255,255,255,0.9);
-          font-size: 0.9rem;
+          font-size: 16px;
           line-height: 1.5;
           min-height: 24px;
           max-height: 120px;
@@ -616,9 +616,9 @@ export default function DeclarationsPage() {
         }
         .send-btn {
           flex-shrink: 0;
-          width: 38px;
-          height: 38px;
-          border-radius: 10px;
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
           background: #489e3e;
           border: none;
           display: flex;
@@ -736,9 +736,9 @@ export default function DeclarationsPage() {
 
           {/* Load More Section */}
           {!loading && hasMore && (
-            <button 
-              className="load-more-btn" 
-              onClick={handleLoadMore} 
+            <button
+              className="load-more-btn"
+              onClick={handleLoadMore}
               disabled={fetchingMore}
             >
               {fetchingMore ? (
@@ -751,7 +751,7 @@ export default function DeclarationsPage() {
 
           {!loading && outOfResults && (
             <p className="no-more-text">
-              You&apos;ve seen all declarations for this topic. 
+              You&apos;ve seen all declarations for this topic.
               Try asking about a different need.
             </p>
           )}

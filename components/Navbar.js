@@ -77,9 +77,10 @@ export default function Navbar() {
           <div className="md:hidden flex items-center">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className={`p-2 rounded-md transition-colors ${
+              className={`p-3 rounded-md transition-colors ${
                 scrolled ? "text-brand-navy" : "text-white"
               }`}
+              aria-label="Toggle menu"
             >
               {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -90,7 +91,7 @@ export default function Navbar() {
       {/* Mobile Navigation */}
       <div
         className={`md:hidden transition-all duration-300 ease-in-out ${
-          isOpen ? "max-height-screen opacity-100" : "max-h-0 opacity-0 overflow-hidden"
+          isOpen ? "max-h-screen opacity-100" : "max-h-0 opacity-0 overflow-hidden"
         } bg-white border-b border-gray-100 shadow-xl`}
       >
         <div className="px-4 pt-2 pb-6 space-y-2">
