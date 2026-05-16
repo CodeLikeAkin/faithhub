@@ -5,6 +5,8 @@ const corsHeaders = {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const model = new Supabase.ai.Session('gte-small')
+
 serve(async (req) => {
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
@@ -20,9 +22,7 @@ serve(async (req) => {
             )
         }
 
-        // Use Supabase's native AI inference (no external dependencies)
-        const session = new Supabase.ai.Session('gte-small')
-        const embedding = await session.run(text, {
+        const embedding = await model.run(text, {
             mean_pool: true,
             normalize: true,
         })
