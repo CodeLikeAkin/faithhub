@@ -1,173 +1,225 @@
+// app/api/series-chat/route.js
+
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+async function embedText(text) {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/embed`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text }),
+    }
+  );
+  if (!res.ok) throw new Error(`Embed failed: ${await res.text()}`);
+  const { embedding } = await res.json();
+  return embedding;
+}
+
 export async function POST(req) {
   try {
     const { seriesId, message, chatHistory } = await req.json();
 
-    // 1. Fetch series and sermons with transcripts and segments
-    const { data: series, error } = await supabase
+    // 1. Fetch series + sermon metadata
+    const { data: series, error: seriesError } = await supabase
       .from('series')
       .select(`
         title,
         series_sermons (
           part_number,
           sermons (
-            title, 
-            youtube_video_id, 
-            transcript,
-            transcript_segments
+            id,
+            title,
+            youtube_video_id
           )
         )
       `)
       .eq('id', seriesId)
       .single();
 
-    if (error || !series) {
+    if (seriesError || !series) {
       return NextResponse.json({ error: true, message: 'Series not found' }, { status: 404 });
     }
 
-    // 2. Build context from transcripts and build segments index
     const sortedSermons = series.series_sermons
       .sort((a, b) => a.part_number - b.part_number)
-      .map(ss => ss.sermons);
+      .map((ss) => ss.sermons);
 
-    let segmentsIndex = [];
-    let transcriptContext = `SERMON SERIES: ${series.title}\n\n`;
-    const MAX_SEGMENTS = 100;
-    const segmentsPerSermon = Math.floor(MAX_SEGMENTS / (sortedSermons.length || 1));
+    // 2. Embed user question
+    let queryEmbedding = null;
+    try {
+      queryEmbedding = await embedText(message);
+    } catch (embedErr) {
+      console.error('[chat] Embed failed:', embedErr.message);
+    }
 
-    sortedSermons.forEach((s, idx) => {
-      // 1. Full transcript
-      transcriptContext += `[Sermon ${idx + 1}: ${s.title}]\nTranscript: ${s.transcript || "No transcript available."}\n\n`;
-
-      // 2. Build segments index (spread evenly across the sermon)
-      const validSegments = (s.transcript_segments || []).filter(seg => {
-        const videoId = seg.youtube_video_id || s.youtube_video_id;
-        return videoId && seg.start_seconds !== undefined;
+    // 3. Semantic segment search
+    let relevantSegments = [];
+    if (queryEmbedding) {
+      const { data: segments, error: segErr } = await supabase.rpc('match_segments', {
+        query_embedding: queryEmbedding,
+        filter_series_id: seriesId,
+        match_threshold: 0.25,
+        match_count: 15,
       });
-
-      if (validSegments.length > 0) {
-        const numToTake = Math.min(validSegments.length, segmentsPerSermon);
-        for (let i = 0; i < numToTake; i++) {
-          const selectIdx = Math.floor(i * (validSegments.length / numToTake));
-          const seg = validSegments[selectIdx];
-          segmentsIndex.push({
-            text: seg.text,
-            start_seconds: Math.floor(seg.start_seconds),
-            sermon_title: s.title,
-            youtube_video_id: seg.youtube_video_id || s.youtube_video_id
-          });
-        }
+      if (segErr) {
+        console.error('[chat] Segment RPC error:', segErr.message);
+      } else {
+        relevantSegments = segments || [];
       }
-    });
+    }
 
-    // 3. System prompt (unchanged)
-    const systemPrompt = `You are a Bible study assistant exclusively for Heritage of Faith Church sermon series. You help believers study the EXACT teachings of Rev. Peter Ayoalabi and the Heritage of Faith teaching team.
+    // 4. Fallback if no embedded segments yet
+    if (relevantSegments.length === 0) {
+      console.warn('[chat] No embedded segments, using fallback.');
+      const { data: sermonData } = await supabase
+        .from('sermons')
+        .select('id, title, youtube_video_id, transcript_segments')
+        .in('id', sortedSermons.map((s) => s.id));
 
-STRICT SOURCING RULE — THIS IS YOUR MOST IMPORTANT INSTRUCTION:
-- You may ONLY teach what is explicitly stated in the transcript segments provided to you below
-- If a point cannot be directly traced to something said in the transcript, DO NOT include it — remove it entirely
-- Never add outside theology, generic Christian advice, or anything you know from your training data
-- If the question asks about something not covered in the transcripts, say warmly: "Rev. Peter does not cover that specific topic in this series. Here is what he does teach that is closest to your question: [then cite what is actually there]"
-- You are a reporter of what Rev. Peter said, not a theologian adding your own commentary
+      const MAX_PER_SERMON = Math.ceil(15 / (sermonData?.length || 1));
+      relevantSegments = (sermonData || []).flatMap((sermon) =>
+        (sermon.transcript_segments || [])
+          .filter(seg => seg.text && seg.text.trim().split(' ').length >= 15)
+          .slice(0, MAX_PER_SERMON)
+          .map((seg, i) => ({
+            id: `${sermon.id}-${i}`,
+            sermon_id: sermon.id,
+            text: seg.text,
+            start_seconds: Math.floor(seg.start_seconds || 0),
+            sermon_title: sermon.title,
+            video_id: sermon.youtube_video_id,
+            similarity: 0,
+          }))
+      );
+    }
 
-CITATION RULE — MANDATORY:
-- Every single bullet point MUST end with a citation [N]
-- Every section heading claim MUST have a citation [N]
-- If you cannot find a segment that supports a point, DELETE that point entirely — do not include uncited claims
-- Only cite segments that have a valid youtube_video_id and start_seconds. If a segment has no timestamp data, do not cite it — find a different segment that does.
-- Citations must reference real segments from the segments index provided — match the text as closely as possible
-- At the end of your response include a CITATIONS section:
-  [1] "exact short quote from segment" — Sermon Title — YouTube URL with &t=start_seconds
+    // 5. Build segment index — pass video_id and start_seconds explicitly
+    const segmentList = relevantSegments
+      .map((seg, i) =>
+        `[${i + 1}] VIDEO_ID:${seg.video_id} | TIME:${seg.start_seconds} | SERMON:${seg.sermon_title}
+"${seg.text}"`
+      )
+      .join('\n\n');
 
-HOW TO STRUCTURE YOUR ANSWERS:
-- Start with 1-2 sentences directly answering the question, citing the most relevant segment immediately [1]
-- Then 2-4 bold section headings that reflect what Rev. Peter ACTUALLY taught — use his exact language and phrases where possible
-- Under each heading, 2-3 bullet points — each MUST end with [N]
-- End with a short application challenge that uses Rev. Peter's own words or phrases from the transcript, cited [N]
-- Minimum 200 words, but never pad with uncited content
+    // 6. Pass segment map as JSON so frontend can build YouTube links
+    const segmentMap = relevantSegments.reduce((acc, seg, i) => {
+      acc[i + 1] = {
+        video_id: seg.video_id,
+        start_seconds: seg.start_seconds,
+        sermon_title: seg.sermon_title,
+        text: seg.text.substring(0, 80),
+      };
+      return acc;
+    }, {});
 
-TONE:
-- Warm, faith-filled, and grounded in the Word
-- Speak as a study companion who has deeply read these transcripts
-- Use Rev. Peter's own language and phrases — mirror his voice
-- Never say "the transcript says" — teach it as living truth
-- Always refer to the pastor as "Rev. Peter" or "Rev. Peter Ayoalabi" — never "the speaker" or "the pastor"
+    const seriesOverview = `SERMON SERIES: ${series.title}
+Parts: ${sortedSermons.map((s, i) => `Part ${i + 1} — ${s.title}`).join(', ')}`;
 
-FOLLOW-UP SUGGESTIONS:
-- At the very end of every response, on a new line, output exactly:
-  SUGGESTIONS:["Question one based on what Rev Peter actually taught?", "Question two based on what Rev Peter actually taught?", "Question three based on what Rev Peter actually taught?"]
-- These must be questions that can be answered FROM THE TRANSCRIPT — do not suggest questions about topics not covered in the series`;
+    // 7. Improved system prompt
+    const systemPrompt = `You are a warm, knowledgeable Bible study companion for Heritage of Faith Church. You help believers study the exact teachings of Rev. Peter Ayoalabi from this sermon series.
 
-    // 4. Build conversation history — swap 'ai'/'assistant' → 'model', 'user' stays 'user'
+═══════════════════════════════════════
+SOURCING — YOUR MOST CRITICAL RULE
+═══════════════════════════════════════
+- You may ONLY use what is explicitly stated in the transcript segments provided
+- Never add outside theology, generic Christian advice, or anything from your training data
+- If the question is not covered in the segments, say warmly:
+  "Rev. Peter doesn't address that specific point in these segments. What he does teach here is: [cite what's actually there]"
+- Never invent or assume what Rev. Peter might teach
+
+═══════════════════════════════════════
+CITATION RULES — MANDATORY
+═══════════════════════════════════════
+- Every factual claim MUST end with [N] matching a segment number
+- Use the exact segment numbers from the provided list [1], [2], [3] etc.
+- Only cite segments you actually used — do not cite a segment just to have a citation
+- Do NOT include a CITATIONS section at the end — citations are inline only [N]
+- Do NOT write URLs — the frontend builds the links from segment numbers
+
+═══════════════════════════════════════
+RESPONSE FORMAT — READ CAREFULLY
+═══════════════════════════════════════
+- Match your format to the question:
+  • Simple/direct question → 2-4 sentences of flowing prose, no headings, no bullets
+  • Complex/multi-part question → prose paragraphs with occasional bold for emphasis
+  • "List" or "what are the ways" questions → only then use a short list
+- NEVER default to bullet points for everything
+- NEVER use rigid "heading + 3 bullets" structure on every answer
+- Write like a thoughtful study companion who has read these transcripts deeply
+- Keep answers focused — don't pad to fill space
+
+═══════════════════════════════════════
+VOICE & TONE
+═══════════════════════════════════════
+- Mirror Rev. Peter's own phrases and language from the segments
+- Warm, faith-filled, conversational — not academic or robotic
+- Never say "the transcript says" or "according to the segment" — teach it as living truth
+- Refer to the pastor as "Rev. Peter" always
+
+═══════════════════════════════════════
+FOLLOW-UP SUGGESTIONS — STRICT RULES
+═══════════════════════════════════════
+- At the very end of your response, output exactly this format:
+  SUGGESTIONS:["Question one?","Question two?","Question three?"]
+- CRITICAL: Every suggestion MUST be directly answerable from the segments you were given
+- Read the segments first — then generate questions only about what's actually there
+- Never suggest questions about topics not present in the provided segments
+- Do not generate generic Christian questions — they must be specific to this series content`;
+
+    // 8. Build conversation history
     const conversationHistory = (chatHistory || [])
-      .map(m => ({
+      .map((m) => ({
         role: m.role === 'ai' || m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.text || m.content || '' }]
+        parts: [{ text: m.text || m.content || '' }],
       }))
-      .filter(m => m.parts[0].text.trim() !== '');
+      .filter((m) => m.parts[0].text.trim() !== '')
+      .slice(-6);
 
-    const recentHistory = conversationHistory.slice(-6);
+    // 9. User message with segments
+    const userMessageWithContext = `${seriesOverview}
 
-    const segmentList = segmentsIndex.map((seg, i) => 
-      `--- CITATION ID: [${i + 1}] ---
-      Quote: "${seg.text}"
-      Sermon: ${seg.sermon_title}
-      Location: TimeRef-${seg.start_seconds}s
-      Video: ${seg.youtube_video_id}`
-    ).join('\n\n');
-
-    const userMessageWithContext = `
-TRANSCRIPT SEGMENTS INDEX (ONLY USE THE [CITATION ID] FOR YOUR BRACKETED CITATIONS):
+TRANSCRIPT SEGMENTS — USE ONLY THESE:
 ${segmentList}
 
-FULL SERMON TRANSCRIPTS:
-${transcriptContext}
+QUESTION: ${message}`;
 
-USER QUESTION:
-${message}
-`;
+    console.log(`[chat] ${relevantSegments.length} segments sent to Gemini`);
 
-    console.log('Total segments count:', segmentsIndex.length);
-    console.log('Total transcript length being sent:', transcriptContext.length);
-
-    // 5. Call Gemini with streaming
+    // 10. Call Gemini with streaming
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.5-flash',
-      systemInstruction: systemPrompt + `
-      
-      CITATION SYSTEM RULES:
-      1. You are provided with a "TRANSCRIPT SEGMENTS INDEX" containing numbered items like --- CITATION ID: [1] ---.
-      2. When you make a point, you MUST end the bullet or sentence with the ID in brackets, e.g., [1] or [1][3].
-      3. NEVER use "TimeRef" or seconds (e.g., [1455]) as a citation ID.
-      4. The CITATIONS section at the end is MANDATORY and must map the IDs back to full references.
-      Format: [N] "short quote" — Sermon Title — https://youtube.com/watch?v=VideoID&t=StartTime`,
+      systemInstruction: systemPrompt,
     });
 
-    const chat = model.startChat({ history: recentHistory });
+    const chat = model.startChat({ history: conversationHistory });
     const result = await chat.sendMessageStream(userMessageWithContext);
 
-    // 6. Stream the response back exactly as before
+    // 11. Stream back — prepend segment map as first line for frontend
     const encoder = new TextEncoder();
+    const segmentMapHeader = `SEGMENT_MAP:${JSON.stringify(segmentMap)}\n`;
+
     const stream = new ReadableStream({
       async start(controller) {
         try {
+          controller.enqueue(encoder.encode(segmentMapHeader));
           for await (const chunk of result.stream) {
             const content = chunk.text();
-            if (content) {
-              controller.enqueue(encoder.encode(content));
-            }
+            if (content) controller.enqueue(encoder.encode(content));
           }
         } catch (err) {
           controller.error(err);
         } finally {
           controller.close();
         }
-      }
+      },
     });
 
     return new Response(stream, {
@@ -179,10 +231,10 @@ ${message}
     });
 
   } catch (error) {
-    console.error('Chat API Error:', error);
-    return NextResponse.json({
-      error: true,
-      message: error.message || 'Internal Server Error'
-    }, { status: 500 });
+    console.error('[chat] Error:', error);
+    return NextResponse.json(
+      { error: true, message: error.message || 'Internal Server Error' },
+      { status: 500 }
+    );
   }
 }

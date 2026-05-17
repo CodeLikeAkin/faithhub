@@ -10,78 +10,133 @@ import {
   List,
   Send,
   Loader2,
-  ExternalLink,
   MessageSquare,
-  BookOpen,
   Sparkles,
   Quote
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import ReactMarkdown from "react-markdown";
 
-const CitationGroup = ({ nums, citationsMap }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  
-  if (nums.length <= 1) {
-    const num = nums[0];
-    const data = citationsMap[num];
-    if (!data) return null;
-    return (
-      <a 
-        href={data.url} 
-        target="_blank" 
-        rel="noopener noreferrer"
-        className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/10 border border-white/10 text-[9px] font-bold text-gray-400 hover:text-white hover:border-[#D4AF37] transition-all ml-1 -translate-y-0.5 cursor-pointer"
-      >
-        {num}
-      </a>
-    );
-  }
+// ─────────────────────────────────────────────────────────
+// CitationBadge — renders [N] as a clickable YouTube link
+// ─────────────────────────────────────────────────────────
+const CitationBadge = ({ num, segmentMap }) => {
+  const seg = segmentMap?.[num];
+  if (!seg?.video_id) return <sup className="text-gray-500 text-[9px]">[{num}]</sup>;
 
+  const url = `https://youtube.com/watch?v=${seg.video_id}&t=${seg.start_seconds}s`;
   return (
-    <span className="inline-flex items-center gap-1 ml-1 -translate-y-0.5">
-      {/* Always show first one */}
-      <a 
-        href={citationsMap[nums[0]]?.url} 
-        target="_blank" 
-        rel="noopener noreferrer"
-        className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/10 border border-white/10 text-[9px] font-bold text-gray-400 hover:text-white hover:border-[#D4AF37] transition-all cursor-pointer"
-      >
-        {nums[0]}
-      </a>
-
-      {isExpanded ? (
-        <>
-          {nums.slice(1).map(num => (
-            <a 
-              key={num}
-              href={citationsMap[num]?.url} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/10 border border-white/10 text-[9px] font-bold text-gray-400 hover:text-white hover:border-[#D4AF37] transition-all animate-in fade-in slide-in-from-left-1 duration-200 cursor-pointer"
-            >
-              {num}
-            </a>
-          ))}
-          <button 
-            onClick={(e) => { e.preventDefault(); setIsExpanded(false); }}
-            className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/20 border border-[#D4AF37]/50 text-[9px] font-black text-[#D4AF37] hover:bg-white/30 transition-all cursor-pointer"
-          >
-            <ArrowLeft size={10} />
-          </button>
-        </>
-      ) : (
-        <button 
-          onClick={(e) => { e.preventDefault(); setIsExpanded(true); }}
-          className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/10 border border-white/10 text-[9px] font-bold text-gray-500 hover:text-white hover:bg-white/20 transition-all cursor-pointer"
-        >
-          ...
-        </button>
-      )}
-    </span>
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={`"${seg.text}" — ${seg.sermon_title}`}
+      className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/10 border border-white/10 text-[9px] font-bold text-gray-400 hover:text-white hover:border-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all ml-0.5 -translate-y-0.5 cursor-pointer no-underline"
+    >
+      {num}
+    </a>
   );
 };
 
+// ─────────────────────────────────────────────────────────
+// renderRichAIResponse — parses [N] citations and markdown
+// No sources panel. Citations are inline clickable badges.
+// ─────────────────────────────────────────────────────────
+const RichAIResponse = ({ text, segmentMap }) => {
+  // Replace [N] and [N,M] patterns with special markers for ReactMarkdown
+  const processCitations = (content) => {
+    // Match [1], [2,3], [1][2] patterns
+    return content.replace(/(\[\d+\](?:\[\d+\])*|\[\d+(?:,\s*\d+)+\])/g, (match) => {
+      const nums = [...match.matchAll(/\d+/g)].map(m => m[0]);
+      return nums.map(n => `[[CIT:${n}]]`).join('');
+    });
+  };
+
+  const processedText = processCitations(text);
+
+  // Split on citation markers and render
+  const renderWithCitations = (str) => {
+    const parts = str.split(/(\[\[CIT:\d+\]\])/g);
+    return parts.map((part, i) => {
+      const citMatch = part.match(/\[\[CIT:(\d+)\]\]/);
+      if (citMatch) {
+        return <CitationBadge key={i} num={citMatch[1]} segmentMap={segmentMap} />;
+      }
+      return part;
+    });
+  };
+
+  return (
+    <div className="text-[15px] leading-relaxed text-gray-200">
+      <ReactMarkdown
+        components={{
+          strong: ({ node, children, ...props }) => (
+            <strong className="text-white font-semibold" {...props}>{children}</strong>
+          ),
+          em: ({ node, children, ...props }) => (
+            <em className="text-gray-300 italic" {...props}>{children}</em>
+          ),
+          ul: ({ node, ...props }) => (
+            <ul className="list-disc pl-5 space-y-1.5 my-3" {...props} />
+          ),
+          ol: ({ node, ...props }) => (
+            <ol className="list-decimal pl-5 space-y-1.5 my-3" {...props} />
+          ),
+          li: ({ node, children, ...props }) => (
+            <li className="text-gray-200" {...props}>
+              {typeof children === 'string'
+                ? renderWithCitations(children)
+                : children}
+            </li>
+          ),
+          p: ({ node, children, ...props }) => (
+            <p className="mb-3 last:mb-0" {...props}>
+              {typeof children === 'string'
+                ? renderWithCitations(children)
+                : Array.isArray(children)
+                  ? children.map((child, i) =>
+                    typeof child === 'string' ? renderWithCitations(child) : child
+                  )
+                  : children}
+            </p>
+          ),
+          h1: ({ node, ...props }) => (
+            <h1 className="text-white text-lg font-bold mt-5 mb-2" {...props} />
+          ),
+          h2: ({ node, ...props }) => (
+            <h2 className="text-white text-base font-bold mt-4 mb-2" {...props} />
+          ),
+          h3: ({ node, ...props }) => (
+            <h3 className="text-white text-sm font-bold mt-3 mb-1.5" {...props} />
+          ),
+          // Suppress any raw links Gemini might output
+          a: ({ node, children, href, ...props }) => {
+            if (typeof children?.[0] === 'string' && children[0].startsWith('CIT:')) {
+              return null;
+            }
+            return (
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#D4AF37] hover:underline"
+                {...props}
+              >
+                {children}
+              </a>
+            );
+          },
+        }}
+      >
+        {processedText}
+      </ReactMarkdown>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────
+// Main Page Component
+// ─────────────────────────────────────────────────────────
 export default function SeriesDetailPage() {
   const { id } = useParams();
   const [series, setSeries] = useState(null);
@@ -91,11 +146,8 @@ export default function SeriesDetailPage() {
   const [summary, setSummary] = useState("");
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summarySuggestions, setSummarySuggestions] = useState([]);
-
   const [summarySuggestionsHidden, setSummarySuggestionsHidden] = useState(false);
-  const [showSources, setShowSources] = useState({}); // Map of messageId -> boolean
 
-  // Chat State
   const [chatInput, setChatInput] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
@@ -111,27 +163,18 @@ export default function SeriesDetailPage() {
   ];
 
   useEffect(() => {
-    const nav = document.querySelector('nav') ||
-      document.querySelector('header')
-    if (nav) nav.style.display = 'none'
-    return () => {
-      if (nav) nav.style.display = ''
-    }
-  }, [])
+    const nav = document.querySelector('nav') || document.querySelector('header');
+    if (nav) nav.style.display = 'none';
+    return () => { if (nav) nav.style.display = ''; };
+  }, []);
 
   useEffect(() => {
-    if (id) {
-      fetchSeriesData();
-    }
+    if (id) fetchSeriesData();
   }, [id]);
 
   useEffect(() => {
-    if (series && sermons.length > 0) {
-      generateSeriesSummary();
-    }
+    if (series && sermons.length > 0) generateSeriesSummary();
   }, [series, sermons]);
-
-
 
   const fetchSeriesData = async () => {
     setLoading(true);
@@ -151,18 +194,13 @@ export default function SeriesDetailPage() {
         .single();
 
       if (error) throw error;
-
       if (data) {
         setSeries(data);
         const sortedSermons = data.series_sermons
           .sort((a, b) => a.part_number - b.part_number)
-          .map(ss => ({
-            ...ss.sermons,
-            part_number: ss.part_number
-          }));
+          .map(ss => ({ ...ss.sermons, part_number: ss.part_number }));
         setSermons(sortedSermons);
 
-        // Fetch top 3 declarations for these sermons
         const sermonIds = sortedSermons.map(s => s.id);
         const { data: decls } = await supabase
           .from('declarations')
@@ -192,9 +230,7 @@ export default function SeriesDetailPage() {
       });
       const data = await res.json();
       setSummary(data.summary);
-      if (data.suggestions) {
-        setSummarySuggestions(data.suggestions);
-      }
+      if (data.suggestions) setSummarySuggestions(data.suggestions);
     } catch (err) {
       console.error("Error generating summary:", err);
     } finally {
@@ -208,26 +244,27 @@ export default function SeriesDetailPage() {
 
     const messageId = Date.now();
     const userMessage = { id: messageId, role: "user", text: actualText };
-    
-    // Fix 1 & 6: Hide suggestions instantly with fade out
+
     if (sourceMessageId === 'summary') {
-      // Create fade out effect by setting a state
       setSummarySuggestionsHidden(true);
       setTimeout(() => setSummarySuggestions([]), 200);
     } else if (sourceMessageId) {
-      setChatHistory(prev => prev.map(m => m.id === sourceMessageId ? { ...m, suggestionsHidden: true } : m));
+      setChatHistory(prev => prev.map(m =>
+        m.id === sourceMessageId ? { ...m, suggestionsHidden: true } : m
+      ));
       setTimeout(() => {
-        setChatHistory(prev => prev.map(m => m.id === sourceMessageId ? { ...m, suggestions: [] } : m));
+        setChatHistory(prev => prev.map(m =>
+          m.id === sourceMessageId ? { ...m, suggestions: [] } : m
+        ));
       }, 200);
     }
 
-    // Fix 3: Input clears immediately before API responds
     if (typeof textToSubmit !== 'string' || textToSubmit === chatInput) {
       setChatInput("");
     }
 
     const aiMessageId = messageId + 1;
-    const aiMessage = { id: aiMessageId, role: "ai", text: "", isThinking: true };
+    const aiMessage = { id: aiMessageId, role: "ai", text: "", isThinking: true, segmentMap: {} };
 
     setChatHistory(prev => [...prev, userMessage, aiMessage]);
     setChatLoading(true);
@@ -237,12 +274,8 @@ export default function SeriesDetailPage() {
       setThinkingStep(prev => (prev + 1) % thinkingMessages.length);
     }, 2000);
 
-    // Fix 2: Scroll to new user message instantly and pin to top
     setTimeout(() => {
-      userMessageRefs.current[messageId]?.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'start' 
-      });
+      userMessageRefs.current[messageId]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
 
     try {
@@ -262,52 +295,62 @@ export default function SeriesDetailPage() {
         throw new Error(errorData.message || "I encountered an error.");
       }
 
-      // Fix 4: Stream processing
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let aiText = "";
+      let segmentMap = {};
+      let firstChunk = true;
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        
+
         const chunk = decoder.decode(value, { stream: true });
         aiText += chunk;
 
-        let displayAiText = aiText;
-        let aiSuggestions = [];
+        // Extract SEGMENT_MAP from first line
+        if (firstChunk) {
+          firstChunk = false;
+          const mapMatch = aiText.match(/^SEGMENT_MAP:(.+)\n/);
+          if (mapMatch) {
+            try {
+              segmentMap = JSON.parse(mapMatch[1]);
+              aiText = aiText.replace(/^SEGMENT_MAP:.+\n/, '');
+            } catch (e) {
+              console.error('Failed to parse segment map', e);
+            }
+          }
+          clearInterval(thinkingInterval);
+        }
 
+        // Extract SUGGESTIONS from end
+        let displayText = aiText;
+        let aiSuggestions = [];
         const suggestionsIndex = aiText.lastIndexOf("SUGGESTIONS:");
         if (suggestionsIndex !== -1) {
-          displayAiText = aiText.substring(0, suggestionsIndex).trim();
+          displayText = aiText.substring(0, suggestionsIndex).trim();
           const suggestionsStr = aiText.substring(suggestionsIndex + "SUGGESTIONS:".length).trim();
           try {
             aiSuggestions = JSON.parse(suggestionsStr);
-          } catch(e) {}
+          } catch (e) { }
         }
 
-        setChatHistory(prev => prev.map(m => 
-          m.id === aiMessageId 
-            ? { ...m, text: displayAiText, suggestions: aiSuggestions, isThinking: false } 
+        setChatHistory(prev => prev.map(m =>
+          m.id === aiMessageId
+            ? { ...m, text: displayText, suggestions: aiSuggestions, isThinking: false, segmentMap }
             : m
         ));
-        
-        // Clear interval on first chunk
-        if (typeof thinkingInterval !== 'undefined') clearInterval(thinkingInterval);
       }
     } catch (err) {
       console.error("Chat error:", err);
-      setChatHistory(prev => [...prev, { id: Date.now() + 1, role: "ai", text: `Error: ${err.message}` }]);
-
-      setTimeout(() => {
-        userMessageRefs.current[messageId]?.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'start' 
-        });
-      }, 100);
+      setChatHistory(prev => [...prev, {
+        id: Date.now() + 1, role: "ai",
+        text: `I encountered an error: ${err.message}`,
+        segmentMap: {}
+      }]);
     } finally {
       setChatLoading(false);
-      if (typeof thinkingInterval !== 'undefined') clearInterval(thinkingInterval);
+      clearInterval(thinkingInterval);
     }
   };
 
@@ -321,105 +364,6 @@ export default function SeriesDetailPage() {
     const s = new Date(start).toLocaleDateString("en-US", options);
     const e = end ? new Date(end).toLocaleDateString("en-US", options) : s;
     return s === e ? s : `${s} – ${e}`;
-  };
-
-  const renderRichAIResponse = (text) => {
-    const sections = text.split(/CITATIONS:/i);
-    const mainContent = sections[0].trim();
-    const citationsContent = sections[1]?.trim() || "";
-    
-    // Extract source count for the button
-    const sourceCount = (citationsContent.match(/\[\d+\]/g) || []).length;
-    console.log('Detected sourceCount:', sourceCount);
-
-    const citationsMap = {};
-    const citationRegex = /\[(\d+)\]\s+"(.*?)"\s+—\s+(.*?)\s+—\s+(https?:\/\/\S+)/g;
-    let match;
-    while ((match = citationRegex.exec(citationsContent)) !== null) {
-      citationsMap[match[1]] = { preview: match[2], title: match[3], url: match[4] };
-    }
-
-    let processedContent = mainContent;
-    
-    // Pattern to catch citation groups like [1][2] or [1] [2]
-    const citationGroupRegex = /(?:\[(\d+)\]\s*)+/g;
-    processedContent = processedContent.replace(citationGroupRegex, (match) => {
-      const nums = [...match.matchAll(/\[(\d+)\]/g)].map(m => m[1]);
-      const validNums = nums.filter(n => citationsMap[n]);
-      if (validNums.length === 0) return match;
-      
-      // We return a special markdown link that the component will pick up
-      return `[CITATIONS:${validNums.join(',')}](${citationsMap[validNums[0]].url})`;
-    });
-
-    return (
-      <div className="space-y-6 w-full">
-        <div className="text-[15px] leading-relaxed text-gray-200">
-          <ReactMarkdown
-            components={{
-              strong: ({ node, ...props }) => <strong className="text-white font-semibold" {...props} />,
-              ul: ({ node, ...props }) => <ul className="list-disc pl-5 space-y-1 my-2" {...props} />,
-              ol: ({ node, ...props }) => <ol className="list-decimal pl-5 space-y-1 my-2" {...props} />,
-              p: ({ node, ...props }) => <p className="mb-3 last:mb-0" {...props} />,
-              h1: ({ node, ...props }) => <h1 className="text-white text-xl font-bold mt-4 mb-2" {...props} />,
-              h2: ({ node, ...props }) => <h2 className="text-white text-lg font-bold mt-4 mb-2" {...props} />,
-              h3: ({ node, ...props }) => <h3 className="text-white text-base font-bold mt-3 mb-2" {...props} />,
-              a: ({ node, ...props }) => {
-                const textContent = props.children?.[0];
-                console.log('Rendering link/citation:', textContent);
-                if (typeof textContent === 'string' && textContent.startsWith('CITATIONS:')) {
-                  const nums = textContent.replace('CITATIONS:', '').split(',');
-                  return <CitationGroup nums={nums} citationsMap={citationsMap} />;
-                }
-                return (
-                  <sup className="text-xs text-gray-400 ml-0.5">
-                    <a className="hover:text-white" target="_blank" rel="noopener noreferrer" {...props} />
-                  </sup>
-                );
-              }
-            }}
-          >
-            {processedContent}
-          </ReactMarkdown>
-        </div>
-
-        {sourceCount > 0 && (
-          <div className="mt-4">
-            <div className="flex justify-end">
-              <button 
-                onClick={() => setShowSources(prev => ({ ...prev, [text]: !prev[text] }))}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-gray-400 hover:bg-white/10 hover:text-white transition-all"
-              >
-                {sourceCount} {sourceCount === 1 ? 'source' : 'sources'}
-                <ArrowLeft size={10} className={`transition-transform duration-300 ${showSources[text] ? 'rotate-90' : 'rotate-180'}`} />
-              </button>
-            </div>
-            
-            {showSources[text] && (
-              <div className="mt-3 p-4 bg-black/20 border border-white/5 rounded-xl space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Sources Referenced</h4>
-                {Object.entries(citationsMap).map(([num, data]) => (
-                  <div key={num} className="text-[11px] leading-relaxed group">
-                    <span className="text-[#D4AF37] font-bold mr-2">[{num}]</span>
-                    <span className="text-gray-300 italic">"{data.preview}"</span>
-                    <span className="text-gray-500 mx-2">—</span>
-                    <span className="text-gray-400 font-medium">{data.title}</span>
-                    <a 
-                      href={data.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="ml-2 text-[#D4AF37] hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      View moment
-                    </a>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    );
   };
 
   if (loading) {
@@ -453,13 +397,9 @@ export default function SeriesDetailPage() {
           </Link>
           <h2 className="text-lg font-black text-white leading-tight">{series.title}</h2>
         </div>
-
         <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
           {sermons.map((sermon) => (
-            <div
-              key={sermon.id}
-              className="p-4 bg-white/5 border border-white/5 rounded-xl hover:border-[#D4AF37]/30 transition-all group"
-            >
+            <div key={sermon.id} className="p-4 bg-white/5 border border-white/5 rounded-xl hover:border-[#D4AF37]/30 transition-all group">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[10px] font-black text-[#D4AF37] uppercase tracking-tighter bg-[#D4AF37]/10 px-2 py-0.5 rounded">
                   Part {sermon.part_number}
@@ -477,17 +417,15 @@ export default function SeriesDetailPage() {
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 w-full py-2 bg-white/5 text-[11px] font-bold text-white border border-white/10 rounded-lg hover:bg-white/10 transition-all"
               >
-                <Play size={10} fill="currentColor" />
-                Watch
+                <Play size={10} fill="currentColor" /> Watch
               </a>
             </div>
           ))}
         </div>
       </aside>
 
-      {/* CENTER PANEL - Hero & Chat */}
+      {/* CENTER PANEL - Chat */}
       <section className="flex-1 flex flex-col bg-[#121424] relative overflow-hidden">
-        {/* Background Orbs */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute -top-[10%] -right-[5%] w-[45%] h-[45%] rounded-full bg-[#D4AF37] opacity-[0.02] blur-[100px]" />
           <div className="absolute bottom-[10%] -left-[5%] w-[35%] h-[35%] rounded-full bg-[#D4AF37] opacity-[0.01] blur-[80px]" />
@@ -500,7 +438,6 @@ export default function SeriesDetailPage() {
             style={{ backgroundImage: `url(${heroThumb ? `https://img.youtube.com/vi/${heroThumb}/maxresdefault.jpg` : ""})` }}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#121424]" />
-
           <div className="relative z-10 h-full flex flex-col justify-end px-8 py-4">
             <div className="flex items-center gap-3 mb-2">
               <span className="px-2 py-0.5 bg-[#D4AF37] text-[#0f1129] rounded text-[9px] font-black uppercase tracking-wider">
@@ -521,7 +458,7 @@ export default function SeriesDetailPage() {
 
         {/* Chat Area */}
         <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
-          {/* Series Overview as First AI Message */}
+          {/* Summary as first message */}
           <div className="flex flex-col items-start mb-6 w-full">
             <div className="flex justify-start w-full">
               <div className="flex gap-4 max-w-[90%] md:max-w-[80%]">
@@ -537,23 +474,24 @@ export default function SeriesDetailPage() {
                   ) : (
                     <ReactMarkdown
                       components={{
-                        strong: ({ node, ...props }) => <strong className="text-white font-semibold" {...props} />
+                        strong: ({ node, ...props }) => <strong className="text-white font-semibold" {...props} />,
+                        p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />
                       }}
                     >
-                      {summary || "Explore the deep teachings of this series through transcripts and AI study."}
+                      {summary || "Explore the deep teachings of this series through AI study."}
                     </ReactMarkdown>
                   )}
                 </div>
               </div>
             </div>
 
-            {!summaryLoading && summarySuggestions && summarySuggestions.length > 0 && (
-              <div className={`flex flex-col gap-2 mt-4 w-full pl-0 md:pl-12 transition-opacity duration-200 ${summarySuggestionsHidden ? 'opacity-0' : 'opacity-100'}`}>
+            {!summaryLoading && summarySuggestions.length > 0 && (
+              <div className={`flex flex-col gap-2 mt-4 w-full pl-12 transition-opacity duration-200 ${summarySuggestionsHidden ? 'opacity-0' : 'opacity-100'}`}>
                 {summarySuggestions.map((question, i) => (
                   <button
                     key={i}
                     onClick={() => handleSuggestionClick(question, 'summary')}
-                    className="w-fit max-w-[90%] md:max-w-[80%] text-left text-sm px-4 py-2 rounded-xl bg-[#1e2235] text-gray-200 hover:bg-[#2a3050] transition-colors cursor-pointer"
+                    className="w-fit max-w-[80%] text-left text-sm px-4 py-2 rounded-xl bg-[#1e2235] text-gray-200 hover:bg-[#2a3050] transition-colors cursor-pointer"
                   >
                     {question}
                   </button>
@@ -562,55 +500,54 @@ export default function SeriesDetailPage() {
             )}
           </div>
 
-          {chatHistory.map((msg, i) => {
-            return (
-              <div
-                key={msg.id || i}
-                ref={el => { if (msg.role === 'user') userMessageRefs.current[msg.id] = el; }}
-                className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"} mb-6`}
-              >
-                <div className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} w-full`}>
-                  <div className={`w-full ${msg.role === "user" ? "flex justify-end" : "flex gap-4 max-w-[90%] md:max-w-[80%]"}`}>
-                    {msg.role === "ai" && (
-                      <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex-shrink-0 flex items-center justify-center mt-1">
-                        <MessageSquare size={14} className="text-[#D4AF37]" />
-                      </div>
-                    )}
-                    <div className={
-                      msg.role === "user"
-                        ? "bg-[#1e2235] text-sm text-gray-300 rounded-2xl px-4 py-2 max-w-[70%]"
-                        : "w-full text-[15px] text-gray-200 leading-relaxed"
-                    }>
-                      {msg.role === "ai" && msg.isThinking ? (
-                        <div className="flex items-center gap-3 text-gray-400 bg-white/5 rounded-2xl px-4 py-2 border border-white/5 animate-in fade-in slide-in-from-bottom-1 duration-500">
-                          <Loader2 size={14} className="animate-spin text-[#D4AF37]" />
-                          <span className="text-sm italic font-medium">
-                            {thinkingMessages[thinkingStep]}
-                          </span>
-                        </div>
-                      ) : (
-                        msg.role === "ai" ? renderRichAIResponse(msg.text) : msg.text
-                      )}
+          {/* Chat messages */}
+          {chatHistory.map((msg, i) => (
+            <div
+              key={msg.id || i}
+              ref={el => { if (msg.role === 'user') userMessageRefs.current[msg.id] = el; }}
+              className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"} mb-6`}
+            >
+              <div className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} w-full`}>
+                <div className={`w-full ${msg.role === "user" ? "flex justify-end" : "flex gap-4 max-w-[90%] md:max-w-[80%]"}`}>
+                  {msg.role === "ai" && (
+                    <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex-shrink-0 flex items-center justify-center mt-1">
+                      <MessageSquare size={14} className="text-[#D4AF37]" />
                     </div>
+                  )}
+                  <div className={
+                    msg.role === "user"
+                      ? "bg-[#1e2235] text-sm text-gray-300 rounded-2xl px-4 py-2 max-w-[70%]"
+                      : "w-full text-[15px] text-gray-200 leading-relaxed"
+                  }>
+                    {msg.role === "ai" && msg.isThinking ? (
+                      <div className="flex items-center gap-3 text-gray-400 bg-white/5 rounded-2xl px-4 py-2 border border-white/5 animate-in fade-in duration-500">
+                        <Loader2 size={14} className="animate-spin text-[#D4AF37]" />
+                        <span className="text-sm italic font-medium">{thinkingMessages[thinkingStep]}</span>
+                      </div>
+                    ) : msg.role === "ai" ? (
+                      <RichAIResponse text={msg.text} segmentMap={msg.segmentMap || {}} />
+                    ) : (
+                      msg.text
+                    )}
                   </div>
                 </div>
-
-                {msg.suggestions && msg.suggestions.length > 0 && (
-                  <div className={`flex flex-col gap-2 mt-4 w-full pl-0 md:pl-12 transition-opacity duration-200 ${msg.suggestionsHidden ? 'opacity-0' : 'opacity-100'}`}>
-                    {msg.suggestions.map((question, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleSuggestionClick(question, msg.id)}
-                        className="w-fit max-w-[90%] md:max-w-[80%] text-left text-sm px-4 py-2 rounded-xl bg-[#1e2235] text-gray-200 hover:bg-[#2a3050] transition-colors cursor-pointer"
-                      >
-                        {question}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
-            )
-          })}
+
+              {msg.suggestions && msg.suggestions.length > 0 && (
+                <div className={`flex flex-col gap-2 mt-4 w-full pl-12 transition-opacity duration-200 ${msg.suggestionsHidden ? 'opacity-0' : 'opacity-100'}`}>
+                  {msg.suggestions.map((question, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleSuggestionClick(question, msg.id)}
+                      className="w-fit max-w-[80%] text-left text-sm px-4 py-2 rounded-xl bg-[#1e2235] text-gray-200 hover:bg-[#2a3050] transition-colors cursor-pointer"
+                    >
+                      {question}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
           <div ref={chatBottomRef} />
         </div>
 
@@ -620,7 +557,7 @@ export default function SeriesDetailPage() {
             <div className="relative flex items-center bg-[#181b31] border border-[#2d3452] rounded-3xl focus-within:border-gray-500 transition-all px-4 py-2">
               <input
                 type="text"
-                placeholder="Start typing..."
+                placeholder="Ask about this series..."
                 className="w-full bg-transparent border-none outline-none py-2 px-2 text-sm text-white placeholder:text-gray-500"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
@@ -629,7 +566,7 @@ export default function SeriesDetailPage() {
               <button
                 onClick={handleSendMessage}
                 disabled={!chatInput.trim() || chatLoading}
-                className="p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-30 disabled:hover:text-gray-400"
+                className="p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-30"
               >
                 <Send size={16} />
               </button>
@@ -638,10 +575,9 @@ export default function SeriesDetailPage() {
         </div>
       </section>
 
-      {/* RIGHT PANEL - Declarations */}
+      {/* RIGHT PANEL - Key Declarations */}
       <aside className="hidden lg:flex w-[260px] flex-col border-l border-white/5 bg-[#0f1129] overflow-y-auto custom-scrollbar">
         <div className="p-6 space-y-8">
-          {/* Declarations */}
           <section>
             <h3 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4 flex items-center gap-2">
               <Quote size={12} className="text-[#D4AF37]" />
@@ -669,7 +605,9 @@ export default function SeriesDetailPage() {
                   </div>
                 ))
               ) : (
-                <p className="text-[10px] text-gray-600 text-center py-4">No specific declarations extracted for this series yet.</p>
+                <p className="text-[10px] text-gray-600 text-center py-4">
+                  No declarations extracted for this series yet.
+                </p>
               )}
             </div>
           </section>
