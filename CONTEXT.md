@@ -42,14 +42,19 @@ faithhub/                          ← YOU ARE HERE (Next.js app root)
 │   └── Navbar.js                  ← Global navigation bar
 │
 ├── lib/
-│   ├── gemini.js                  ← ⚠️ MISNAMED — contains Groq client, not Gemini
+│   ├── groq.js                    ← Groq client (used by Declarations + summary)
+│   ├── voice.js                   ← Rev. Peter signature-phrase glossary → chat prompt
 │   ├── supabase.js                ← Supabase client (anon key)
 │   └── utils.js                   ← cn() helper (clsx + tailwind-merge)
 │
 ├── supabase/
-│   └── functions/
-│       └── embed/
-│           └── index.ts           ← Edge Function: generates embeddings (gte-small, free)
+│   ├── functions/
+│   │   └── embed/
+│   │       └── index.ts           ← Edge Function: generates embeddings (gte-small, free)
+│   └── migrations/
+│       ├── hybrid_search.sql          ← FTS columns + *_hybrid RPCs (RRF) — APPLY THIS
+│       ├── match_segments_by_sermons.sql ← vector-only fallback RPC
+│       └── vector_indexes.sql         ← HNSW indexes
 │
 ├── .env.local                     ← Secret keys (never commit)
 ├── .env.example                   ← Template for required env vars
@@ -133,7 +138,9 @@ sermon_segments               ← NEW table (added in semantic refactor)
 ```
 User types situation
   → embedText(message) via Supabase Edge Function (gte-small)
-  → match_declarations() RPC — cosine similarity search on declarations.embedding
+  → match_declarations_hybrid() RPC — vector + keyword (FTS) fused with RRF
+      (degrades to keyword-only if the embed service is down;
+       falls back to match_declarations() if the hybrid RPC isn't applied yet)
   → top 10 declarations returned
   → getDeclarations() — Groq generates pastoral response
   → frontend shows AI text + declaration cards with YouTube links
@@ -143,7 +150,11 @@ User types situation
 ```
 User picks series + asks question
   → embedText(message) via Supabase Edge Function
-  → match_segments() RPC — finds top 15 relevant transcript segments by meaning
+  → match_segments_hybrid() RPC — vector + keyword (FTS) fused with RRF,
+      scoped to the series' sermon_ids; retrieves a pool of ~40
+      (degrades to keyword-only if embed is down;
+       falls back to match_segments_by_sermons() if hybrid RPC not applied)
+  → rerankSegments() in the route — dedupe + per-sermon diversity cap → top 15
   → ONLY those 15 segments sent to Gemini (NOT full transcript)
   → Gemini streams cited response with [N] citation brackets
   → frontend renders citations as clickable YouTube timestamp links
@@ -161,14 +172,15 @@ User opens a series
 
 ## Critical Rules for Any AI Working on This Project
 
-1. **Never send full `transcript` to Gemini** — use `match_segments()` RPC instead. Full transcripts cause token limit crashes.
+1. **Never send full `transcript` to Gemini** — use the hybrid segment RPC instead. Full transcripts cause token limit crashes.
 2. **Always embed user message first** before querying Supabase for declarations or segments.
-3. **Declaration retrieval must use `match_declarations()` RPC** — never `ilike` or `contains`.
-4. **`lib/gemini.js` contains Groq, not Gemini** — do not rename without updating all imports.
+3. **Retrieval must use the RPCs** — `match_segments_hybrid()` / `match_declarations_hybrid()` (vector + keyword). Never `ilike` or `contains`. The old vector-only RPCs (`match_segments_by_sermons()`, `match_declarations()`) remain only as fallbacks.
+4. **Study Series LLM client lives in `lib/groq.js`** and Gemini is called inline in the route — the client util is Groq despite the feature using Gemini for chat. Do not rename without updating all imports.
 5. **Gemini is for Study Series only** — Declarations always use Groq.
 6. **Bible verse fetches go to `bible.helloao.org`** — never ESV API or any key-gated service.
-7. **Embedding column is `vector(384)`** — never switch models without re-embedding all data.
-8. **`sermon_segments` table must be populated** by running `backfill-embeddings.js` in the pipeline before Study Series semantic search works.
+7. **Embedding column is `vector(384)` (gte-small)** — never switch models without re-embedding all data. Chunking + the gte-small embedder are centralized in `faithhub-pipeline/lib/embed-content.js`; the query-time embedder is the `embed` edge function. They MUST stay the same model.
+8. **`sermon_segments` is now populated automatically** by the pipeline (transcribe/extract auto-embed via `embed-content.js`). `backfill-embeddings.js` is only for re-embedding existing data (e.g. after the overlap change). Run `node coverage.js` to see which series are fully embedded.
+9. **New search RPCs + FTS columns require `supabase/migrations/hybrid_search.sql`** to be applied. Until it's run, routes silently fall back to vector-only. Also apply `vector_indexes.sql` for HNSW indexes.
 
 ---
 
@@ -180,6 +192,11 @@ User opens a series
 | Token crashes in Study Series | Full transcript sent to Gemini | `match_segments()` — only 15 relevant segments |
 | No embedding infrastructure | `embeddings.js` existed but never called | Supabase Edge Function (`embed`) — free, built-in |
 | Bible verse lookup | ESV API (token-limited) | AO Lab Free Bible API (no key, no limit) |
+| Vector search missed exact phrases/scripture | Pure pgvector cosine (gte-small) | Hybrid vector + keyword FTS, RRF-fused (`*_hybrid` RPCs) |
+| Thoughts split at chunk boundaries | Hard 300-word flush, no overlap | ~50-word overlap in `embed-content.js buildChunks` |
+| Top-15 raw cosine, noisy context | Fed straight to Gemini | Retrieve ~40 → `rerankSegments()` dedupe + diversity → 15 |
+| Segments only via manual backfill (silent rot) | `backfill-embeddings.js` run by hand | Pipeline auto-embeds on transcribe/extract; `coverage.js` visibility |
+| Duplicate/mismatched embedder (all-MiniLM) | Dead `lib/embeddings.js` (wrong model) | Deleted; single gte-small source in `lib/embed-content.js` |
 
 ---
 

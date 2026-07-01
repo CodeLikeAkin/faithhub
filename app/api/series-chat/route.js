@@ -1,10 +1,65 @@
 // app/api/series-chat/route.js
 
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { voicePromptSection } from '@/lib/voice';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// Diversity-aware rerank over the fused (retrieve-more) candidate pool.
+// Rows arrive already ordered by hybrid score. We (a) drop near-duplicate text,
+// and (b) cap how many segments any one sermon may contribute so a single
+// message can't monopolize the context — then, if still short, fill the rest
+// ignoring the cap so we don't starve single-sermon answers.
+function rerankSegments(rows, limit = 15, maxPerSermon = 4) {
+  const norm = (t) =>
+    (t || '').toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim().slice(0, 120);
+
+  const seenText = new Set();
+  const pickedIds = new Set();
+  const perSermon = new Map();
+  const out = [];
+
+  // Pass 1 — diversity-capped
+  for (const r of rows) {
+    if (out.length >= limit) break;
+    const key = norm(r.text);
+    if (seenText.has(key)) continue;
+    const count = perSermon.get(r.sermon_id) || 0;
+    if (count >= maxPerSermon) continue;
+    seenText.add(key);
+    perSermon.set(r.sermon_id, count + 1);
+    pickedIds.add(r.id);
+    out.push(r);
+  }
+
+  // Pass 2 — fill remaining slots, ignoring the per-sermon cap
+  if (out.length < limit) {
+    for (const r of rows) {
+      if (out.length >= limit) break;
+      if (pickedIds.has(r.id)) continue;
+      const key = norm(r.text);
+      if (seenText.has(key)) continue;
+      seenText.add(key);
+      pickedIds.add(r.id);
+      out.push(r);
+    }
+  }
+
+  return out;
+}
+
+// Admin Supabase client for RPC calls (requires service key)
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY || ''
+);
+
+// Validate service key is available
+if (!process.env.SUPABASE_SERVICE_KEY) {
+  console.error('WARNING: SUPABASE_SERVICE_KEY not set. RPC calls may fail.');
+}
 
 async function embedText(text) {
   const res = await fetch(
@@ -23,12 +78,41 @@ async function embedText(text) {
   return embedding;
 }
 
+// Stream a plain assistant message (with an empty segment map) using the same
+// wire format the frontend already parses. Used when we have no grounded
+// segments and refuse to fabricate an answer.
+function plainStreamResponse(text) {
+  const encoder = new TextEncoder();
+  const body = `SEGMENT_MAP:{}\n${text}`;
+  const stream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(encoder.encode(body));
+      controller.close();
+    },
+  });
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'no-cache',
+    },
+  });
+}
+
 export async function POST(req) {
   try {
     const { seriesId, message, chatHistory } = await req.json();
 
+    // Validate inputs
+    if (!seriesId || typeof seriesId !== 'string') {
+      return NextResponse.json({ error: true, message: 'Invalid or missing seriesId' }, { status: 400 });
+    }
+
+    if (!message || typeof message !== 'string' || message.trim().length === 0) {
+      return NextResponse.json({ error: true, message: 'Message is required and cannot be empty' }, { status: 400 });
+    }
+
     // 1. Fetch series + sermon metadata
-    const { data: series, error: seriesError } = await supabase
+    const { data: series, error: seriesError } = await supabaseAdmin
       .from('series')
       .select(`
         title,
@@ -59,46 +143,60 @@ export async function POST(req) {
     } catch (embedErr) {
       console.error('[chat] Embed failed:', embedErr.message);
     }
+    const embedFailed = !queryEmbedding;
 
-    // 3. Semantic segment search
+    // 3. Hybrid segment search (semantic + keyword, RRF-fused), scoped by the
+    //    series' sermon_ids rather than sermon_segments.series_id (only partially
+    //    populated). We retrieve a wide pool (40), then rerank down to 15 for
+    //    diversity. If the embed service is down, queryEmbedding is null and the
+    //    hybrid RPC degrades to keyword-only instead of returning nothing.
+    const sermonIds = sortedSermons.map((s) => s?.id).filter(Boolean);
     let relevantSegments = [];
-    if (queryEmbedding) {
-      const { data: segments, error: segErr } = await supabase.rpc('match_segments', {
-        query_embedding: queryEmbedding,
-        filter_series_id: seriesId,
-        match_threshold: 0.25,
-        match_count: 15,
+    if (sermonIds.length > 0 && (queryEmbedding || message.trim())) {
+      let candidatePool = null;
+
+      const { data: hybrid, error: hybridErr } = await supabaseAdmin.rpc('match_segments_hybrid', {
+        query_embedding: queryEmbedding, // may be null → keyword-only
+        query_text: message,
+        filter_sermon_ids: sermonIds,
+        match_count: 40,
       });
-      if (segErr) {
-        console.error('[chat] Segment RPC error:', segErr.message);
+
+      if (hybridErr) {
+        // Hybrid RPC not present yet (migration not applied) or failed — fall
+        // back to the vector-only RPC when we have an embedding.
+        console.error('[chat] Hybrid RPC error, falling back to vector-only:', hybridErr.message);
+        if (queryEmbedding) {
+          const { data: vec, error: vecErr } = await supabaseAdmin.rpc('match_segments_by_sermons', {
+            query_embedding: queryEmbedding,
+            filter_sermon_ids: sermonIds,
+            match_threshold: 0.25,
+            match_count: 40,
+          });
+          if (vecErr) console.error('[chat] Vector fallback RPC error:', vecErr.message);
+          else candidatePool = vec;
+        }
       } else {
-        relevantSegments = segments || [];
+        candidatePool = hybrid;
+      }
+
+      if (Array.isArray(candidatePool) && candidatePool.length > 0) {
+        relevantSegments = rerankSegments(candidatePool, 15);
       }
     }
 
-    // 4. Fallback if no embedded segments yet
+    // 4. No grounded segments → be honest instead of fabricating.
+    //    Previously this fell back to raw chronological transcript chunks, which
+    //    surfaced worship intros / "[Music]" filler and let the model answer from
+    //    non-teaching content with no visible failure. We now refuse rather than
+    //    mislead: either the study service is down, or this series' segments have
+    //    not been embedded yet (run backfill-embeddings.js to fix the latter).
     if (relevantSegments.length === 0) {
-      console.warn('[chat] No embedded segments, using fallback.');
-      const { data: sermonData } = await supabase
-        .from('sermons')
-        .select('id, title, youtube_video_id, transcript_segments')
-        .in('id', sortedSermons.map((s) => s.id));
-
-      const MAX_PER_SERMON = Math.ceil(15 / (sermonData?.length || 1));
-      relevantSegments = (sermonData || []).flatMap((sermon) =>
-        (sermon.transcript_segments || [])
-          .filter(seg => seg.text && seg.text.trim().split(' ').length >= 15)
-          .slice(0, MAX_PER_SERMON)
-          .map((seg, i) => ({
-            id: `${sermon.id}-${i}`,
-            sermon_id: sermon.id,
-            text: seg.text,
-            start_seconds: Math.floor(seg.start_seconds || 0),
-            sermon_title: sermon.title,
-            video_id: sermon.youtube_video_id,
-            similarity: 0,
-          }))
-      );
+      console.warn(`[chat] No grounded segments for series ${seriesId} (embedFailed=${embedFailed}). Refusing to fabricate.`);
+      const honestMessage = embedFailed
+        ? "I'm having trouble reaching the study service right now, so I can't pull up Rev. Peter's exact teaching for this question yet. Please try again in a moment."
+        : `I don't yet have Rev. Peter's teaching from “${series.title}” indexed for deep study, so I can't ground an answer in his exact words here. You can still watch the messages directly from the series page while this series is being prepared.`;
+      return plainStreamResponse(honestMessage);
     }
 
     // 5. Build segment index — pass video_id and start_seconds explicitly
@@ -160,6 +258,8 @@ RESPONSE FORMAT — READ CAREFULLY
 VOICE & TONE
 ═══════════════════════════════════════
 - Mirror Rev. Peter's own phrases and language from the segments
+- Quote his exact words directly and often — prefer his phrasing over paraphrase.
+  When he says something memorably, put it in his words, not yours.
 - Warm, faith-filled, conversational — not academic or robotic
 - Never say "the transcript says" or "according to the segment" — teach it as living truth
 - Refer to the pastor as "Rev. Peter" always
@@ -172,7 +272,7 @@ FOLLOW-UP SUGGESTIONS — STRICT RULES
 - CRITICAL: Every suggestion MUST be directly answerable from the segments you were given
 - Read the segments first — then generate questions only about what's actually there
 - Never suggest questions about topics not present in the provided segments
-- Do not generate generic Christian questions — they must be specific to this series content`;
+- Do not generate generic Christian questions — they must be specific to this series content${voicePromptSection()}`;
 
     // 8. Build conversation history
     const conversationHistory = (chatHistory || [])

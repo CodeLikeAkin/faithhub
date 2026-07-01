@@ -117,11 +117,7 @@ export default function DeclarationsPage() {
   const [lastQuery, setLastQuery] = useState("");
   const bottomRef = useRef(null);
   const textareaRef = useRef(null);
-
-  // Auto-scroll to latest message
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading, fetchingMore]);
+  const userMessageRefs = useRef({});
 
   // Auto-grow textarea
   useEffect(() => {
@@ -144,11 +140,16 @@ export default function DeclarationsPage() {
     setOutOfResults(false);
     setHasMore(false);
 
-    const userMsg = { id: Date.now(), role: "user", text: msg.trim() };
+    const userMsgId = Date.now();
+    const userMsg = { id: userMsgId, role: "user", text: msg.trim() };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setActiveTopic(null);
     setLoading(true);
+
+    setTimeout(() => {
+      userMessageRefs.current[userMsgId]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
 
     try {
       const res = await fetch("/api/declarations", {
@@ -730,7 +731,14 @@ export default function DeclarationsPage() {
             msg.role === "ai" ? (
               <AIMessage key={msg.id} message={msg} />
             ) : (
-              <UserMessage key={msg.id} message={msg} />
+              <div
+                key={msg.id}
+                ref={(el) => {
+                  userMessageRefs.current[msg.id] = el;
+                }}
+              >
+                <UserMessage message={msg} />
+              </div>
             )
           )}
 
