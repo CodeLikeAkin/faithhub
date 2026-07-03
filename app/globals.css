@@ -2,67 +2,72 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+  FaithHub design tokens — sourced from the hofng.org brand.
+  Light is the default (church-matching white + royal blue #173A68).
+  Dark mode is opt-in via the `dark` class on <html>.
+*/
 @layer base {
   :root {
-    --background: 233 34% 14%;
-    --foreground: 210 40% 98%;
+    --background: 0 0% 100%;
+    --foreground: 220 44% 16%; /* #17233B ink */
 
-    --card: 233 34% 14%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 44% 16%;
 
-    --popover: 233 34% 14%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 44% 16%;
 
-    --primary: 114 43% 44%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 214 64% 25%; /* #173A68 HOF royal blue */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 233 34% 10%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 114 43% 44%; /* #489E3E green — rare accents only */
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 233 34% 20%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 213 50% 96%;
+    --muted-foreground: 0 0% 48%; /* #7A7A7A */
 
-    --accent: 114 43% 44%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 212 63% 95%; /* #EAF2FB sky tint */
+    --accent-foreground: 214 64% 25%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 233 34% 20%;
-    --input: 233 34% 20%;
-    --ring: 114 43% 44%;
+    --border: 216 28% 90%;
+    --input: 216 28% 88%;
+    --ring: 214 64% 25%;
 
-    --radius: 0.5rem;
+    --radius: 1rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 217 55% 12%; /* #0E1B30 deep blue-black */
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
+    --card: 216 45% 16%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 4.9%;
+    --popover: 216 45% 16%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 214 55% 45%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 114 43% 44%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 216 40% 20%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 216 45% 20%;
     --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 62% 40%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 216 35% 22%;
+    --input: 216 35% 22%;
+    --ring: 214 60% 60%;
   }
 }
 
@@ -85,12 +90,12 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(212, 175, 55, 0.1);
+  background: rgba(23, 58, 104, 0.15);
   border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(212, 175, 55, 0.3);
+  background: rgba(23, 58, 104, 0.35);
 }
 
 .hide-series-nav header {

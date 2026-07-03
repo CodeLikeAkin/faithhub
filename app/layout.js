@@ -1,22 +1,23 @@
 import './globals.css'
-import { Poppins } from 'next/font/google'
+import { Roboto } from 'next/font/google'
 import Navbar from '@/components/Navbar'
 
-const poppins = Poppins({ 
+const roboto = Roboto({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800'],
-  variable: '--font-poppins',
+  weight: ['400', '500', '700', '900'],
+  variable: '--font-roboto',
 })
 
 export const metadata = {
-  title: 'Faith Hub',
-  description: 'Heritage of Faith Church AI Companion App',
+  title: 'FaithHub — Heritage of Faith Church',
+  description:
+    "Study Rev. Peter Ayo Alabi's teaching and speak God's Word over your life. Declarations, series study, and scripture — grounded in the messages of Heritage of Faith Church.",
 }
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className="dark scroll-smooth">
-      <body className={`${poppins.variable} font-sans antialiased`}>
+    <html lang="en" className="scroll-smooth">
+      <body className={`${roboto.variable} font-sans antialiased`}>
         <Navbar />
         {children}
       </body>

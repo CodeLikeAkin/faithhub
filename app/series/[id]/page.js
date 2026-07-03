@@ -12,7 +12,8 @@ import {
   Loader2,
   MessageSquare,
   Sparkles,
-  Quote
+  Quote,
+  BookOpen
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import ReactMarkdown from "react-markdown";
@@ -22,7 +23,7 @@ import ReactMarkdown from "react-markdown";
 // ─────────────────────────────────────────────────────────
 const CitationBadge = ({ num, segmentMap }) => {
   const seg = segmentMap?.[num];
-  if (!seg?.video_id) return <sup className="text-gray-500 text-[9px]">[{num}]</sup>;
+  if (!seg?.video_id) return <sup className="text-gray-400 text-[9px]">[{num}]</sup>;
 
   const url = `https://youtube.com/watch?v=${seg.video_id}&t=${seg.start_seconds}s`;
   return (
@@ -31,7 +32,7 @@ const CitationBadge = ({ num, segmentMap }) => {
       target="_blank"
       rel="noopener noreferrer"
       title={`"${seg.text}" — ${seg.sermon_title}`}
-      className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/10 border border-white/10 text-[9px] font-bold text-gray-400 hover:text-white hover:border-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all ml-0.5 -translate-y-0.5 cursor-pointer no-underline"
+      className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#173A68]/10 border border-[#173A68]/20 text-[9px] font-bold text-[#5A6B82] hover:text-white hover:border-[#173A68] hover:bg-[#173A68] transition-all ml-0.5 -translate-y-0.5 cursor-pointer no-underline"
     >
       {num}
     </a>
@@ -67,14 +68,14 @@ const RichAIResponse = ({ text, segmentMap }) => {
   };
 
   return (
-    <div className="text-[15px] leading-relaxed text-gray-200">
+    <div className="text-[15px] leading-relaxed text-[#2A3A55]">
       <ReactMarkdown
         components={{
           strong: ({ node, children, ...props }) => (
-            <strong className="text-white font-semibold" {...props}>{children}</strong>
+            <strong className="text-[#17233B] font-semibold" {...props}>{children}</strong>
           ),
           em: ({ node, children, ...props }) => (
-            <em className="text-gray-300 italic" {...props}>{children}</em>
+            <em className="text-[#4A5E7C] italic" {...props}>{children}</em>
           ),
           ul: ({ node, ...props }) => (
             <ul className="list-disc pl-5 space-y-1.5 my-3" {...props} />
@@ -83,7 +84,7 @@ const RichAIResponse = ({ text, segmentMap }) => {
             <ol className="list-decimal pl-5 space-y-1.5 my-3" {...props} />
           ),
           li: ({ node, children, ...props }) => (
-            <li className="text-gray-200" {...props}>
+            <li className="text-[#2A3A55]" {...props}>
               {typeof children === 'string'
                 ? renderWithCitations(children)
                 : children}
@@ -101,13 +102,13 @@ const RichAIResponse = ({ text, segmentMap }) => {
             </p>
           ),
           h1: ({ node, ...props }) => (
-            <h1 className="text-white text-lg font-bold mt-5 mb-2" {...props} />
+            <h1 className="text-[#17233B] text-lg font-bold mt-5 mb-2" {...props} />
           ),
           h2: ({ node, ...props }) => (
-            <h2 className="text-white text-base font-bold mt-4 mb-2" {...props} />
+            <h2 className="text-[#17233B] text-base font-bold mt-4 mb-2" {...props} />
           ),
           h3: ({ node, ...props }) => (
-            <h3 className="text-white text-sm font-bold mt-3 mb-1.5" {...props} />
+            <h3 className="text-[#17233B] text-sm font-bold mt-3 mb-1.5" {...props} />
           ),
           // Suppress any raw links Gemini might output
           a: ({ node, children, href, ...props }) => {
@@ -119,7 +120,7 @@ const RichAIResponse = ({ text, segmentMap }) => {
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#D4AF37] hover:underline"
+                className="text-[#173A68] font-medium hover:underline"
                 {...props}
               >
                 {children}
@@ -161,12 +162,6 @@ export default function SeriesDetailPage() {
     "Finding the right moment...",
     "Preparing your answer..."
   ];
-
-  useEffect(() => {
-    const nav = document.querySelector('nav') || document.querySelector('header');
-    if (nav) nav.style.display = 'none';
-    return () => { if (nav) nav.style.display = ''; };
-  }, []);
 
   useEffect(() => {
     if (id) fetchSeriesData();
@@ -368,17 +363,17 @@ export default function SeriesDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0f1129] flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-[#D4AF37] animate-spin" />
+      <div className="min-h-screen bg-[#F7FAFD] flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-[#173A68] animate-spin" />
       </div>
     );
   }
 
   if (!series) {
     return (
-      <div className="min-h-screen bg-[#0f1129] flex flex-col items-center justify-center p-6 text-center">
-        <h1 className="text-2xl font-bold text-white mb-4">Series not found</h1>
-        <Link href="/series" className="text-[#D4AF37] hover:underline flex items-center gap-2">
+      <div className="min-h-screen bg-[#F7FAFD] flex flex-col items-center justify-center p-6 text-center">
+        <h1 className="text-2xl font-bold text-[#17233B] mb-4">Series not found</h1>
+        <Link href="/series" className="text-[#173A68] font-bold hover:underline flex items-center gap-2">
           <ArrowLeft size={18} /> Back to Browse
         </Link>
       </div>
@@ -388,71 +383,81 @@ export default function SeriesDetailPage() {
   const heroThumb = sermons[0]?.youtube_video_id;
 
   return (
-    <main className="flex flex-col md:flex-row h-screen bg-[#0f1129] text-white selection:bg-[#D4AF37] selection:text-[#0f1129] overflow-hidden">
+    <main className="flex flex-col md:flex-row h-screen bg-[#F7FAFD] text-[#17233B] selection:bg-[#173A68] selection:text-white overflow-hidden">
       {/* LEFT PANEL - Sermon List */}
-      <aside className="w-full md:w-[280px] flex flex-col border-r border-white/5 bg-[#0f1129] overflow-hidden">
-        <div className="p-6 border-b border-white/5">
-          <Link href="/series" className="flex items-center gap-2 text-xs font-bold text-[#489e3e] hover:translate-x-[-2px] transition-all mb-4">
+      <aside className="w-full md:w-[280px] flex flex-col border-r border-[#173A68]/10 bg-white overflow-hidden">
+        <div className="p-6 border-b border-[#173A68]/10">
+          <Link href="/series" className="flex items-center gap-2 text-xs font-bold text-[#173A68] hover:translate-x-[-2px] transition-all mb-4">
             <ArrowLeft size={14} /> Back to Browse
           </Link>
-          <h2 className="text-lg font-black text-white leading-tight">{series.title}</h2>
+          <h2 className="text-lg font-black text-[#17233B] leading-tight">{series.title}</h2>
         </div>
         <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
           {sermons.map((sermon) => (
-            <div key={sermon.id} className="p-4 bg-white/5 border border-white/5 rounded-xl hover:border-[#D4AF37]/30 transition-all group">
+            <div key={sermon.id} className="p-4 bg-[#F0F5FB] border border-[#173A68]/10 rounded-xl hover:border-[#173A68]/30 transition-all group">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-black text-[#D4AF37] uppercase tracking-tighter bg-[#D4AF37]/10 px-2 py-0.5 rounded">
+                <span className="text-[10px] font-black text-[#173A68] uppercase tracking-tighter bg-[#173A68]/10 px-2 py-0.5 rounded">
                   Part {sermon.part_number}
                 </span>
-                <span className="text-[10px] text-gray-500">
+                <span className="text-[10px] text-[#7A7A7A]">
                   {new Date(sermon.sermon_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                 </span>
               </div>
-              <h3 className="text-sm font-bold text-white mb-3 line-clamp-2 leading-snug group-hover:text-[#D4AF37] transition-colors">
-                {sermon.title}
-              </h3>
-              <a
-                href={sermon.youtube_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full py-2 bg-white/5 text-[11px] font-bold text-white border border-white/10 rounded-lg hover:bg-white/10 transition-all"
-              >
-                <Play size={10} fill="currentColor" /> Watch
-              </a>
+              <Link href={`/sermon/${sermon.id}`}>
+                <h3 className="text-sm font-bold text-[#17233B] mb-3 line-clamp-2 leading-snug group-hover:text-[#173A68] transition-colors cursor-pointer">
+                  {sermon.title}
+                </h3>
+              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/sermon/${sermon.id}`}
+                  className="flex items-center justify-center gap-1.5 flex-1 py-2 bg-[#173A68] text-[11px] font-bold text-white rounded-lg hover:bg-[#102A4E] transition-all"
+                >
+                  <BookOpen size={10} /> Verses
+                </Link>
+                <a
+                  href={sermon.youtube_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1.5 flex-1 py-2 bg-white text-[11px] font-bold text-[#173A68] border border-[#173A68]/15 rounded-lg hover:bg-[#EAF2FB] transition-all"
+                >
+                  <Play size={10} fill="currentColor" /> Watch
+                </a>
+              </div>
             </div>
           ))}
         </div>
       </aside>
 
       {/* CENTER PANEL - Chat */}
-      <section className="flex-1 flex flex-col bg-[#121424] relative overflow-hidden">
+      <section className="flex-1 flex flex-col bg-white relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-[10%] -right-[5%] w-[45%] h-[45%] rounded-full bg-[#D4AF37] opacity-[0.02] blur-[100px]" />
-          <div className="absolute bottom-[10%] -left-[5%] w-[35%] h-[35%] rounded-full bg-[#D4AF37] opacity-[0.01] blur-[80px]" />
+          <div className="absolute -top-[10%] -right-[5%] w-[45%] h-[45%] rounded-full bg-[#173A68] opacity-[0.03] blur-[100px]" />
+          <div className="absolute bottom-[10%] -left-[5%] w-[35%] h-[35%] rounded-full bg-[#173A68] opacity-[0.02] blur-[80px]" />
         </div>
 
         {/* Hero Header */}
-        <div className="relative shrink-0 overflow-hidden border-b border-white/5 h-28">
+        <div className="relative shrink-0 overflow-hidden border-b border-[#173A68]/10 h-28">
           <div
-            className="absolute inset-0 bg-cover bg-center opacity-30 blur-sm"
+            className="absolute inset-0 bg-cover bg-center opacity-25 blur-sm"
             style={{ backgroundImage: `url(${heroThumb ? `https://img.youtube.com/vi/${heroThumb}/maxresdefault.jpg` : ""})` }}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#121424]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white" />
           <div className="relative z-10 h-full flex flex-col justify-end px-8 py-4">
             <div className="flex items-center gap-3 mb-2">
-              <span className="px-2 py-0.5 bg-[#D4AF37] text-[#0f1129] rounded text-[9px] font-black uppercase tracking-wider">
+              <span className="px-2 py-0.5 bg-[#173A68] text-white rounded text-[9px] font-black uppercase tracking-wider">
                 {series.service_type || "Series"}
               </span>
-              <span className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
-                <List size={12} className="text-[#D4AF37]" />
+              <span className="text-[10px] font-bold text-[#5A6B82] flex items-center gap-1">
+                <List size={12} className="text-[#173A68]" />
                 {sermons.length} Parts
               </span>
-              <span className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
-                <Calendar size={12} className="text-[#489e3e]" />
+              <span className="text-[10px] font-bold text-[#5A6B82] flex items-center gap-1">
+                <Calendar size={12} className="text-[#173A68]" />
                 {formatDateRange(series.start_date, series.end_date)}
               </span>
             </div>
-            <h1 className="text-2xl font-black tracking-tight">{series.title}</h1>
+            <h1 className="text-2xl font-black tracking-tight text-[#17233B]">{series.title}</h1>
           </div>
         </div>
 
@@ -462,19 +467,19 @@ export default function SeriesDetailPage() {
           <div className="flex flex-col items-start mb-6 w-full">
             <div className="flex justify-start w-full">
               <div className="flex gap-4 max-w-[90%] md:max-w-[80%]">
-                <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex-shrink-0 flex items-center justify-center mt-1">
-                  <Sparkles size={14} className="text-[#D4AF37]" />
+                <div className="w-8 h-8 rounded-lg bg-[#173A68]/10 border border-[#173A68]/25 flex-shrink-0 flex items-center justify-center mt-1">
+                  <Sparkles size={14} className="text-[#173A68]" />
                 </div>
-                <div className="w-full text-[15px] text-gray-200 leading-relaxed">
+                <div className="w-full text-[15px] text-[#2A3A55] leading-relaxed">
                   {summaryLoading ? (
                     <span className="flex items-center gap-2">
-                      <Loader2 size={14} className="animate-spin text-[#D4AF37]" />
+                      <Loader2 size={14} className="animate-spin text-[#173A68]" />
                       Generating series insights...
                     </span>
                   ) : (
                     <ReactMarkdown
                       components={{
-                        strong: ({ node, ...props }) => <strong className="text-white font-semibold" {...props} />,
+                        strong: ({ node, ...props }) => <strong className="text-[#17233B] font-semibold" {...props} />,
                         p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />
                       }}
                     >
@@ -491,7 +496,7 @@ export default function SeriesDetailPage() {
                   <button
                     key={i}
                     onClick={() => handleSuggestionClick(question, 'summary')}
-                    className="w-fit max-w-[80%] text-left text-sm px-4 py-2 rounded-xl bg-[#1e2235] text-gray-200 hover:bg-[#2a3050] transition-colors cursor-pointer"
+                    className="w-fit max-w-[80%] text-left text-sm px-4 py-2 rounded-xl bg-[#EAF2FB] text-[#173A68] hover:bg-[#D9E7F5] transition-colors cursor-pointer"
                   >
                     {question}
                   </button>
@@ -510,18 +515,18 @@ export default function SeriesDetailPage() {
               <div className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} w-full`}>
                 <div className={`w-full ${msg.role === "user" ? "flex justify-end" : "flex gap-4 max-w-[90%] md:max-w-[80%]"}`}>
                   {msg.role === "ai" && (
-                    <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/30 flex-shrink-0 flex items-center justify-center mt-1">
-                      <MessageSquare size={14} className="text-[#D4AF37]" />
+                    <div className="w-8 h-8 rounded-lg bg-[#173A68]/10 border border-[#173A68]/25 flex-shrink-0 flex items-center justify-center mt-1">
+                      <MessageSquare size={14} className="text-[#173A68]" />
                     </div>
                   )}
                   <div className={
                     msg.role === "user"
-                      ? "bg-[#1e2235] text-sm text-gray-300 rounded-2xl px-4 py-2 max-w-[70%]"
-                      : "w-full text-[15px] text-gray-200 leading-relaxed"
+                      ? "bg-[#173A68] text-sm text-white rounded-2xl px-4 py-2 max-w-[70%]"
+                      : "w-full text-[15px] text-[#2A3A55] leading-relaxed"
                   }>
                     {msg.role === "ai" && msg.isThinking ? (
-                      <div className="flex items-center gap-3 text-gray-400 bg-white/5 rounded-2xl px-4 py-2 border border-white/5 animate-in fade-in duration-500">
-                        <Loader2 size={14} className="animate-spin text-[#D4AF37]" />
+                      <div className="flex items-center gap-3 text-[#5A6B82] bg-[#F0F5FB] rounded-2xl px-4 py-2 border border-[#173A68]/10 animate-in fade-in duration-500">
+                        <Loader2 size={14} className="animate-spin text-[#173A68]" />
                         <span className="text-sm italic font-medium">{thinkingMessages[thinkingStep]}</span>
                       </div>
                     ) : msg.role === "ai" ? (
@@ -539,7 +544,7 @@ export default function SeriesDetailPage() {
                     <button
                       key={idx}
                       onClick={() => handleSuggestionClick(question, msg.id)}
-                      className="w-fit max-w-[80%] text-left text-sm px-4 py-2 rounded-xl bg-[#1e2235] text-gray-200 hover:bg-[#2a3050] transition-colors cursor-pointer"
+                      className="w-fit max-w-[80%] text-left text-sm px-4 py-2 rounded-xl bg-[#EAF2FB] text-[#173A68] hover:bg-[#D9E7F5] transition-colors cursor-pointer"
                     >
                       {question}
                     </button>
@@ -554,11 +559,11 @@ export default function SeriesDetailPage() {
         {/* Chat Input */}
         <div className="p-8 shrink-0">
           <div className="max-w-4xl mx-auto">
-            <div className="relative flex items-center bg-[#181b31] border border-[#2d3452] rounded-3xl focus-within:border-gray-500 transition-all px-4 py-2">
+            <div className="relative flex items-center bg-white border border-[#C9D6E7] rounded-3xl focus-within:border-[#173A68]/60 focus-within:shadow-[0_0_0_3px_rgba(23,58,104,0.08)] transition-all px-4 py-2">
               <input
                 type="text"
                 placeholder="Ask about this series..."
-                className="w-full bg-transparent border-none outline-none py-2 px-2 text-sm text-white placeholder:text-gray-500"
+                className="w-full bg-transparent border-none outline-none py-2 px-2 text-sm text-[#17233B] placeholder:text-[#9AA6B6]"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
@@ -566,7 +571,7 @@ export default function SeriesDetailPage() {
               <button
                 onClick={handleSendMessage}
                 disabled={!chatInput.trim() || chatLoading}
-                className="p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-30"
+                className="p-2 text-[#5A6B82] hover:text-[#173A68] transition-colors disabled:opacity-30"
               >
                 <Send size={16} />
               </button>
@@ -576,28 +581,28 @@ export default function SeriesDetailPage() {
       </section>
 
       {/* RIGHT PANEL - Key Declarations */}
-      <aside className="hidden lg:flex w-[260px] flex-col border-l border-white/5 bg-[#0f1129] overflow-y-auto custom-scrollbar">
+      <aside className="hidden lg:flex w-[260px] flex-col border-l border-[#173A68]/10 bg-white overflow-y-auto custom-scrollbar">
         <div className="p-6 space-y-8">
           <section>
-            <h3 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4 flex items-center gap-2">
-              <Quote size={12} className="text-[#D4AF37]" />
+            <h3 className="text-xs font-black uppercase tracking-widest text-[#7A7A7A] mb-4 flex items-center gap-2">
+              <Quote size={12} className="text-[#173A68]" />
               Key Declarations
             </h3>
             <div className="space-y-4">
               {declarations.length > 0 ? (
                 declarations.map((decl) => (
-                  <div key={decl.id} className="p-4 bg-white/5 border border-white/5 rounded-2xl relative group">
-                    <div className="absolute -top-2 -left-2 w-6 h-6 bg-[#D4AF37]/20 rounded-lg flex items-center justify-center border border-[#D4AF37]/30">
-                      <Quote size={10} className="text-[#D4AF37]" />
+                  <div key={decl.id} className="p-4 bg-[#F0F5FB] border border-[#173A68]/10 rounded-2xl relative group">
+                    <div className="absolute -top-2 -left-2 w-6 h-6 bg-[#EAF2FB] rounded-lg flex items-center justify-center border border-[#173A68]/25">
+                      <Quote size={10} className="text-[#173A68]" />
                     </div>
-                    <p className="text-[11px] text-gray-300 leading-relaxed mb-4 pt-2">
+                    <p className="text-[11px] text-[#2A3A55] leading-relaxed mb-4 pt-2">
                       "{decl.declaration_text}"
                     </p>
                     <a
                       href={decl.youtube_url_with_timestamp}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 text-[9px] font-bold text-[#D4AF37] hover:underline"
+                      className="flex items-center gap-1.5 text-[9px] font-bold text-[#173A68] hover:underline"
                     >
                       <Play size={8} fill="currentColor" />
                       Watch moment
@@ -605,7 +610,7 @@ export default function SeriesDetailPage() {
                   </div>
                 ))
               ) : (
-                <p className="text-[10px] text-gray-600 text-center py-4">
+                <p className="text-[10px] text-[#9AA6B6] text-center py-4">
                   No declarations extracted for this series yet.
                 </p>
               )}

@@ -30,7 +30,7 @@ function DeclarationCard({ declaration, index }) {
       className="declaration-card"
       style={{ animationDelay: `${index * 80}ms` }}
     >
-      {/* Gold accent bar */}
+      {/* Navy accent bar */}
       <div className="declaration-accent" />
 
       <div className="declaration-body">
@@ -266,14 +266,14 @@ export default function DeclarationsPage() {
         /* ── Layout ────────────────────────────────────────────────────────── */
         .decl-page {
           min-height: 100vh;
-          background: #181b31;
+          background: #F7FAFD;
           display: flex;
           flex-direction: column;
           position: relative;
           overflow: hidden;
         }
 
-        /* Ambient glow orbs */
+        /* Ambient tint orbs */
         .glow-orb-1 {
           position: absolute;
           top: -10%;
@@ -281,8 +281,8 @@ export default function DeclarationsPage() {
           width: 45%;
           height: 45%;
           border-radius: 50%;
-          background: #D4AF37;
-          opacity: 0.06;
+          background: #173A68;
+          opacity: 0.05;
           filter: blur(100px);
           pointer-events: none;
         }
@@ -293,8 +293,8 @@ export default function DeclarationsPage() {
           width: 35%;
           height: 35%;
           border-radius: 50%;
-          background: #D4AF37;
-          opacity: 0.05;
+          background: #173A68;
+          opacity: 0.04;
           filter: blur(80px);
           pointer-events: none;
         }
@@ -308,9 +308,9 @@ export default function DeclarationsPage() {
           align-items: center;
           gap: 14px;
           padding: 18px 20px;
-          background: rgba(24, 27, 49, 0.85);
+          background: rgba(255, 255, 255, 0.88);
           backdrop-filter: blur(16px);
-          border-bottom: 1px solid rgba(72, 158, 62, 0.15);
+          border-bottom: 1px solid rgba(23, 58, 104, 0.1);
         }
         .back-btn {
           display: flex;
@@ -319,14 +319,14 @@ export default function DeclarationsPage() {
           width: 44px;
           height: 44px;
           border-radius: 12px;
-          background: rgba(255,255,255,0.05);
-          border: 1px solid rgba(255,255,255,0.08);
-          color: #489e3e;
+          background: #ffffff;
+          border: 1px solid rgba(23, 58, 104, 0.15);
+          color: #173A68;
           transition: background 0.2s, transform 0.2s;
           flex-shrink: 0;
         }
         .back-btn:hover {
-          background: rgba(72,158,62,0.12);
+          background: #EAF2FB;
           transform: translateX(-2px);
         }
         .header-title-group {
@@ -336,13 +336,13 @@ export default function DeclarationsPage() {
         .header-title {
           font-size: 1.2rem;
           font-weight: 700;
-          color: #489e3e;
+          color: #173A68;
           line-height: 1.2;
           letter-spacing: -0.01em;
         }
         .header-subtitle {
           font-size: 0.72rem;
-          color: rgba(255,255,255,0.4);
+          color: #7A7A7A;
           margin-top: 2px;
         }
         .header-badge {
@@ -351,12 +351,12 @@ export default function DeclarationsPage() {
           align-items: center;
           gap: 6px;
           padding: 6px 12px;
-          background: rgba(72,158,62,0.1);
-          border: 1px solid rgba(72,158,62,0.25);
+          background: rgba(23, 58, 104, 0.07);
+          border: 1px solid rgba(23, 58, 104, 0.2);
           border-radius: 999px;
-          color: #489e3e;
+          color: #173A68;
           font-size: 0.72rem;
-          font-weight: 600;
+          font-weight: 700;
         }
 
         /* ── Topics bar ─────────────────────────────────────────────────────── */
@@ -375,23 +375,23 @@ export default function DeclarationsPage() {
           border-radius: 999px;
           font-size: 0.85rem;
           font-weight: 600;
-          border: 1px solid rgba(72,158,62,0.25);
-          background: rgba(72,158,62,0.06);
-          color: rgba(255,255,255,0.65);
+          border: 1px solid rgba(23, 58, 104, 0.18);
+          background: #ffffff;
+          color: #5A6B82;
           cursor: pointer;
           transition: all 0.2s;
           letter-spacing: 0.01em;
         }
         .topic-chip:hover {
-          background: rgba(72,158,62,0.15);
-          color: #489e3e;
-          border-color: rgba(72,158,62,0.5);
+          background: #EAF2FB;
+          color: #173A68;
+          border-color: rgba(23, 58, 104, 0.4);
         }
         .topic-chip.active {
-          background: #489e3e;
+          background: #173A68;
           color: #ffffff;
-          border-color: #489e3e;
-          box-shadow: 0 0 16px rgba(72,158,62,0.35);
+          border-color: #173A68;
+          box-shadow: 0 4px 16px rgba(23, 58, 104, 0.25);
         }
 
         /* ── Chat area ──────────────────────────────────────────────────────── */
@@ -403,11 +403,11 @@ export default function DeclarationsPage() {
           flex-direction: column;
           gap: 20px;
           scrollbar-width: thin;
-          scrollbar-color: rgba(72,158,62,0.2) transparent;
+          scrollbar-color: rgba(23, 58, 104, 0.2) transparent;
         }
         .chat-area::-webkit-scrollbar { width: 4px; }
         .chat-area::-webkit-scrollbar-track { background: transparent; }
-        .chat-area::-webkit-scrollbar-thumb { background: rgba(72,158,62,0.2); border-radius: 4px; }
+        .chat-area::-webkit-scrollbar-thumb { background: rgba(23, 58, 104, 0.2); border-radius: 4px; }
 
         /* ── AI message ─────────────────────────────────────────────────────── */
         .msg-ai-wrapper {
@@ -422,12 +422,12 @@ export default function DeclarationsPage() {
           width: 34px;
           height: 34px;
           border-radius: 10px;
-          background: linear-gradient(135deg, rgba(72,158,62,0.3), rgba(72,158,62,0.1));
-          border: 1px solid rgba(72,158,62,0.35);
+          background: linear-gradient(135deg, rgba(23, 58, 104, 0.14), rgba(23, 58, 104, 0.05));
+          border: 1px solid rgba(23, 58, 104, 0.25);
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #489e3e;
+          color: #173A68;
           margin-top: 2px;
         }
         .msg-ai-bubble {
@@ -436,14 +436,15 @@ export default function DeclarationsPage() {
           gap: 12px;
         }
         .msg-ai-text {
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.08);
+          background: #ffffff;
+          border: 1px solid #E3EAF3;
           border-radius: 4px 16px 16px 16px;
           padding: 14px 16px;
           font-size: 0.9rem;
           line-height: 1.65;
-          color: rgba(255,255,255,0.85);
+          color: #2A3A55;
           white-space: pre-wrap;
+          box-shadow: 0 2px 10px rgba(23, 58, 104, 0.04);
         }
 
         /* ── User message ───────────────────────────────────────────────────── */
@@ -453,13 +454,13 @@ export default function DeclarationsPage() {
         }
         .msg-user-bubble {
           max-width: 80%;
-          background: linear-gradient(135deg, rgba(72,158,62,0.22), rgba(72,158,62,0.12));
-          border: 1px solid rgba(72,158,62,0.3);
+          background: linear-gradient(135deg, #173A68, #1E4A82);
+          border: 1px solid rgba(23, 58, 104, 0.3);
           border-radius: 16px 4px 16px 16px;
           padding: 12px 16px;
           font-size: 0.9rem;
           line-height: 1.6;
-          color: rgba(255,255,255,0.9);
+          color: #ffffff;
         }
 
         /* ── Declaration cards ──────────────────────────────────────────────── */
@@ -471,17 +472,17 @@ export default function DeclarationsPage() {
         .declaration-card {
           display: flex;
           gap: 0;
-          background: rgba(18, 20, 36, 0.7);
-          border: 1px solid rgba(72,158,62,0.2);
+          background: #ffffff;
+          border: 1px solid rgba(23, 58, 104, 0.14);
           border-radius: 14px;
           overflow: hidden;
           animation: slideUp 0.4s ease both;
-          backdrop-filter: blur(8px);
           transition: border-color 0.2s, box-shadow 0.2s;
+          box-shadow: 0 2px 10px rgba(23, 58, 104, 0.04);
         }
         .declaration-card:hover {
-          border-color: rgba(72,158,62,0.45);
-          box-shadow: 0 4px 24px rgba(72,158,62,0.1);
+          border-color: rgba(23, 58, 104, 0.35);
+          box-shadow: 0 6px 24px rgba(23, 58, 104, 0.1);
         }
         @keyframes slideUp {
           from { opacity: 0; transform: translateY(10px); }
@@ -490,7 +491,7 @@ export default function DeclarationsPage() {
         .declaration-accent {
           width: 3px;
           flex-shrink: 0;
-          background: linear-gradient(to bottom, #489e3e, rgba(72,158,62,0.3));
+          background: linear-gradient(to bottom, #173A68, rgba(23, 58, 104, 0.3));
           border-radius: 3px 0 0 3px;
         }
         .declaration-body {
@@ -503,11 +504,11 @@ export default function DeclarationsPage() {
         .declaration-text {
           font-size: 0.88rem;
           line-height: 1.6;
-          color: rgba(255,255,255,0.88);
+          color: #17233B;
           font-style: italic;
         }
         .declaration-quote {
-          color: #489e3e;
+          color: #173A68;
           font-style: normal;
           font-size: 1.1em;
         }
@@ -523,10 +524,10 @@ export default function DeclarationsPage() {
           align-items: center;
           gap: 5px;
           font-size: 0.72rem;
-          color: rgba(255,255,255,0.4);
+          color: #7A7A7A;
         }
         .declaration-source-icon {
-          color: rgba(72,158,62,0.5);
+          color: rgba(23, 58, 104, 0.55);
           flex-shrink: 0;
         }
         .watch-btn {
@@ -534,18 +535,18 @@ export default function DeclarationsPage() {
           align-items: center;
           gap: 5px;
           padding: 4px 12px;
-          background: rgba(72,158,62,0.12);
-          border: 1px solid rgba(72,158,62,0.3);
+          background: rgba(23, 58, 104, 0.07);
+          border: 1px solid rgba(23, 58, 104, 0.25);
           border-radius: 999px;
-          color: #489e3e;
+          color: #173A68;
           font-size: 0.7rem;
-          font-weight: 600;
+          font-weight: 700;
           text-decoration: none;
           transition: background 0.2s, box-shadow 0.2s;
         }
         .watch-btn:hover {
-          background: rgba(72,158,62,0.22);
-          box-shadow: 0 0 12px rgba(72,158,62,0.2);
+          background: rgba(23, 58, 104, 0.14);
+          box-shadow: 0 0 12px rgba(23, 58, 104, 0.15);
         }
 
         /* ── Typing indicator ───────────────────────────────────────────────── */
@@ -555,8 +556,8 @@ export default function DeclarationsPage() {
           align-items: flex-start;
         }
         .typing-bubble {
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.08);
+          background: #ffffff;
+          border: 1px solid #E3EAF3;
           border-radius: 4px 16px 16px 16px;
           padding: 14px 18px;
           display: flex;
@@ -567,7 +568,7 @@ export default function DeclarationsPage() {
           width: 7px;
           height: 7px;
           border-radius: 50%;
-          background: rgba(72,158,62,0.6);
+          background: rgba(23, 58, 104, 0.5);
           animation: bounce 1.2s infinite;
         }
         .typing-dot:nth-child(2) { animation-delay: 0.2s; }
@@ -580,24 +581,24 @@ export default function DeclarationsPage() {
         /* ── Input bar ──────────────────────────────────────────────────────── */
         .input-bar {
           padding: 12px 16px 16px;
-          background: rgba(24, 27, 49, 0.9);
+          background: rgba(255, 255, 255, 0.92);
           backdrop-filter: blur(16px);
-          border-top: 1px solid rgba(72, 158, 62, 0.12);
+          border-top: 1px solid rgba(23, 58, 104, 0.1);
           flex-shrink: 0;
         }
         .input-inner {
           display: flex;
           gap: 10px;
           align-items: flex-end;
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(72, 158, 62, 0.2);
+          background: #ffffff;
+          border: 1px solid rgba(23, 58, 104, 0.2);
           border-radius: 16px;
           padding: 10px 12px;
           transition: border-color 0.2s, box-shadow 0.2s;
         }
         .input-inner:focus-within {
-          border-color: rgba(72, 158, 62, 0.45);
-          box-shadow: 0 0 0 3px rgba(72, 158, 62, 0.08);
+          border-color: rgba(23, 58, 104, 0.5);
+          box-shadow: 0 0 0 3px rgba(23, 58, 104, 0.08);
         }
         .chat-textarea {
           flex: 1;
@@ -605,7 +606,7 @@ export default function DeclarationsPage() {
           border: none;
           outline: none;
           resize: none;
-          color: rgba(255,255,255,0.9);
+          color: #17233B;
           font-size: 16px;
           line-height: 1.5;
           min-height: 24px;
@@ -613,14 +614,14 @@ export default function DeclarationsPage() {
           font-family: inherit;
         }
         .chat-textarea::placeholder {
-          color: rgba(255,255,255,0.25);
+          color: rgba(23, 35, 59, 0.35);
         }
         .send-btn {
           flex-shrink: 0;
           width: 44px;
           height: 44px;
           border-radius: 12px;
-          background: #489e3e;
+          background: #173A68;
           border: none;
           display: flex;
           align-items: center;
@@ -631,9 +632,9 @@ export default function DeclarationsPage() {
           align-self: flex-end;
         }
         .send-btn:hover:not(:disabled) {
-          background: #3e8a36;
+          background: #102A4E;
           transform: scale(1.05);
-          box-shadow: 0 0 16px rgba(72,158,62,0.4);
+          box-shadow: 0 4px 16px rgba(23, 58, 104, 0.35);
         }
         .send-btn:disabled {
           opacity: 0.45;
@@ -643,7 +644,7 @@ export default function DeclarationsPage() {
           margin-top: 8px;
           text-align: center;
           font-size: 0.68rem;
-          color: rgba(255,255,255,0.2);
+          color: rgba(23, 35, 59, 0.35);
         }
 
         /* ── Load More Button ──────────────────────────────────────────────── */
@@ -656,19 +657,19 @@ export default function DeclarationsPage() {
           max-width: 260px;
           margin: 10px auto 20px;
           padding: 12px 20px;
-          background: #D4AF37;
-          color: #181b31;
+          background: #173A68;
+          color: #ffffff;
           border: none;
           border-radius: 12px;
           font-weight: 700;
           font-size: 0.88rem;
           cursor: pointer;
           transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+          box-shadow: 0 4px 12px rgba(23, 58, 104, 0.2);
         }
         .load-more-btn:hover:not(:disabled) {
           transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+          box-shadow: 0 6px 20px rgba(23, 58, 104, 0.35);
         }
         .load-more-btn:active:not(:disabled) {
           transform: translateY(0);
@@ -681,7 +682,7 @@ export default function DeclarationsPage() {
           text-align: center;
           padding: 15px 20px 30px;
           font-size: 0.85rem;
-          color: rgba(255,255,255,0.4);
+          color: rgba(23, 35, 59, 0.5);
           line-height: 1.5;
           max-width: 300px;
           margin: 0 auto;
@@ -689,7 +690,7 @@ export default function DeclarationsPage() {
       `}</style>
 
       <div className="decl-page">
-        {/* Ambient glows */}
+        {/* Ambient tints */}
         <div className="glow-orb-1" />
         <div className="glow-orb-2" />
 

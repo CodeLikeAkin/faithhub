@@ -7,11 +7,24 @@ export async function POST(req) {
   try {
     const { title, sermonTitles } = await req.json();
 
+    // Sermon titles carry the preacher's name inline, e.g.
+    // "... | Pastor Funlola Alabi | 21st June 2026" — extract it instead of
+    // assuming every series was preached by Rev. Peter Ayo Alabi.
+    const preacherNames = new Set();
+    const preacherPattern = /(Rev(?:erend|\.)?|Pastor|Bishop|Dr\.?)\s+[A-Z][\w'.-]*(?:\s+[A-Z][\w'.-]*){0,3}/g;
+    for (const t of sermonTitles) {
+      const matches = t.match(preacherPattern) || [];
+      for (const m of matches) preacherNames.add(m.trim());
+    }
+    const preacherContext = preacherNames.size > 0
+      ? `This series was preached by ${[...preacherNames].join(' and ')}. Focus on the core themes of their teachings.`
+      : 'Focus on the core themes of the teachings.';
+
     const completion = await groq.chat.completions.create({
       messages: [
         {
           role: 'system',
-          content: 'You are a helpful assistant for a church. Generate a 3-5 sentence AI-generated summary of a sermon series based on its title and the titles of the sermons within it. Keep it concise, professional, and spiritually encouraging. Focus on the core themes of Rev. Peter Ayoalabi\'s teachings.'
+          content: `You are a helpful assistant for a church. Generate a 3-5 sentence AI-generated summary of a sermon series based on its title and the titles of the sermons within it. Keep it concise, professional, and spiritually encouraging. ${preacherContext} Only credit the preacher(s) named above — do not invent or assume any other preacher.`
         },
         {
           role: 'user',

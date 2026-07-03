@@ -18,7 +18,7 @@ module.exports = {
     },
     extend: {
       fontFamily: {
-        sans: ["var(--font-poppins)", "sans-serif"],
+        sans: ["var(--font-roboto)", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -54,12 +54,17 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        /* HOF NG brand palette — hofng.org is the source of truth */
         brand: {
-          navy: "#181b31",
-          green: "#489e3e",
-          light: "#f8f9fa",
-          dark: "#121424",
-        }
+          navy: "#173A68",  /* primary — the logo blue */
+          deep: "#102A4E",  /* darker blue for overlays/hover */
+          ink: "#17233B",   /* heading text */
+          sky: "#EAF2FB",   /* light blue tint surface */
+          mist: "#C6DAEE",  /* deeper tint for gradients */
+          green: "#489E3E", /* secondary — rare accents only */
+          gray: "#7A7A7A",  /* body text */
+          light: "#F8F9FA",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
