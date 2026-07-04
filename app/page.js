@@ -25,12 +25,19 @@ const entryCards = [
     href: "/series",
     icon: BookOpen,
   },
+  {
+    index: "03",
+    title: "The Word",
+    desc: "Every scripture Pastor opens, mapped across every message.",
+    href: "/word",
+    icon: BookMarked,
+  },
 ];
 
 const communityPoints = [
   "Answers cited to the exact sermon moment on YouTube",
   "Declarations drawn from years of Rev. Peter's messages",
-  "Coming soon: every Bible verse in every message — The Word",
+  "Every Bible verse in every message, mapped — The Word",
 ];
 
 export default function Home() {
@@ -124,27 +131,6 @@ export default function Home() {
             </div>
           </Link>
         ))}
-
-        {/* The Word — coming soon */}
-        <div className="flex items-start justify-between gap-4 bg-white border border-brand-navy/10 rounded-3xl p-5 sm:p-6">
-          <div>
-            <p className="text-[10px] font-bold tracking-[0.18em] text-brand-gray uppercase flex items-center gap-2">
-              / 03 /
-              <span className="bg-brand-green text-white text-[9px] font-bold px-2 py-0.5 rounded-full tracking-normal normal-case">
-                Coming soon
-              </span>
-            </p>
-            <h3 className="mt-1.5 text-lg font-bold text-brand-ink leading-snug">
-              The Word
-            </h3>
-            <p className="mt-1 text-xs sm:text-sm text-brand-gray leading-relaxed">
-              Every scripture Pastor opens, in every message.
-            </p>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-brand-navy text-white flex items-center justify-center flex-shrink-0">
-            <BookMarked className="w-6 h-6" />
-          </div>
-        </div>
       </section>
 
       {/* ── Declaration of the day ── */}

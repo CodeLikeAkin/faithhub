@@ -10,6 +10,7 @@ const navLinks = [
   { name: "Home", href: "/" },
   { name: "Declarations", href: "/declarations" },
   { name: "Series Study", href: "/series" },
+  { name: "The Word", href: "/word" },
 ];
 
 export default function Navbar() {
