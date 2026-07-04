@@ -383,16 +383,16 @@ export default function SeriesDetailPage() {
   const heroThumb = sermons[0]?.youtube_video_id;
 
   return (
-    <main className="flex flex-col md:flex-row h-screen bg-[#F7FAFD] text-[#17233B] selection:bg-[#173A68] selection:text-white overflow-hidden">
+    <main className="flex flex-col md:flex-row h-[100dvh] bg-[#F7FAFD] text-[#17233B] selection:bg-[#173A68] selection:text-white overflow-hidden">
       {/* LEFT PANEL - Sermon List */}
-      <aside className="w-full md:w-[280px] flex flex-col border-r border-[#173A68]/10 bg-white overflow-hidden">
-        <div className="p-6 border-b border-[#173A68]/10">
-          <Link href="/series" className="flex items-center gap-2 text-xs font-bold text-[#173A68] hover:translate-x-[-2px] transition-all mb-4">
+      <aside className="w-full md:w-[280px] flex flex-col shrink-0 max-h-[38vh] md:max-h-none border-b md:border-b-0 md:border-r border-[#173A68]/10 bg-white overflow-hidden">
+        <div className="p-4 sm:p-6 border-b border-[#173A68]/10">
+          <Link href="/series" className="flex items-center gap-2 text-xs font-bold text-[#173A68] hover:translate-x-[-2px] transition-all mb-3 sm:mb-4">
             <ArrowLeft size={14} /> Back to Browse
           </Link>
-          <h2 className="text-lg font-black text-[#17233B] leading-tight">{series.title}</h2>
+          <h2 className="text-base sm:text-lg font-black text-[#17233B] leading-tight">{series.title}</h2>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 custom-scrollbar">
           {sermons.map((sermon) => (
             <div key={sermon.id} className="p-4 bg-[#F0F5FB] border border-[#173A68]/10 rounded-xl hover:border-[#173A68]/30 transition-all group">
               <div className="flex items-center justify-between mb-2">
@@ -430,7 +430,7 @@ export default function SeriesDetailPage() {
       </aside>
 
       {/* CENTER PANEL - Chat */}
-      <section className="flex-1 flex flex-col bg-white relative overflow-hidden">
+      <section className="flex-1 min-h-0 flex flex-col bg-white relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute -top-[10%] -right-[5%] w-[45%] h-[45%] rounded-full bg-[#173A68] opacity-[0.03] blur-[100px]" />
           <div className="absolute bottom-[10%] -left-[5%] w-[35%] h-[35%] rounded-full bg-[#173A68] opacity-[0.02] blur-[80px]" />
@@ -443,7 +443,7 @@ export default function SeriesDetailPage() {
             style={{ backgroundImage: `url(${heroThumb ? `https://img.youtube.com/vi/${heroThumb}/maxresdefault.jpg` : ""})` }}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white" />
-          <div className="relative z-10 h-full flex flex-col justify-end px-8 py-4">
+          <div className="relative z-10 h-full flex flex-col justify-end px-5 sm:px-8 py-4">
             <div className="flex items-center gap-3 mb-2">
               <span className="px-2 py-0.5 bg-[#173A68] text-white rounded text-[9px] font-black uppercase tracking-wider">
                 {series.service_type || "Series"}
@@ -462,7 +462,7 @@ export default function SeriesDetailPage() {
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-8 space-y-8 custom-scrollbar">
           {/* Summary as first message */}
           <div className="flex flex-col items-start mb-6 w-full">
             <div className="flex justify-start w-full">
@@ -557,13 +557,13 @@ export default function SeriesDetailPage() {
         </div>
 
         {/* Chat Input */}
-        <div className="p-8 shrink-0">
+        <div className="p-4 sm:p-8 shrink-0">
           <div className="max-w-4xl mx-auto">
             <div className="relative flex items-center bg-white border border-[#C9D6E7] rounded-3xl focus-within:border-[#173A68]/60 focus-within:shadow-[0_0_0_3px_rgba(23,58,104,0.08)] transition-all px-4 py-2">
               <input
                 type="text"
                 placeholder="Ask about this series..."
-                className="w-full bg-transparent border-none outline-none py-2 px-2 text-sm text-[#17233B] placeholder:text-[#9AA6B6]"
+                className="w-full bg-transparent border-none outline-none py-2 px-2 text-base sm:text-sm text-[#17233B] placeholder:text-[#9AA6B6]"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}

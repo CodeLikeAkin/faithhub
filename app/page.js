@@ -4,6 +4,7 @@ import {
   Sparkles,
   BookOpen,
   BookMarked,
+  Quote,
   ArrowRight,
   ArrowUpRight,
   Check,
@@ -13,22 +14,29 @@ import DeclarationOfTheDay from "@/components/DeclarationOfTheDay";
 const entryCards = [
   {
     index: "01",
-    title: "Faith Declarations",
-    desc: "Speak the Word Pastor has actually spoken over your situation.",
-    href: "/declarations",
+    title: "Ask the Word",
+    desc: "One question, answered from across every message — with moments to watch.",
+    href: "/ask",
     icon: Sparkles,
   },
   {
     index: "02",
+    title: "Faith Declarations",
+    desc: "Speak the Word God has actually spoken over your situation.",
+    href: "/declarations",
+    icon: Quote,
+  },
+  {
+    index: "03",
     title: "Study Series",
     desc: "Ask any series questions — answers grounded in the transcripts.",
     href: "/series",
     icon: BookOpen,
   },
   {
-    index: "03",
+    index: "04",
     title: "The Word",
-    desc: "Every scripture Pastor opens, mapped across every message.",
+    desc: "Every scripture Dad opens, mapped across every message.",
     href: "/word",
     icon: BookMarked,
   },
@@ -107,7 +115,7 @@ export default function Home() {
       </section>
 
       {/* ── Entry cards ── */}
-      <section className="mx-auto max-w-[1400px] px-4 sm:px-6 mt-5 sm:mt-6 grid sm:grid-cols-3 gap-4">
+      <section className="mx-auto max-w-[1400px] px-4 sm:px-6 mt-5 sm:mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {entryCards.map((card) => (
           <Link
             key={card.index}

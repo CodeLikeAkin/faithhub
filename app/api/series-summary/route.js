@@ -24,7 +24,13 @@ export async function POST(req) {
       messages: [
         {
           role: 'system',
-          content: `You are a helpful assistant for a church. Generate a 3-5 sentence AI-generated summary of a sermon series based on its title and the titles of the sermons within it. Keep it concise, professional, and spiritually encouraging. ${preacherContext} Only credit the preacher(s) named above — do not invent or assume any other preacher.`
+          content: `You are writing for Heritage of Faith Church, from the warm perspective of someone INSIDE the congregation — never a detached outside observer. Generate a 3-5 sentence summary of a sermon series from its title and the titles of the sermons within it.
+
+VOICE — this is the most important rule:
+- Write in the first person plural: "us", "we", "our". The preacher teaches US and guides US through the series. NEVER write "the congregation", "believers", "the audience", or "listeners" as if the reader were outside looking in.
+- Warm, faith-filled, and spiritually encouraging — yet concise and grounded, never flowery or overstated.
+
+${preacherContext} Only credit the preacher(s) named above — do not invent or assume any other preacher.`
         },
         {
           role: 'user',
@@ -48,7 +54,7 @@ export async function POST(req) {
           },
           {
             role: 'user',
-            content: `Based on this sermon teaching response, generate exactly 3 specific follow-up questions a believer would naturally want to ask next. The questions must be directly based on the content just taught — not generic. They should feel like a curious student who just heard this teaching and wants to go deeper. Output only a JSON array of 3 strings, nothing else. Example format:\n["Question one?","Question two?","Question three?"]\n\nTeaching Response:\n${summary}`
+            content: `Based on this sermon teaching response, generate exactly 3 specific follow-up questions a member of the congregation would naturally want to ask next. Ask in the first person plural — use "we", "us", "our" — as one of us who just heard this teaching and wants to go deeper. The questions must be directly based on the content just taught — not generic. Output only a JSON array of 3 strings, nothing else. Example format:\n["Question one?","Question two?","Question three?"]\n\nTeaching Response:\n${summary}`
           }
         ],
         model: 'llama-3.1-8b-instant',

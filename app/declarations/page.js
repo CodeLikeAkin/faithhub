@@ -265,7 +265,8 @@ export default function DeclarationsPage() {
       <style>{`
         /* ── Layout ────────────────────────────────────────────────────────── */
         .decl-page {
-          min-height: 100vh;
+          height: 100vh;      /* fallback for browsers without dvh */
+          height: 100dvh;     /* tracks mobile browser chrome + keyboard */
           background: #F7FAFD;
           display: flex;
           flex-direction: column;

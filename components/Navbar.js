@@ -8,6 +8,7 @@ import { Menu, X, ArrowRight } from "lucide-react";
 
 const navLinks = [
   { name: "Home", href: "/" },
+  { name: "Ask", href: "/ask" },
   { name: "Declarations", href: "/declarations" },
   { name: "Series Study", href: "/series" },
   { name: "The Word", href: "/word" },
@@ -21,6 +22,7 @@ export default function Navbar() {
   const hidden =
     pathname === "/declarations" ||
     pathname === "/admin" ||
+    pathname === "/ask" ||
     /^\/series\/.+/.test(pathname);
   if (hidden) return null;
 

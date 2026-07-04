@@ -172,7 +172,7 @@ export default function WordPage() {
               Every scripture, in every message.
             </h1>
             <p className="mt-3 text-brand-gray max-w-xl leading-relaxed">
-              A living concordance of Rev. Peter&apos;s teaching. Every passage
+              A living concordance of Dad&apos;s teaching. Every passage
               he opens is mapped here — see what he returns to most, then trace
               any book to the messages that unpack it.
             </p>
