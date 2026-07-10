@@ -246,7 +246,8 @@ QUESTION: ${message}`;
 
     // 6. Stream the answer, SEGMENT_MAP header first (same wire format as chat).
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      // "-latest" alias — gemini-2.5-flash was retired (404) in mid-2026.
+      model: 'gemini-flash-latest',
       systemInstruction: systemPrompt,
     });
 

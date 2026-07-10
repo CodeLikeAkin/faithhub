@@ -1,136 +1,111 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import {
-  ArrowLeft,
-  Play,
-  Calendar,
-  List,
-  Send,
-  Loader2,
-  MessageSquare,
-  Sparkles,
-  Quote,
-  BookOpen
-} from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Play, Loader2, Quote } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import ReactMarkdown from "react-markdown";
+import { cleanTitle } from "@/lib/titles";
+import { fetchPassage } from "@/lib/bible";
+import StudyChat from "@/components/StudyChat";
+
+/**
+ * Series studio — three zones, same grammar as Ask the Word.
+ * Left: the parts timeline (one row per part; click opens that message's own
+ * page with its verses, notes and declarations — hover for Watch). Center:
+ * the study thread (StudyChat), always grounded in the WHOLE series. Right
+ * (wide screens): "Series at a glance" — the key verses of the series
+ * (tap to read) and key declarations.
+ */
 
 // ─────────────────────────────────────────────────────────
-// CitationBadge — renders [N] as a clickable YouTube link
+// KeyVerses — the series' most-read verses, tap to read
 // ─────────────────────────────────────────────────────────
-const CitationBadge = ({ num, segmentMap }) => {
-  const seg = segmentMap?.[num];
-  if (!seg?.video_id) return <sup className="text-gray-400 text-[9px]">[{num}]</sup>;
+const KeyVerses = ({ verses }) => {
+  const [openRef, setOpenRef] = useState(null);
+  const [texts, setTexts] = useState({}); // reference -> {loading}|{verses,translation}|{error}
 
-  const url = `https://youtube.com/watch?v=${seg.video_id}&t=${seg.start_seconds}s`;
-  return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      title={`"${seg.text}" — ${seg.sermon_title}`}
-      className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#173A68]/10 border border-[#173A68]/20 text-[9px] font-bold text-[#5A6B82] hover:text-white hover:border-[#173A68] hover:bg-[#173A68] transition-all ml-0.5 -translate-y-0.5 cursor-pointer no-underline"
-    >
-      {num}
-    </a>
-  );
-};
-
-// ─────────────────────────────────────────────────────────
-// renderRichAIResponse — parses [N] citations and markdown
-// No sources panel. Citations are inline clickable badges.
-// ─────────────────────────────────────────────────────────
-const RichAIResponse = ({ text, segmentMap }) => {
-  // Replace [N] and [N,M] patterns with special markers for ReactMarkdown
-  const processCitations = (content) => {
-    // Match [1], [2,3], [1][2] patterns
-    return content.replace(/(\[\d+\](?:\[\d+\])*|\[\d+(?:,\s*\d+)+\])/g, (match) => {
-      const nums = [...match.matchAll(/\d+/g)].map(m => m[0]);
-      return nums.map(n => `[[CIT:${n}]]`).join('');
+  const toggle = async (v) => {
+    if (openRef === v.reference) {
+      setOpenRef(null);
+      return;
+    }
+    setOpenRef(v.reference);
+    if (texts[v.reference]) return;
+    setTexts((t) => ({ ...t, [v.reference]: { loading: true } }));
+    const passage = await fetchPassage({
+      book: v.book,
+      bookId: v.book_id,
+      chapter: v.chapter,
+      verseStart: v.verse_start,
+      verseEnd: v.verse_end,
     });
+    setTexts((t) => ({
+      ...t,
+      [v.reference]: passage
+        ? { verses: passage.verses, translation: passage.translation }
+        : { error: true },
+    }));
   };
 
-  const processedText = processCitations(text);
-
-  // Split on citation markers and render
-  const renderWithCitations = (str) => {
-    const parts = str.split(/(\[\[CIT:\d+\]\])/g);
-    return parts.map((part, i) => {
-      const citMatch = part.match(/\[\[CIT:(\d+)\]\]/);
-      if (citMatch) {
-        return <CitationBadge key={i} num={citMatch[1]} segmentMap={segmentMap} />;
-      }
-      return part;
-    });
-  };
+  const open = verses.find((v) => v.reference === openRef);
+  const vt = open ? texts[open.reference] : null;
 
   return (
-    <div className="text-[15px] leading-relaxed text-[#2A3A55]">
-      <ReactMarkdown
-        components={{
-          strong: ({ node, children, ...props }) => (
-            <strong className="text-[#17233B] font-semibold" {...props}>{children}</strong>
-          ),
-          em: ({ node, children, ...props }) => (
-            <em className="text-[#4A5E7C] italic" {...props}>{children}</em>
-          ),
-          ul: ({ node, ...props }) => (
-            <ul className="list-disc pl-5 space-y-1.5 my-3" {...props} />
-          ),
-          ol: ({ node, ...props }) => (
-            <ol className="list-decimal pl-5 space-y-1.5 my-3" {...props} />
-          ),
-          li: ({ node, children, ...props }) => (
-            <li className="text-[#2A3A55]" {...props}>
-              {typeof children === 'string'
-                ? renderWithCitations(children)
-                : children}
-            </li>
-          ),
-          p: ({ node, children, ...props }) => (
-            <p className="mb-3 last:mb-0" {...props}>
-              {typeof children === 'string'
-                ? renderWithCitations(children)
-                : Array.isArray(children)
-                  ? children.map((child, i) =>
-                    typeof child === 'string' ? renderWithCitations(child) : child
-                  )
-                  : children}
-            </p>
-          ),
-          h1: ({ node, ...props }) => (
-            <h1 className="text-[#17233B] text-lg font-bold mt-5 mb-2" {...props} />
-          ),
-          h2: ({ node, ...props }) => (
-            <h2 className="text-[#17233B] text-base font-bold mt-4 mb-2" {...props} />
-          ),
-          h3: ({ node, ...props }) => (
-            <h3 className="text-[#17233B] text-sm font-bold mt-3 mb-1.5" {...props} />
-          ),
-          // Suppress any raw links Gemini might output
-          a: ({ node, children, href, ...props }) => {
-            if (typeof children?.[0] === 'string' && children[0].startsWith('CIT:')) {
-              return null;
-            }
-            return (
-              <a
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#173A68] font-medium hover:underline"
-                {...props}
+    <div>
+      <div className="flex flex-wrap gap-1.5">
+        {verses.map((v) => (
+          <button
+            key={v.reference}
+            onClick={() => toggle(v)}
+            aria-expanded={openRef === v.reference}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11.5px] font-bold transition-colors ${
+              openRef === v.reference
+                ? "bg-brand-navy text-white border-brand-navy"
+                : "bg-brand-sky text-brand-navy border-brand-navy/10 hover:border-brand-navy/40"
+            }`}
+          >
+            {v.reference}
+            {v.count > 1 && (
+              <span
+                className={`text-[10px] font-semibold ${
+                  openRef === v.reference ? "text-white/70" : "text-brand-navy/50"
+                }`}
               >
-                {children}
-              </a>
-            );
-          },
-        }}
-      >
-        {processedText}
-      </ReactMarkdown>
+                ×{v.count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+      {open && (
+        <div className="mt-2.5 rounded-r-xl rounded-l-md border border-brand-navy/10 border-l-[3px] border-l-brand-navy bg-gradient-to-br from-brand-sky/60 to-white px-3.5 py-3">
+          {vt?.loading && (
+            <span className="flex items-center gap-2 text-xs text-brand-gray">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              Loading verse…
+            </span>
+          )}
+          {vt?.error && (
+            <p className="text-xs text-brand-gray italic">
+              Couldn&apos;t load this verse right now.
+            </p>
+          )}
+          {vt?.verses && (
+            <p className="text-[13px] leading-relaxed text-brand-ink">
+              {vt.verses.map((v) => (
+                <span key={v.number}>
+                  <sup className="text-brand-navy/50 font-bold mr-0.5">{v.number}</sup>
+                  {v.text}{" "}
+                </span>
+              ))}
+              <span className="block mt-1 text-[10px] uppercase tracking-wider text-brand-gray">
+                {open.reference} · {vt.translation}
+              </span>
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 };
@@ -143,25 +118,11 @@ export default function SeriesDetailPage() {
   const [series, setSeries] = useState(null);
   const [sermons, setSermons] = useState([]);
   const [declarations, setDeclarations] = useState([]);
+  const [scriptureStats, setScriptureStats] = useState(null); // { total, top: [...] }
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState("");
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summarySuggestions, setSummarySuggestions] = useState([]);
-  const [summarySuggestionsHidden, setSummarySuggestionsHidden] = useState(false);
-
-  const [chatInput, setChatInput] = useState("");
-  const [chatHistory, setChatHistory] = useState([]);
-  const [chatLoading, setChatLoading] = useState(false);
-  const chatBottomRef = useRef(null);
-  const userMessageRefs = useRef({});
-  const [thinkingStep, setThinkingStep] = useState(0);
-
-  const thinkingMessages = [
-    "Searching the sermons...",
-    "Reading Rev. Peter's teaching...",
-    "Finding the right moment...",
-    "Preparing your answer..."
-  ];
 
   useEffect(() => {
     if (id) fetchSeriesData();
@@ -176,7 +137,8 @@ export default function SeriesDetailPage() {
     try {
       const { data, error } = await supabase
         .from("series")
-        .select(`
+        .select(
+          `
           *,
           series_sermons (
             part_number,
@@ -184,7 +146,8 @@ export default function SeriesDetailPage() {
               id, title, sermon_date, youtube_video_id, youtube_url, transcript, summary
             )
           )
-        `)
+        `
+        )
         .eq("id", id)
         .single();
 
@@ -193,16 +156,47 @@ export default function SeriesDetailPage() {
         setSeries(data);
         const sortedSermons = data.series_sermons
           .sort((a, b) => a.part_number - b.part_number)
-          .map(ss => ({ ...ss.sermons, part_number: ss.part_number }));
+          .map((ss) => ({ ...ss.sermons, part_number: ss.part_number }));
         setSermons(sortedSermons);
 
-        const sermonIds = sortedSermons.map(s => s.id);
-        const { data: decls } = await supabase
-          .from('declarations')
-          .select('*')
-          .in('sermon_id', sermonIds)
-          .limit(3);
+        const sermonIds = sortedSermons.map((s) => s.id);
+        const wantRefs = !Array.isArray(data.key_verses) || !data.key_verses.length;
+        const [{ data: decls }, refsRes] = await Promise.all([
+          supabase
+            .from("declarations")
+            .select("id, declaration_text, youtube_url_with_timestamp")
+            .in("sermon_id", sermonIds)
+            .limit(50),
+          // Stored key verses win; only aggregate live when absent.
+          wantRefs
+            ? supabase
+                .from("sermon_scriptures")
+                .select("reference, book, book_id, chapter, verse_start, verse_end")
+                .in("sermon_id", sermonIds)
+            : Promise.resolve({ data: null }),
+        ]);
         setDeclarations(decls || []);
+
+        if (!wantRefs) {
+          setScriptureStats({
+            total: data.key_verses_total ?? null,
+            top: data.key_verses,
+          });
+        } else if (refsRes.data?.length) {
+          // Key verses = the exact references read most often across the series.
+          const counts = new Map();
+          for (const r of refsRes.data) {
+            const cur = counts.get(r.reference);
+            if (cur) cur.count += 1;
+            else counts.set(r.reference, { ...r, count: 1 });
+          }
+          const top = [...counts.values()]
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 6);
+          setScriptureStats({ total: refsRes.data.length, top });
+        } else {
+          setScriptureStats({ total: 0, top: [] });
+        }
       }
     } catch (err) {
       console.error("Error fetching series details:", err);
@@ -213,15 +207,23 @@ export default function SeriesDetailPage() {
 
   const generateSeriesSummary = async () => {
     if (summary) return;
+    // Stored summary → zero tokens. The API generates + saves only when missing.
+    if (series.study_summary) {
+      setSummary(series.study_summary);
+      if (Array.isArray(series.suggested_questions))
+        setSummarySuggestions(series.suggested_questions);
+      return;
+    }
     setSummaryLoading(true);
     try {
       const res = await fetch("/api/series-summary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          seriesId: id,
           title: series.title,
-          sermonTitles: sermons.map(s => s.title)
-        })
+          sermonTitles: sermons.map((s) => s.title),
+        }),
       });
       const data = await res.json();
       setSummary(data.summary);
@@ -231,126 +233,6 @@ export default function SeriesDetailPage() {
     } finally {
       setSummaryLoading(false);
     }
-  };
-
-  const handleSendMessage = async (textToSubmit, sourceMessageId = null) => {
-    const actualText = typeof textToSubmit === 'string' ? textToSubmit : chatInput;
-    if (!actualText.trim() || chatLoading) return;
-
-    const messageId = Date.now();
-    const userMessage = { id: messageId, role: "user", text: actualText };
-
-    if (sourceMessageId === 'summary') {
-      setSummarySuggestionsHidden(true);
-      setTimeout(() => setSummarySuggestions([]), 200);
-    } else if (sourceMessageId) {
-      setChatHistory(prev => prev.map(m =>
-        m.id === sourceMessageId ? { ...m, suggestionsHidden: true } : m
-      ));
-      setTimeout(() => {
-        setChatHistory(prev => prev.map(m =>
-          m.id === sourceMessageId ? { ...m, suggestions: [] } : m
-        ));
-      }, 200);
-    }
-
-    if (typeof textToSubmit !== 'string' || textToSubmit === chatInput) {
-      setChatInput("");
-    }
-
-    const aiMessageId = messageId + 1;
-    const aiMessage = { id: aiMessageId, role: "ai", text: "", isThinking: true, segmentMap: {} };
-
-    setChatHistory(prev => [...prev, userMessage, aiMessage]);
-    setChatLoading(true);
-    setThinkingStep(0);
-
-    const thinkingInterval = setInterval(() => {
-      setThinkingStep(prev => (prev + 1) % thinkingMessages.length);
-    }, 2000);
-
-    setTimeout(() => {
-      userMessageRefs.current[messageId]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-
-    try {
-      const historyToSend = chatHistory.map(m => ({ role: m.role, text: m.text }));
-      const res = await fetch("/api/series-chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          seriesId: id,
-          message: userMessage.text,
-          chatHistory: historyToSend
-        })
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || "I encountered an error.");
-      }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let aiText = "";
-      let segmentMap = {};
-      let firstChunk = true;
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        aiText += chunk;
-
-        // Extract SEGMENT_MAP from first line
-        if (firstChunk) {
-          firstChunk = false;
-          const mapMatch = aiText.match(/^SEGMENT_MAP:(.+)\n/);
-          if (mapMatch) {
-            try {
-              segmentMap = JSON.parse(mapMatch[1]);
-              aiText = aiText.replace(/^SEGMENT_MAP:.+\n/, '');
-            } catch (e) {
-              console.error('Failed to parse segment map', e);
-            }
-          }
-          clearInterval(thinkingInterval);
-        }
-
-        // Extract SUGGESTIONS from end
-        let displayText = aiText;
-        let aiSuggestions = [];
-        const suggestionsIndex = aiText.lastIndexOf("SUGGESTIONS:");
-        if (suggestionsIndex !== -1) {
-          displayText = aiText.substring(0, suggestionsIndex).trim();
-          const suggestionsStr = aiText.substring(suggestionsIndex + "SUGGESTIONS:".length).trim();
-          try {
-            aiSuggestions = JSON.parse(suggestionsStr);
-          } catch (e) { }
-        }
-
-        setChatHistory(prev => prev.map(m =>
-          m.id === aiMessageId
-            ? { ...m, text: displayText, suggestions: aiSuggestions, isThinking: false, segmentMap }
-            : m
-        ));
-      }
-    } catch (err) {
-      console.error("Chat error:", err);
-      setChatHistory(prev => [...prev, {
-        id: Date.now() + 1, role: "ai",
-        text: `I encountered an error: ${err.message}`,
-        segmentMap: {}
-      }]);
-    } finally {
-      setChatLoading(false);
-      clearInterval(thinkingInterval);
-    }
-  };
-
-  const handleSuggestionClick = (question, sourceMessageId) => {
-    handleSendMessage(question, sourceMessageId);
   };
 
   const formatDateRange = (start, end) => {
@@ -363,259 +245,234 @@ export default function SeriesDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F7FAFD] flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-[#173A68] animate-spin" />
+      <div className="min-h-screen bg-brand-light flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-brand-navy animate-spin" />
       </div>
     );
   }
 
   if (!series) {
     return (
-      <div className="min-h-screen bg-[#F7FAFD] flex flex-col items-center justify-center p-6 text-center">
-        <h1 className="text-2xl font-bold text-[#17233B] mb-4">Series not found</h1>
-        <Link href="/series" className="text-[#173A68] font-bold hover:underline flex items-center gap-2">
+      <div className="min-h-screen bg-brand-light flex flex-col items-center justify-center p-6 text-center">
+        <h1 className="text-2xl font-bold text-brand-ink mb-4">Series not found</h1>
+        <Link
+          href="/series"
+          className="text-brand-navy font-bold hover:underline flex items-center gap-2"
+        >
           <ArrowLeft size={18} /> Back to Browse
         </Link>
       </div>
     );
   }
 
-  const heroThumb = sermons[0]?.youtube_video_id;
+  const shownDecls = declarations.slice(0, 3);
 
   return (
-    <main className="flex flex-col md:flex-row h-[100dvh] bg-[#F7FAFD] text-[#17233B] selection:bg-[#173A68] selection:text-white overflow-hidden">
-      {/* LEFT PANEL - Sermon List */}
-      <aside className="w-full md:w-[280px] flex flex-col shrink-0 max-h-[38vh] md:max-h-none border-b md:border-b-0 md:border-r border-[#173A68]/10 bg-white overflow-hidden">
-        <div className="p-4 sm:p-6 border-b border-[#173A68]/10">
-          <Link href="/series" className="flex items-center gap-2 text-xs font-bold text-[#173A68] hover:translate-x-[-2px] transition-all mb-3 sm:mb-4">
-            <ArrowLeft size={14} /> Back to Browse
+    <main className="h-dvh bg-white text-brand-ink flex flex-col lg:grid lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)_300px]">
+      {/* ── Zone 1 · Parts timeline ────────────────────────────────────────── */}
+      <aside className="hidden lg:flex flex-col min-h-0 bg-brand-light border-r border-brand-navy/10">
+        <div className="px-5 pt-5 pb-3">
+          <Link
+            href="/series"
+            className="inline-flex items-center gap-2 text-xs font-bold text-brand-gray hover:text-brand-navy transition-colors"
+          >
+            <ArrowLeft size={13} /> All series
           </Link>
-          <h2 className="text-base sm:text-lg font-black text-[#17233B] leading-tight">{series.title}</h2>
+          <h2 className="mt-3 text-xl font-bold text-brand-ink leading-tight">
+            {series.title}
+          </h2>
+          <p className="mt-1 text-[11.5px] text-brand-gray">
+            {sermons.length} {sermons.length === 1 ? "part" : "parts"} ·{" "}
+            {formatDateRange(series.start_date, series.end_date)}
+          </p>
         </div>
-        <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-          {sermons.map((sermon) => (
-            <div key={sermon.id} className="p-4 bg-[#F0F5FB] border border-[#173A68]/10 rounded-xl hover:border-[#173A68]/30 transition-all group">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-black text-[#173A68] uppercase tracking-tighter bg-[#173A68]/10 px-2 py-0.5 rounded">
-                  Part {sermon.part_number}
-                </span>
-                <span className="text-[10px] text-[#7A7A7A]">
-                  {new Date(sermon.sermon_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                </span>
-              </div>
-              <Link href={`/sermon/${sermon.id}`}>
-                <h3 className="text-sm font-bold text-[#17233B] mb-3 line-clamp-2 leading-snug group-hover:text-[#173A68] transition-colors cursor-pointer">
-                  {sermon.title}
-                </h3>
-              </Link>
-              <div className="flex items-center gap-2">
+
+        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-3 pb-3">
+          <ul className="flex flex-col gap-0.5">
+            {sermons.map((sermon) => (
+              <li key={sermon.id}>
                 <Link
                   href={`/sermon/${sermon.id}`}
-                  className="flex items-center justify-center gap-1.5 flex-1 py-2 bg-[#173A68] text-[11px] font-bold text-white rounded-lg hover:bg-[#102A4E] transition-all"
+                  className="group flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 hover:bg-brand-sky/70 transition-colors"
                 >
-                  <BookOpen size={10} /> Verses
+                  <span className="w-6 h-6 rounded-lg text-[11.5px] font-bold flex items-center justify-center flex-shrink-0 bg-brand-sky text-brand-navy group-hover:bg-brand-navy group-hover:text-white transition-colors">
+                    {sermon.part_number}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[13px] font-bold text-brand-ink leading-snug">
+                      Part {sermon.part_number}
+                    </span>
+                    <span className="block text-[11px] text-brand-gray mt-0.5 line-clamp-1">
+                      {cleanTitle(sermon.title)}
+                      {sermon.sermon_date &&
+                        ` · ${new Date(sermon.sermon_date).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        })}`}
+                    </span>
+                  </span>
+                  <span className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {sermon.youtube_url && (
+                      <a
+                        href={sermon.youtube_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        title="Watch"
+                        className="w-6 h-6 rounded-md border border-brand-navy/15 bg-white text-brand-navy flex items-center justify-center hover:bg-brand-sky"
+                      >
+                        <Play size={9} fill="currentColor" />
+                      </a>
+                    )}
+                    <ArrowUpRight size={13} className="text-brand-navy/50 self-center" />
+                  </span>
                 </Link>
-                <a
-                  href={sermon.youtube_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-1.5 flex-1 py-2 bg-white text-[11px] font-bold text-[#173A68] border border-[#173A68]/15 rounded-lg hover:bg-[#EAF2FB] transition-all"
-                >
-                  <Play size={10} fill="currentColor" /> Watch
-                </a>
-              </div>
-            </div>
-          ))}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="px-5 py-3.5 border-t border-brand-navy/10">
+          <p className="text-[11px] text-brand-gray leading-relaxed">
+            Open a part to read its verses, notes and declarations, and to
+            study that message on its own.
+          </p>
         </div>
       </aside>
 
-      {/* CENTER PANEL - Chat */}
-      <section className="flex-1 min-h-0 flex flex-col bg-white relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-[10%] -right-[5%] w-[45%] h-[45%] rounded-full bg-[#173A68] opacity-[0.03] blur-[100px]" />
-          <div className="absolute bottom-[10%] -left-[5%] w-[35%] h-[35%] rounded-full bg-[#173A68] opacity-[0.02] blur-[80px]" />
-        </div>
-
-        {/* Hero Header */}
-        <div className="relative shrink-0 overflow-hidden border-b border-[#173A68]/10 h-28">
-          <div
-            className="absolute inset-0 bg-cover bg-center opacity-25 blur-sm"
-            style={{ backgroundImage: `url(${heroThumb ? `https://img.youtube.com/vi/${heroThumb}/maxresdefault.jpg` : ""})` }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white" />
-          <div className="relative z-10 h-full flex flex-col justify-end px-5 sm:px-8 py-4">
-            <div className="flex items-center gap-3 mb-2">
-              <span className="px-2 py-0.5 bg-[#173A68] text-white rounded text-[9px] font-black uppercase tracking-wider">
-                {series.service_type || "Series"}
-              </span>
-              <span className="text-[10px] font-bold text-[#5A6B82] flex items-center gap-1">
-                <List size={12} className="text-[#173A68]" />
-                {sermons.length} Parts
-              </span>
-              <span className="text-[10px] font-bold text-[#5A6B82] flex items-center gap-1">
-                <Calendar size={12} className="text-[#173A68]" />
-                {formatDateRange(series.start_date, series.end_date)}
-              </span>
-            </div>
-            <h1 className="text-2xl font-black tracking-tight text-[#17233B]">{series.title}</h1>
+      {/* ── Zone 2 · Study thread ──────────────────────────────────────────── */}
+      <section className="flex flex-col min-h-0 min-w-0 flex-1">
+        {/* Header */}
+        <div className="flex-shrink-0 border-b border-brand-navy/10 bg-gradient-to-br from-brand-sky/50 to-white px-4 sm:px-7 pt-4 pb-3.5">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Link href="/series" className="lg:hidden text-brand-gray hover:text-brand-navy">
+              <ArrowLeft size={16} />
+            </Link>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-brand-ink">
+              {series.title}
+            </h1>
+            <span className="px-2.5 py-1 bg-brand-navy/10 border border-brand-navy/15 text-brand-navy rounded-full text-[9.5px] font-bold uppercase tracking-wider">
+              Grounded in all {sermons.length} parts
+            </span>
           </div>
-        </div>
-
-        {/* Chat Area */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-8 space-y-8 custom-scrollbar">
-          {/* Summary as first message */}
-          <div className="flex flex-col items-start mb-6 w-full">
-            <div className="flex justify-start w-full">
-              <div className="flex gap-4 max-w-[90%] md:max-w-[80%]">
-                <div className="w-8 h-8 rounded-lg bg-[#173A68]/10 border border-[#173A68]/25 flex-shrink-0 flex items-center justify-center mt-1">
-                  <Sparkles size={14} className="text-[#173A68]" />
-                </div>
-                <div className="w-full text-[15px] text-[#2A3A55] leading-relaxed">
-                  {summaryLoading ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 size={14} className="animate-spin text-[#173A68]" />
-                      Generating series insights...
-                    </span>
-                  ) : (
-                    <ReactMarkdown
-                      components={{
-                        strong: ({ node, ...props }) => <strong className="text-[#17233B] font-semibold" {...props} />,
-                        p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />
-                      }}
-                    >
-                      {summary || "Explore the deep teachings of this series through AI study."}
-                    </ReactMarkdown>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {!summaryLoading && summarySuggestions.length > 0 && (
-              <div className={`flex flex-col gap-2 mt-4 w-full pl-12 transition-opacity duration-200 ${summarySuggestionsHidden ? 'opacity-0' : 'opacity-100'}`}>
-                {summarySuggestions.map((question, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleSuggestionClick(question, 'summary')}
-                    className="w-fit max-w-[80%] text-left text-sm px-4 py-2 rounded-xl bg-[#EAF2FB] text-[#173A68] hover:bg-[#D9E7F5] transition-colors cursor-pointer"
-                  >
-                    {question}
-                  </button>
-                ))}
-              </div>
+          <div className="mt-1.5 text-[13px] text-brand-gray leading-relaxed max-w-2xl">
+            {summaryLoading ? (
+              <span className="flex items-center gap-2">
+                <Loader2 size={12} className="animate-spin text-brand-navy" />
+                Reading the series…
+              </span>
+            ) : (
+              <p className="line-clamp-2">
+                {summary || "Ask anything — every answer is grounded in these messages."}
+              </p>
             )}
           </div>
 
-          {/* Chat messages */}
-          {chatHistory.map((msg, i) => (
-            <div
-              key={msg.id || i}
-              ref={el => { if (msg.role === 'user') userMessageRefs.current[msg.id] = el; }}
-              className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"} mb-6`}
-            >
-              <div className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} w-full`}>
-                <div className={`w-full ${msg.role === "user" ? "flex justify-end" : "flex gap-4 max-w-[90%] md:max-w-[80%]"}`}>
-                  {msg.role === "ai" && (
-                    <div className="w-8 h-8 rounded-lg bg-[#173A68]/10 border border-[#173A68]/25 flex-shrink-0 flex items-center justify-center mt-1">
-                      <MessageSquare size={14} className="text-[#173A68]" />
-                    </div>
-                  )}
-                  <div className={
-                    msg.role === "user"
-                      ? "bg-[#173A68] text-sm text-white rounded-2xl px-4 py-2 max-w-[70%]"
-                      : "w-full text-[15px] text-[#2A3A55] leading-relaxed"
-                  }>
-                    {msg.role === "ai" && msg.isThinking ? (
-                      <div className="flex items-center gap-3 text-[#5A6B82] bg-[#F0F5FB] rounded-2xl px-4 py-2 border border-[#173A68]/10 animate-in fade-in duration-500">
-                        <Loader2 size={14} className="animate-spin text-[#173A68]" />
-                        <span className="text-sm italic font-medium">{thinkingMessages[thinkingStep]}</span>
-                      </div>
-                    ) : msg.role === "ai" ? (
-                      <RichAIResponse text={msg.text} segmentMap={msg.segmentMap || {}} />
-                    ) : (
-                      msg.text
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {msg.suggestions && msg.suggestions.length > 0 && (
-                <div className={`flex flex-col gap-2 mt-4 w-full pl-12 transition-opacity duration-200 ${msg.suggestionsHidden ? 'opacity-0' : 'opacity-100'}`}>
-                  {msg.suggestions.map((question, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => handleSuggestionClick(question, msg.id)}
-                      className="w-fit max-w-[80%] text-left text-sm px-4 py-2 rounded-xl bg-[#EAF2FB] text-[#173A68] hover:bg-[#D9E7F5] transition-colors cursor-pointer"
-                    >
-                      {question}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-          <div ref={chatBottomRef} />
-        </div>
-
-        {/* Chat Input */}
-        <div className="p-4 sm:p-8 shrink-0">
-          <div className="max-w-4xl mx-auto">
-            <div className="relative flex items-center bg-white border border-[#C9D6E7] rounded-3xl focus-within:border-[#173A68]/60 focus-within:shadow-[0_0_0_3px_rgba(23,58,104,0.08)] transition-all px-4 py-2">
-              <input
-                type="text"
-                placeholder="Ask about this series..."
-                className="w-full bg-transparent border-none outline-none py-2 px-2 text-base sm:text-sm text-[#17233B] placeholder:text-[#9AA6B6]"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-              />
-              <button
-                onClick={handleSendMessage}
-                disabled={!chatInput.trim() || chatLoading}
-                className="p-2 text-[#5A6B82] hover:text-[#173A68] transition-colors disabled:opacity-30"
+          {/* Mobile part chips — open the message page */}
+          <div className="lg:hidden mt-3 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {sermons.map((sermon) => (
+              <Link
+                key={sermon.id}
+                href={`/sermon/${sermon.id}`}
+                className="flex-shrink-0 rounded-full border px-3 py-1.5 text-[11.5px] font-bold bg-white text-brand-navy border-brand-navy/15 hover:bg-brand-sky transition-colors"
               >
-                <Send size={16} />
-              </button>
-            </div>
+                Part {sermon.part_number}
+              </Link>
+            ))}
           </div>
         </div>
+
+        <StudyChat
+          seriesId={id}
+          openers={summarySuggestions}
+          placeholder="Ask about this series…"
+          hint={`Answers come only from these ${sermons.length} messages — every claim is cited.`}
+          emptyNote="Ask anything about this series — the exact moments behind each answer come with it."
+        />
       </section>
 
-      {/* RIGHT PANEL - Key Declarations */}
-      <aside className="hidden lg:flex w-[260px] flex-col border-l border-[#173A68]/10 bg-white overflow-y-auto custom-scrollbar">
-        <div className="p-6 space-y-8">
-          <section>
-            <h3 className="text-xs font-black uppercase tracking-widest text-[#7A7A7A] mb-4 flex items-center gap-2">
-              <Quote size={12} className="text-[#173A68]" />
-              Key Declarations
-            </h3>
-            <div className="space-y-4">
-              {declarations.length > 0 ? (
-                declarations.map((decl) => (
-                  <div key={decl.id} className="p-4 bg-[#F0F5FB] border border-[#173A68]/10 rounded-2xl relative group">
-                    <div className="absolute -top-2 -left-2 w-6 h-6 bg-[#EAF2FB] rounded-lg flex items-center justify-center border border-[#173A68]/25">
-                      <Quote size={10} className="text-[#173A68]" />
-                    </div>
-                    <p className="text-[11px] text-[#2A3A55] leading-relaxed mb-4 pt-2">
-                      "{decl.declaration_text}"
-                    </p>
-                    <a
-                      href={decl.youtube_url_with_timestamp}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 text-[9px] font-bold text-[#173A68] hover:underline"
-                    >
-                      <Play size={8} fill="currentColor" />
-                      Watch moment
-                    </a>
-                  </div>
-                ))
-              ) : (
-                <p className="text-[10px] text-[#9AA6B6] text-center py-4">
-                  No declarations extracted for this series yet.
+      {/* ── Zone 3 · Series at a glance ────────────────────────────────────── */}
+      <aside className="hidden xl:flex flex-col min-h-0 bg-brand-light border-l border-brand-navy/10 overflow-y-auto custom-scrollbar">
+        <div className="p-4 space-y-3.5">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-gray px-1">
+            Series at a glance
+          </p>
+
+          <div className="flex gap-2.5">
+            {[
+              [sermons.length, sermons.length === 1 ? "part" : "parts"],
+              [scriptureStats?.total ?? "–", "scriptures"],
+              [declarations.length, "declarations"],
+            ].map(([n, label]) => (
+              <div
+                key={label}
+                className="flex-1 rounded-xl border border-brand-navy/10 bg-white py-2.5 text-center"
+              >
+                <p className="text-lg font-bold text-brand-ink tabular-nums leading-tight">
+                  {n}
                 </p>
-              )}
+                <p className="text-[9.5px] font-bold uppercase tracking-wider text-brand-gray">
+                  {label}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {scriptureStats?.top?.length > 0 && (
+            <div className="rounded-2xl border border-brand-navy/10 bg-white p-4">
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand-gray mb-1">
+                Key verses in this series
+              </h3>
+              <p className="text-[10.5px] text-brand-gray mb-3">
+                The verses Rev. Peter returned to most — tap to read.
+              </p>
+              <KeyVerses verses={scriptureStats.top} />
+              <Link
+                href="/word"
+                className="mt-3 inline-flex items-center gap-1 text-[11.5px] font-bold text-brand-navy hover:underline"
+              >
+                See all in The Word <ArrowUpRight size={11} />
+              </Link>
             </div>
-          </section>
+          )}
+
+          <div className="rounded-2xl border border-brand-navy/10 bg-white p-4">
+            <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand-gray mb-3 flex items-center gap-1.5">
+              <Quote size={11} className="text-brand-navy" />
+              Key declarations
+            </h3>
+            {shownDecls.length > 0 ? (
+              <div className="space-y-4">
+                {shownDecls.map((decl) => (
+                  <div key={decl.id}>
+                    <p className="text-[12.5px] italic text-brand-ink leading-relaxed">
+                      &ldquo;{decl.declaration_text}&rdquo;
+                    </p>
+                    {decl.youtube_url_with_timestamp && (
+                      <a
+                        href={decl.youtube_url_with_timestamp}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-1 inline-flex items-center gap-1.5 text-[10.5px] font-bold text-brand-navy hover:underline"
+                      >
+                        <Play size={8} fill="currentColor" />
+                        Watch moment
+                      </a>
+                    )}
+                  </div>
+                ))}
+                {declarations.length > 3 && (
+                  <p className="text-[11px] text-brand-gray">
+                    + {declarations.length - 3} more across the series
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-[11.5px] text-brand-gray leading-relaxed">
+                Declarations from this series are being prepared.
+              </p>
+            )}
+          </div>
         </div>
       </aside>
     </main>

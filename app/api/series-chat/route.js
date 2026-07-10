@@ -100,41 +100,72 @@ function plainStreamResponse(text) {
 
 export async function POST(req) {
   try {
-    const { seriesId, message, chatHistory } = await req.json();
+    const { seriesId, sermonId, message, chatHistory } = await req.json();
 
     // Validate inputs
-    if (!seriesId || typeof seriesId !== 'string') {
-      return NextResponse.json({ error: true, message: 'Invalid or missing seriesId' }, { status: 400 });
-    }
-
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return NextResponse.json({ error: true, message: 'Message is required and cannot be empty' }, { status: 400 });
     }
 
-    // 1. Fetch series + sermon metadata
-    const { data: series, error: seriesError } = await supabaseAdmin
-      .from('series')
-      .select(`
-        title,
-        series_sermons (
-          part_number,
-          sermons (
-            id,
-            title,
-            youtube_video_id
-          )
-        )
-      `)
-      .eq('id', seriesId)
-      .single();
-
-    if (seriesError || !series) {
-      return NextResponse.json({ error: true, message: 'Series not found' }, { status: 404 });
+    if ((!seriesId || typeof seriesId !== 'string') && (!sermonId || typeof sermonId !== 'string')) {
+      return NextResponse.json({ error: true, message: 'A seriesId or sermonId is required' }, { status: 400 });
     }
 
-    const sortedSermons = series.series_sermons
-      .sort((a, b) => a.part_number - b.part_number)
-      .map((ss) => ss.sermons);
+    // Scope of this study session: a single sermon (sermonId wins) or the whole
+    // series. When scoped to one sermon we retrieve only from that sermon and
+    // tell the model it is studying a single message, not a series.
+    const singleSermon = !!(sermonId && typeof sermonId === 'string');
+
+    let scopeTitle = '';
+    let sermonIds = [];
+    let overviewText = '';
+
+    if (singleSermon) {
+      // 1a. Fetch the single sermon's metadata
+      const { data: sermon, error: sermonError } = await supabaseAdmin
+        .from('sermons')
+        .select('id, title, youtube_video_id')
+        .eq('id', sermonId)
+        .single();
+
+      if (sermonError || !sermon) {
+        return NextResponse.json({ error: true, message: 'Sermon not found' }, { status: 404 });
+      }
+
+      scopeTitle = sermon.title;
+      sermonIds = [sermon.id];
+      overviewText = `SERMON: ${sermon.title}`;
+    } else {
+      // 1b. Fetch series + sermon metadata
+      const { data: series, error: seriesError } = await supabaseAdmin
+        .from('series')
+        .select(`
+          title,
+          series_sermons (
+            part_number,
+            sermons (
+              id,
+              title,
+              youtube_video_id
+            )
+          )
+        `)
+        .eq('id', seriesId)
+        .single();
+
+      if (seriesError || !series) {
+        return NextResponse.json({ error: true, message: 'Series not found' }, { status: 404 });
+      }
+
+      const sortedSermons = series.series_sermons
+        .sort((a, b) => a.part_number - b.part_number)
+        .map((ss) => ss.sermons);
+
+      scopeTitle = series.title;
+      sermonIds = sortedSermons.map((s) => s?.id).filter(Boolean);
+      overviewText = `SERMON SERIES: ${series.title}
+Parts: ${sortedSermons.map((s, i) => `Part ${i + 1} — ${s.title}`).join(', ')}`;
+    }
 
     // 2. Embed user question
     let queryEmbedding = null;
@@ -150,7 +181,6 @@ export async function POST(req) {
     //    populated). We retrieve a wide pool (40), then rerank down to 15 for
     //    diversity. If the embed service is down, queryEmbedding is null and the
     //    hybrid RPC degrades to keyword-only instead of returning nothing.
-    const sermonIds = sortedSermons.map((s) => s?.id).filter(Boolean);
     let relevantSegments = [];
     if (sermonIds.length > 0 && (queryEmbedding || message.trim())) {
       let candidatePool = null;
@@ -181,7 +211,9 @@ export async function POST(req) {
       }
 
       if (Array.isArray(candidatePool) && candidatePool.length > 0) {
-        relevantSegments = rerankSegments(candidatePool, 15);
+        // Single-sermon study: drop the per-sermon diversity cap (there is only
+        // one sermon, so capping at 4 would needlessly reshuffle the best hits).
+        relevantSegments = rerankSegments(candidatePool, 15, singleSermon ? 15 : 4);
       }
     }
 
@@ -192,10 +224,10 @@ export async function POST(req) {
     //    mislead: either the study service is down, or this series' segments have
     //    not been embedded yet (run backfill-embeddings.js to fix the latter).
     if (relevantSegments.length === 0) {
-      console.warn(`[chat] No grounded segments for series ${seriesId} (embedFailed=${embedFailed}). Refusing to fabricate.`);
+      console.warn(`[chat] No grounded segments for ${singleSermon ? `sermon ${sermonId}` : `series ${seriesId}`} (embedFailed=${embedFailed}). Refusing to fabricate.`);
       const honestMessage = embedFailed
         ? "I'm having trouble reaching the study service right now, so I can't pull up Rev. Peter's exact teaching for this question yet. Please try again in a moment."
-        : `I don't yet have Rev. Peter's teaching from “${series.title}” indexed for deep study, so I can't ground an answer in his exact words here. You can still watch the messages directly from the series page while this series is being prepared.`;
+        : `I don't yet have Rev. Peter's teaching from “${scopeTitle}” indexed for deep study, so I can't ground an answer in his exact words here. You can still watch ${singleSermon ? 'this message' : 'the messages'} directly while ${singleSermon ? 'it is' : 'this series is'} being prepared.`;
       return plainStreamResponse(honestMessage);
     }
 
@@ -218,11 +250,8 @@ export async function POST(req) {
       return acc;
     }, {});
 
-    const seriesOverview = `SERMON SERIES: ${series.title}
-Parts: ${sortedSermons.map((s, i) => `Part ${i + 1} — ${s.title}`).join(', ')}`;
-
     // 7. Improved system prompt
-    const systemPrompt = `You are a warm, knowledgeable Bible study companion for Heritage of Faith Church. You help believers study the exact teachings of Rev. Peter Ayoalabi from this sermon series.
+    const systemPrompt = `You are a warm, knowledgeable Bible study companion for Heritage of Faith Church. You help believers study the exact teachings of Rev. Peter Ayoalabi from this ${singleSermon ? 'message' : 'sermon series'}.
 
 ═══════════════════════════════════════
 SOURCING — YOUR MOST CRITICAL RULE
@@ -272,7 +301,7 @@ FOLLOW-UP SUGGESTIONS — STRICT RULES
 - CRITICAL: Every suggestion MUST be directly answerable from the segments you were given
 - Read the segments first — then generate questions only about what's actually there
 - Never suggest questions about topics not present in the provided segments
-- Do not generate generic Christian questions — they must be specific to this series content${voicePromptSection()}`;
+- Do not generate generic Christian questions — they must be specific to this ${singleSermon ? 'message' : 'series'}${voicePromptSection()}`;
 
     // 8. Build conversation history
     const conversationHistory = (chatHistory || [])
@@ -284,7 +313,7 @@ FOLLOW-UP SUGGESTIONS — STRICT RULES
       .slice(-6);
 
     // 9. User message with segments
-    const userMessageWithContext = `${seriesOverview}
+    const userMessageWithContext = `${overviewText}
 
 TRANSCRIPT SEGMENTS — USE ONLY THESE:
 ${segmentList}
@@ -295,7 +324,8 @@ QUESTION: ${message}`;
 
     // 10. Call Gemini with streaming
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      // "-latest" alias — gemini-2.5-flash was retired (404) in mid-2026.
+      model: 'gemini-flash-latest',
       systemInstruction: systemPrompt,
     });
 

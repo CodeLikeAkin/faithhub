@@ -179,11 +179,6 @@ export default function SeriesBrowsePage() {
                         {s.total_parts || s.series_sermons?.length || 0} Parts
                       </span>
                     </div>
-
-                    {/* Service type badge */}
-                    <div className="absolute top-4 left-4 px-3 py-1 bg-white/95 text-brand-navy rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg">
-                      {s.service_type || "Series"}
-                    </div>
                   </div>
 
                   {/* Info */}

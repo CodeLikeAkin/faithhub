@@ -1,11 +1,35 @@
 import { NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
+import { createClient } from '@supabase/supabase-js';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY || ''
+);
+
 export async function POST(req) {
   try {
-    const { title, sermonTitles } = await req.json();
+    const { seriesId, title, sermonTitles } = await req.json();
+
+    // Cached summary → zero tokens. Generation below runs once per series,
+    // then the result is stored on the series row.
+    if (seriesId) {
+      const { data: cached } = await supabaseAdmin
+        .from('series')
+        .select('study_summary, suggested_questions')
+        .eq('id', seriesId)
+        .maybeSingle();
+      if (cached?.study_summary) {
+        return NextResponse.json({
+          summary: cached.study_summary,
+          suggestions: Array.isArray(cached.suggested_questions)
+            ? cached.suggested_questions
+            : [],
+        });
+      }
+    }
 
     // Sermon titles carry the preacher's name inline, e.g.
     // "... | Pastor Funlola Alabi | 21st June 2026" — extract it instead of
@@ -70,6 +94,16 @@ ${preacherContext} Only credit the preacher(s) named above — do not invent or 
       }
     } catch (e) {
       console.error('Failed to generate summary suggestions', e);
+    }
+
+    // Save back so this series never costs tokens again. Fails quietly if
+    // the cache columns haven't been migrated yet.
+    if (seriesId && summary && summary !== 'No summary available.') {
+      const { error: saveErr } = await supabaseAdmin
+        .from('series')
+        .update({ study_summary: summary, suggested_questions: suggestions })
+        .eq('id', seriesId);
+      if (saveErr) console.warn('[series-summary] cache save skipped:', saveErr.message);
     }
 
     return NextResponse.json({ summary, suggestions });
