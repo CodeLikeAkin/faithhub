@@ -13,6 +13,8 @@ create table if not exists sermon_word_studies (
   reference       text,                      -- scripture reference tied to the word, if any
   note            text,                      -- flags where the pastor's meaning diverges from standard lexicons, or transcription is uncertain
   order_index     int default 0,             -- order explained in the message
+  -- pronunciation, strongs_number, timestamp_seconds, youtube_url_with_timestamp
+  -- added in sermon_word_studies_watch_moment.sql
   created_at      timestamptz default now(),
   unique (sermon_id, word, language)
 );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Languages, ChevronDown, ChevronUp, Info } from "lucide-react";
+import { Languages, ChevronDown, ChevronUp, Info, Play } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 const LANGUAGE_LABEL = {
@@ -92,11 +92,6 @@ export default function WordStudy({ sermonId }) {
                     <span className="text-[15px] font-bold text-brand-navy truncate">
                       {w.word}
                     </span>
-                    {w.original_script && (
-                      <span className="text-sm text-brand-gray flex-shrink-0">
-                        {w.original_script}
-                      </span>
-                    )}
                     <span className="text-[10px] font-bold uppercase tracking-wider text-brand-navy/60 bg-brand-navy/5 rounded-full px-2 py-0.5 flex-shrink-0">
                       {LANGUAGE_LABEL[w.language] || w.language}
                     </span>
@@ -110,6 +105,23 @@ export default function WordStudy({ sermonId }) {
 
                 {isOpen && (
                   <div className="px-4 pb-4 pt-1 space-y-2.5">
+                    {w.original_script && (
+                      <p className="text-2xl font-bold text-brand-navy">
+                        {w.original_script}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {w.pronunciation && (
+                        <span className="text-xs text-brand-gray italic">
+                          {w.pronunciation}
+                        </span>
+                      )}
+                      {w.strongs_number && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-brand-navy/60 bg-brand-navy/5 rounded-full px-2 py-0.5">
+                          Strong's {w.strongs_number}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[15px] leading-relaxed text-brand-ink">
                       {w.meaning}
                     </p>
@@ -125,6 +137,17 @@ export default function WordStudy({ sermonId }) {
                           {w.note}
                         </p>
                       </div>
+                    )}
+                    {w.youtube_url_with_timestamp && (
+                      <a
+                        href={w.youtube_url_with_timestamp}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-navy bg-brand-sky border border-brand-navy/15 rounded-full px-3 py-1.5 hover:bg-brand-sky/70 transition-colors"
+                      >
+                        <Play className="w-3 h-3 fill-current" />
+                        Watch moment
+                      </a>
                     )}
                   </div>
                 )}

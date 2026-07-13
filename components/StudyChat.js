@@ -270,6 +270,7 @@ export default function StudyChat({
       const decoder = new TextDecoder();
       let aiText = "";
       let segmentMap = {};
+      let headerParsed = false;
       let firstChunk = true;
 
       while (true) {
@@ -281,16 +282,22 @@ export default function StudyChat({
 
         if (firstChunk) {
           firstChunk = false;
+          clearInterval(thinkingInterval);
+        }
+
+        // The SEGMENT_MAP header may arrive split across multiple reads, so
+        // keep trying until the full "SEGMENT_MAP:{...}\n" line is present.
+        if (!headerParsed) {
           const mapMatch = aiText.match(/^SEGMENT_MAP:(.+)\n/);
           if (mapMatch) {
+            headerParsed = true;
             try {
               segmentMap = JSON.parse(mapMatch[1]);
-              aiText = aiText.replace(/^SEGMENT_MAP:.+\n/, "");
             } catch (e) {
               console.error("Failed to parse segment map", e);
             }
+            aiText = aiText.replace(/^SEGMENT_MAP:.+\n/, "");
           }
-          clearInterval(thinkingInterval);
         }
 
         let displayText = aiText;

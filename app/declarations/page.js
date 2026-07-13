@@ -105,7 +105,6 @@ export default function DeclarationsPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeTopic, setActiveTopic] = useState(null);
-  const [lastTopic, setLastTopic] = useState(null);
   const [hasMore, setHasMore] = useState(false);
   const [fetchingMore, setFetchingMore] = useState(false);
   const [outOfResults, setOutOfResults] = useState(false);
@@ -201,14 +200,13 @@ export default function DeclarationsPage() {
 
   const handleTopicClick = (topic) => {
     setActiveTopic(topic);
-    startSearch(`I need declarations about ${topic.toLowerCase()}`, topic, topic);
+    startSearch(`I need declarations about ${topic.toLowerCase()}`, topic);
   };
 
-  const startSearch = async (msg, t, displayAs = null) => {
+  const startSearch = async (msg, displayAs = null) => {
     if (!msg.trim() || loading) return;
 
     setLastQuery(msg.trim());
-    setLastTopic(t);
     setOutOfResults(false);
     setHasMore(false);
 
@@ -236,7 +234,6 @@ export default function DeclarationsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: msg.trim(),
-          topic: t?.toLowerCase() ?? null,
           shownIds: [],
         }),
       });
@@ -270,7 +267,7 @@ export default function DeclarationsPage() {
     }
   };
 
-  const handleSend = () => startSearch(input, activeTopic);
+  const handleSend = () => startSearch(input);
 
   const handleLoadMore = async () => {
     if (fetchingMore || !lastQuery) return;
@@ -287,7 +284,6 @@ export default function DeclarationsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: lastQuery,
-          topic: lastTopic?.toLowerCase() ?? null,
           shownIds: allIds,
         }),
       });
