@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Play, Send, Loader2, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Play, Send, Loader2, Sparkles, X } from "lucide-react";
 import { cleanTitle } from "@/lib/titles";
 import ReactMarkdown from "react-markdown";
 
@@ -31,28 +31,75 @@ const THINKING_MESSAGES = [
   "Preparing your answer...",
 ];
 
-// [N] as a clickable YouTube-timestamp link.
-const CitationBadge = ({ num, segmentMap }) => {
+// [N] as a clickable YouTube-timestamp link that opens the watch modal.
+const CitationBadge = ({ num, segmentMap, onWatch }) => {
   const seg = segmentMap?.[num];
   if (!seg?.video_id)
     return <sup className="text-gray-400 text-[9px]">[{num}]</sup>;
 
-  const url = `https://youtube.com/watch?v=${seg.video_id}&t=${seg.start_seconds}s`;
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
+    <button
+      type="button"
+      onClick={() => onWatch(seg)}
       title={`"${seg.text}" — ${seg.sermon_title}`}
-      className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-brand-navy/10 border border-brand-navy/20 text-[9px] font-bold text-brand-navy hover:text-white hover:border-brand-navy hover:bg-brand-navy transition-all ml-0.5 -translate-y-0.5 cursor-pointer no-underline"
+      className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-brand-navy/10 border border-brand-navy/20 text-[9px] font-bold text-brand-navy hover:text-white hover:border-brand-navy hover:bg-brand-navy transition-all ml-0.5 -translate-y-0.5 cursor-pointer"
     >
       {num}
-    </a>
+    </button>
+  );
+};
+
+// Fullscreen overlay embedding the cited moment without leaving the page.
+const VideoModal = ({ seg, onClose }) => {
+  useEffect(() => {
+    const onKey = (e) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  if (!seg) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-white text-sm font-medium truncate pr-3">
+            {cleanTitle(seg.sermon_title)}
+          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center flex-shrink-0"
+          >
+            <X size={16} />
+          </button>
+        </div>
+        <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black shadow-2xl">
+          <iframe
+            src={`https://www.youtube.com/embed/${seg.video_id}?start=${Math.max(
+              0,
+              Math.floor(seg.start_seconds || 0)
+            )}&autoplay=1`}
+            title={seg.sermon_title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="absolute inset-0 w-full h-full"
+          />
+        </div>
+      </div>
+    </div>
   );
 };
 
 // Markdown + [N] citations.
-const RichAIResponse = ({ text, segmentMap }) => {
+const RichAIResponse = ({ text, segmentMap, onWatch }) => {
   const processCitations = (content) =>
     content.replace(/(\[\d+\](?:\[\d+\])*|\[\d+(?:,\s*\d+)+\])/g, (match) => {
       const nums = [...match.matchAll(/\d+/g)].map((m) => m[0]);
@@ -66,7 +113,14 @@ const RichAIResponse = ({ text, segmentMap }) => {
     return parts.map((part, i) => {
       const citMatch = part.match(/\[\[CIT:(\d+)\]\]/);
       if (citMatch) {
-        return <CitationBadge key={i} num={citMatch[1]} segmentMap={segmentMap} />;
+        return (
+          <CitationBadge
+            key={i}
+            num={citMatch[1]}
+            segmentMap={segmentMap}
+            onWatch={onWatch}
+          />
+        );
       }
       return part;
     });
@@ -142,7 +196,7 @@ const RichAIResponse = ({ text, segmentMap }) => {
 };
 
 // The cited segments behind an answer, as small watch cards.
-const MomentCards = ({ text, segmentMap }) => {
+const MomentCards = ({ text, segmentMap, onWatch }) => {
   if (!segmentMap || !text) return null;
   const citedNums = [...text.matchAll(/\[(\d+)\]/g)].map((m) => m[1]);
   const seen = new Set();
@@ -161,12 +215,11 @@ const MomentCards = ({ text, segmentMap }) => {
   return (
     <div className="mt-4 flex flex-wrap gap-2.5">
       {moments.map((seg, i) => (
-        <a
+        <button
           key={i}
-          href={`https://youtube.com/watch?v=${seg.video_id}&t=${seg.start_seconds}s`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2.5 rounded-xl border border-brand-navy/10 bg-white px-2.5 py-2 hover:border-brand-navy/40 hover:shadow-md hover:shadow-brand-navy/5 transition-all min-w-0"
+          type="button"
+          onClick={() => onWatch(seg)}
+          className="flex items-center gap-2.5 rounded-xl border border-brand-navy/10 bg-white px-2.5 py-2 hover:border-brand-navy/40 hover:shadow-md hover:shadow-brand-navy/5 transition-all min-w-0 text-left"
         >
           <span className="relative w-[62px] aspect-video rounded-lg overflow-hidden bg-brand-sky flex-shrink-0">
             <img
@@ -189,7 +242,7 @@ const MomentCards = ({ text, segmentMap }) => {
               Watch at {fmtTime(seg.start_seconds)}
             </span>
           </span>
-        </a>
+        </button>
       ))}
     </div>
   );
@@ -208,6 +261,7 @@ export default function StudyChat({
   const [chatHistory, setChatHistory] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
   const [thinkingStep, setThinkingStep] = useState(0);
+  const [activeVideo, setActiveVideo] = useState(null);
   const threadRef = useRef(null);
   const inputRef = useRef(null);
   const userMessageRefs = useRef({});
@@ -347,6 +401,8 @@ export default function StudyChat({
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
+      <VideoModal seg={activeVideo} onClose={() => setActiveVideo(null)} />
+
       {/* Thread */}
       <div
         ref={threadRef}
@@ -424,19 +480,35 @@ export default function StudyChat({
                       <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-brand-navy mb-1">
                         Quick answer
                       </p>
-                      <RichAIResponse text={lead} segmentMap={msg.segmentMap} />
+                      <RichAIResponse
+                        text={lead}
+                        segmentMap={msg.segmentMap}
+                        onWatch={setActiveVideo}
+                      />
                     </div>
                     {rest && (
                       <div className="mt-4">
-                        <RichAIResponse text={rest} segmentMap={msg.segmentMap} />
+                        <RichAIResponse
+                          text={rest}
+                          segmentMap={msg.segmentMap}
+                          onWatch={setActiveVideo}
+                        />
                       </div>
                     )}
                   </>
                 ) : (
-                  <RichAIResponse text={msg.text} segmentMap={msg.segmentMap || {}} />
+                  <RichAIResponse
+                    text={msg.text}
+                    segmentMap={msg.segmentMap || {}}
+                    onWatch={setActiveVideo}
+                  />
                 )}
 
-                <MomentCards text={msg.text} segmentMap={msg.segmentMap} />
+                <MomentCards
+                  text={msg.text}
+                  segmentMap={msg.segmentMap}
+                  onWatch={setActiveVideo}
+                />
 
                 {msg.suggestions && msg.suggestions.length > 0 && (
                   <div className="mt-5">
