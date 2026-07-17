@@ -19,6 +19,8 @@ import {
   Plus,
   Copy,
 } from "lucide-react";
+import { cleanTitle } from "@/lib/titles";
+import VideoModal from "@/components/VideoModal";
 
 /**
  * Ask the Word — global, cross-corpus search, laid out as a study workspace.
@@ -46,8 +48,6 @@ const LEGACY_KEY = "hof-ask-study-v1";
 const MAX_STUDIES = 12;
 const MAX_BLOCKS = 30;
 const RAIL_PREVIEW = 4; // moments shown in the side rail before "Show all"
-
-const yt = (v, t) => `https://youtube.com/watch?v=${v}&t=${t}s`;
 
 const fmtTime = (secs) => {
   const s = Math.max(0, Math.floor(secs || 0));
@@ -175,7 +175,7 @@ function RichParagraph({ text, onJump, className, pKey }) {
 }
 
 // ── Source card — used by the inline rail and the side rail ──────────────────
-function SourceCard({ n, seg, blockId, highlighted, idPrefix = "src", className = "" }) {
+function SourceCard({ n, seg, blockId, highlighted, onWatch, idPrefix = "src", className = "" }) {
   return (
     <div
       id={`${idPrefix}-${blockId}-${n}`}
@@ -186,11 +186,10 @@ function SourceCard({ n, seg, blockId, highlighted, idPrefix = "src", className 
       } ${className}`}
     >
       {seg.video_id ? (
-        <a
-          href={yt(seg.video_id, seg.start_seconds)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group relative block aspect-video bg-brand-sky"
+        <button
+          type="button"
+          onClick={() => onWatch(seg)}
+          className="group relative block w-full aspect-video bg-brand-sky"
           title="Watch this moment"
         >
           <img
@@ -211,7 +210,7 @@ function SourceCard({ n, seg, blockId, highlighted, idPrefix = "src", className 
               <Play size={16} fill="currentColor" className="translate-x-px" />
             </span>
           </span>
-        </a>
+        </button>
       ) : (
         <div className="flex items-center gap-2 px-3.5 pt-3.5">
           <span className="w-6 h-6 rounded-full bg-brand-navy text-white text-[11px] font-bold flex items-center justify-center">
@@ -228,15 +227,14 @@ function SourceCard({ n, seg, blockId, highlighted, idPrefix = "src", className 
         </p>
         <div className="mt-2.5 flex items-center gap-3">
           {seg.video_id && (
-            <a
-              href={yt(seg.video_id, seg.start_seconds)}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => onWatch(seg)}
               className="inline-flex items-center gap-1.5 text-[11px] font-bold text-brand-navy hover:underline"
             >
               <Play size={10} fill="currentColor" />
               Watch this moment
-            </a>
+            </button>
           )}
           {seg.sermon_id && (
             <Link
@@ -254,7 +252,7 @@ function SourceCard({ n, seg, blockId, highlighted, idPrefix = "src", className 
 }
 
 // ── Inline horizontal rail — mobile / narrow screens (side rail takes over on xl)
-function InlineSourceRail({ blockId, sources, highlight }) {
+function InlineSourceRail({ blockId, sources, highlight, onWatch }) {
   const railRef = useRef(null);
   const nudge = (dir) =>
     railRef.current?.scrollBy({ left: dir * 540, behavior: "smooth" });
@@ -294,6 +292,7 @@ function InlineSourceRail({ blockId, sources, highlight }) {
             seg={seg}
             blockId={blockId}
             highlighted={highlight === `${blockId}-${n}`}
+            onWatch={onWatch}
             className="w-[236px] sm:w-[256px] flex-shrink-0 snap-start"
           />
         ))}
@@ -312,6 +311,7 @@ export default function AskPage() {
   const [highlight, setHighlight] = useState(null); // `${blockId}-${n}`
   const [restored, setRestored] = useState(false);
   const [toast, setToast] = useState(null);
+  const [watching, setWatching] = useState(null); // segment currently open in the video modal
   const inputRef = useRef(null);
   const toastTimer = useRef(null);
 
@@ -1005,6 +1005,7 @@ export default function AskPage() {
                         blockId={b.id}
                         sources={sources}
                         highlight={highlight}
+                        onWatch={setWatching}
                       />
                     )}
 
@@ -1109,6 +1110,7 @@ export default function AskPage() {
                     seg={seg}
                     blockId={openBlock.id}
                     highlighted={highlight === `${openBlock.id}-${n}`}
+                    onWatch={setWatching}
                     idPrefix="srcr"
                     className="w-full"
                   />
@@ -1135,6 +1137,8 @@ export default function AskPage() {
           {toast}
         </div>
       )}
+
+      <VideoModal seg={watching} onClose={() => setWatching(null)} />
     </main>
   );
 }

@@ -23,7 +23,8 @@ export default function Navbar() {
     pathname === "/declarations" ||
     pathname === "/admin" ||
     pathname === "/ask" ||
-    /^\/series\/.+/.test(pathname);
+    /^\/series\/.+/.test(pathname) ||
+    /^\/sermon\/.+/.test(pathname);
   if (hidden) return null;
 
   return (

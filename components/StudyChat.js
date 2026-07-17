@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Play, Send, Loader2, Sparkles, X } from "lucide-react";
+import { useEffect, useRef, useState, Fragment, isValidElement, cloneElement } from "react";
+import { Play, Send, Loader2, Sparkles } from "lucide-react";
 import { cleanTitle } from "@/lib/titles";
 import ReactMarkdown from "react-markdown";
+import VideoModal from "@/components/VideoModal";
 
 /**
  * StudyChat — the grounded study thread used by both the series studio
@@ -49,55 +50,6 @@ const CitationBadge = ({ num, segmentMap, onWatch }) => {
   );
 };
 
-// Fullscreen overlay embedding the cited moment without leaving the page.
-const VideoModal = ({ seg, onClose }) => {
-  useEffect(() => {
-    const onKey = (e) => e.key === "Escape" && onClose();
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  if (!seg) return null;
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-white text-sm font-medium truncate pr-3">
-            {cleanTitle(seg.sermon_title)}
-          </p>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center flex-shrink-0"
-          >
-            <X size={16} />
-          </button>
-        </div>
-        <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black shadow-2xl">
-          <iframe
-            src={`https://www.youtube.com/embed/${seg.video_id}?start=${Math.max(
-              0,
-              Math.floor(seg.start_seconds || 0)
-            )}&autoplay=1`}
-            title={seg.sermon_title}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="absolute inset-0 w-full h-full"
-          />
-        </div>
-      </div>
-    </div>
-  );
-};
-
 // Markdown + [N] citations.
 const RichAIResponse = ({ text, segmentMap, onWatch }) => {
   const processCitations = (content) =>
@@ -126,6 +78,26 @@ const RichAIResponse = ({ text, segmentMap, onWatch }) => {
     });
   };
 
+  // Walk any markdown children — strings, arrays, or nested elements like
+  // <strong>/<em> — and turn every [[CIT:N]] token into a badge. The per-node
+  // renderers only pass a plain string when a block has no inline formatting;
+  // a list item with a bold lead-in arrives as an array (and citations can sit
+  // inside a bolded span), so we recurse instead of only handling strings.
+  const renderChildren = (children) => {
+    if (typeof children === "string") return renderWithCitations(children);
+    if (Array.isArray(children))
+      return children.map((child, i) => (
+        <Fragment key={i}>{renderChildren(child)}</Fragment>
+      ));
+    if (isValidElement(children) && children.props?.children != null)
+      return cloneElement(
+        children,
+        undefined,
+        renderChildren(children.props.children)
+      );
+    return children;
+  };
+
   return (
     <div className="text-[15px] leading-[1.75] text-brand-ink/90">
       <ReactMarkdown
@@ -147,29 +119,27 @@ const RichAIResponse = ({ text, segmentMap, onWatch }) => {
             <ol className="list-decimal pl-5 space-y-1.5 my-3" {...props} />
           ),
           li: ({ node, children, ...props }) => (
-            <li {...props}>
-              {typeof children === "string" ? renderWithCitations(children) : children}
-            </li>
+            <li {...props}>{renderChildren(children)}</li>
           ),
           p: ({ node, children, ...props }) => (
             <p className="mb-3 last:mb-0" {...props}>
-              {typeof children === "string"
-                ? renderWithCitations(children)
-                : Array.isArray(children)
-                ? children.map((child, i) =>
-                    typeof child === "string" ? renderWithCitations(child) : child
-                  )
-                : children}
+              {renderChildren(children)}
             </p>
           ),
-          h1: ({ node, ...props }) => (
-            <h1 className="text-brand-ink text-lg font-bold mt-5 mb-2" {...props} />
+          h1: ({ node, children, ...props }) => (
+            <h1 className="text-brand-ink text-lg font-bold mt-5 mb-2" {...props}>
+              {renderChildren(children)}
+            </h1>
           ),
-          h2: ({ node, ...props }) => (
-            <h2 className="text-brand-ink text-base font-bold mt-4 mb-2" {...props} />
+          h2: ({ node, children, ...props }) => (
+            <h2 className="text-brand-ink text-base font-bold mt-4 mb-2" {...props}>
+              {renderChildren(children)}
+            </h2>
           ),
-          h3: ({ node, ...props }) => (
-            <h3 className="text-brand-ink text-sm font-bold mt-3 mb-1.5" {...props} />
+          h3: ({ node, children, ...props }) => (
+            <h3 className="text-brand-ink text-sm font-bold mt-3 mb-1.5" {...props}>
+              {renderChildren(children)}
+            </h3>
           ),
           a: ({ node, children, href, ...props }) => {
             if (typeof children?.[0] === "string" && children[0].startsWith("CIT:")) {
@@ -433,8 +403,17 @@ export default function StudyChat({
             </div>
           )}
 
-          {chatHistory.map((msg, i) => {
+          {(() => {
+            let lastUserIdx = -1;
+            let lastAiIdx = -1;
+            chatHistory.forEach((m, idx) => {
+              if (m.role === "user") lastUserIdx = idx;
+              if (m.role === "ai" && !m.isThinking) lastAiIdx = idx;
+            });
+
+            return chatHistory.map((msg, i) => {
             if (msg.role === "user") {
+              const isLatestQuestion = i === lastUserIdx;
               return (
                 <div
                   key={msg.id || i}
@@ -443,10 +422,20 @@ export default function StudyChat({
                   }}
                   className="mt-7 first:mt-0"
                 >
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-brand-navy/60 mb-1.5">
+                  <p
+                    className={`text-[11px] font-bold uppercase tracking-[0.2em] mb-1.5 ${
+                      isLatestQuestion ? "text-brand-navy/60" : "text-brand-navy/35"
+                    }`}
+                  >
                     You asked
                   </p>
-                  <h3 className="text-lg sm:text-xl font-bold text-brand-ink tracking-tight leading-snug">
+                  <h3
+                    className={`tracking-tight leading-snug ${
+                      isLatestQuestion
+                        ? "text-lg sm:text-xl font-bold text-brand-ink"
+                        : "text-base sm:text-lg font-medium text-brand-ink/65"
+                    }`}
+                  >
                     {msg.text}
                   </h3>
                 </div>
@@ -510,7 +499,7 @@ export default function StudyChat({
                   onWatch={setActiveVideo}
                 />
 
-                {msg.suggestions && msg.suggestions.length > 0 && (
+                {i === lastAiIdx && msg.suggestions && msg.suggestions.length > 0 && (
                   <div className="mt-5">
                     <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-gray mb-2.5">
                       Keep exploring
@@ -530,7 +519,8 @@ export default function StudyChat({
                 )}
               </div>
             );
-          })}
+            });
+          })()}
         </div>
       </div>
 

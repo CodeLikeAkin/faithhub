@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Play } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { parseYoutubeUrl } from "@/lib/youtube";
+import VideoModal from "@/components/VideoModal";
 
 /**
  * Declaration of the Day — picks one declaration deterministically per day
@@ -11,6 +13,7 @@ import { supabase } from "@/lib/supabase";
  */
 export default function DeclarationOfTheDay() {
   const [decl, setDecl] = useState(null);
+  const [watching, setWatching] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,6 +55,8 @@ export default function DeclarationOfTheDay() {
 
   if (!decl) return null;
 
+  const parsed = parseYoutubeUrl(decl.youtube_url_with_timestamp);
+
   return (
     <section className="mx-auto max-w-[1400px] px-4 sm:px-6 pt-14 sm:pt-20">
       <div className="rounded-[2rem] bg-brand-sky border border-brand-navy/10 px-6 sm:px-12 py-10 sm:py-14 text-center">
@@ -67,19 +72,21 @@ export default function DeclarationOfTheDay() {
               From &ldquo;{decl.sermons.title}&rdquo;
             </p>
           )}
-          {decl.youtube_url_with_timestamp && (
-            <a
-              href={decl.youtube_url_with_timestamp}
-              target="_blank"
-              rel="noopener noreferrer"
+          {parsed && (
+            <button
+              type="button"
+              onClick={() =>
+                setWatching({ ...parsed, sermon_title: decl.sermons?.title })
+              }
               className="inline-flex items-center gap-2 bg-brand-navy text-white text-xs sm:text-sm font-bold rounded-full px-5 py-2.5 hover:bg-brand-deep transition-colors"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               Watch Pastor speak it
-            </a>
+            </button>
           )}
         </div>
       </div>
+      <VideoModal seg={watching} onClose={() => setWatching(null)} />
     </section>
   );
 }

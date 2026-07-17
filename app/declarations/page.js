@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { cleanTitle } from "@/lib/titles";
+import { parseYoutubeUrl } from "@/lib/youtube";
+import VideoModal from "@/components/VideoModal";
 
 /**
  * Faith Declarations — a devotional surface, not a chatbot. The landing leads
@@ -47,7 +49,8 @@ const TOPICS = [
 const STREAK_KEY = "hof-decl-streak";
 const localDay = (d) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 
-function DeclarationCard({ declaration, index, onCopy }) {
+function DeclarationCard({ declaration, index, onCopy, onWatch }) {
+  const parsed = parseYoutubeUrl(declaration.youtube_url_with_timestamp);
   return (
     <div
       className="relative rounded-2xl border border-brand-navy/10 bg-white px-6 sm:px-7 pt-6 pb-4 shadow-sm shadow-brand-navy/5 hover:border-brand-navy/30 hover:shadow-lg hover:shadow-brand-navy/10 transition-all animate-in fade-in slide-in-from-bottom-2 duration-500"
@@ -83,16 +86,17 @@ function DeclarationCard({ declaration, index, onCopy }) {
             <Copy size={11} />
             Copy
           </button>
-          {declaration.youtube_url_with_timestamp && (
-            <a
-              href={declaration.youtube_url_with_timestamp}
-              target="_blank"
-              rel="noopener noreferrer"
+          {parsed && (
+            <button
+              type="button"
+              onClick={() =>
+                onWatch({ ...parsed, sermon_title: declaration.sermon_title })
+              }
               className="inline-flex items-center gap-1.5 rounded-full border border-brand-navy/25 bg-brand-navy/5 px-3 py-1.5 text-[11px] font-bold text-brand-navy hover:bg-brand-navy hover:text-white transition-colors"
             >
               <Play size={10} fill="currentColor" />
               Watch moment
-            </a>
+            </button>
           )}
         </span>
       </div>
@@ -112,6 +116,7 @@ export default function DeclarationsPage() {
   const [toast, setToast] = useState(null);
   const [featured, setFeatured] = useState(null); // today's declaration
   const [streak, setStreak] = useState(0);
+  const [watching, setWatching] = useState(null); // segment currently open in the video modal
   const textareaRef = useRef(null);
   const threadRef = useRef(null);
   const userMessageRefs = useRef({});
@@ -423,17 +428,27 @@ export default function DeclarationsPage() {
                         <Copy size={12} />
                         Copy
                       </button>
-                      {featured.youtube_url_with_timestamp && (
-                        <a
-                          href={featured.youtube_url_with_timestamp}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 rounded-full bg-white text-brand-navy px-3.5 py-2 text-[12px] font-bold hover:bg-brand-sky transition-colors"
-                        >
-                          <Play size={11} fill="currentColor" />
-                          Watch the moment
-                        </a>
-                      )}
+                      {(() => {
+                        const parsed = parseYoutubeUrl(
+                          featured.youtube_url_with_timestamp
+                        );
+                        if (!parsed) return null;
+                        return (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setWatching({
+                                ...parsed,
+                                sermon_title: featured.sermon_title,
+                              })
+                            }
+                            className="inline-flex items-center gap-1.5 rounded-full bg-white text-brand-navy px-3.5 py-2 text-[12px] font-bold hover:bg-brand-sky transition-colors"
+                          >
+                            <Play size={11} fill="currentColor" />
+                            Watch the moment
+                          </button>
+                        );
+                      })()}
                     </span>
                   </div>
                 </div>
@@ -521,6 +536,7 @@ export default function DeclarationsPage() {
                             declaration={d}
                             index={i}
                             onCopy={copyDeclaration}
+                            onWatch={setWatching}
                           />
                         ))}
                       </div>
@@ -615,6 +631,8 @@ export default function DeclarationsPage() {
           {toast}
         </div>
       )}
+
+      <VideoModal seg={watching} onClose={() => setWatching(null)} />
     </main>
   );
 }
