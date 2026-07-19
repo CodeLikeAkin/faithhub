@@ -189,7 +189,7 @@ const MomentCards = ({ text, segmentMap, onWatch }) => {
           key={i}
           type="button"
           onClick={() => onWatch(seg)}
-          className="flex items-center gap-2.5 rounded-xl border border-brand-navy/10 bg-white px-2.5 py-2 hover:border-brand-navy/40 hover:shadow-md hover:shadow-brand-navy/5 transition-all min-w-0 text-left"
+          className="flex items-center gap-2.5 rounded-xl border border-brand-navy/10 bg-card px-2.5 py-2 hover:border-brand-navy/40 hover:shadow-md hover:shadow-brand-navy/5 transition-all min-w-0 text-left"
         >
           <span className="relative w-[62px] aspect-video rounded-lg overflow-hidden bg-brand-sky flex-shrink-0">
             <img
@@ -391,7 +391,7 @@ export default function StudyChat({
                     <button
                       key={i}
                       onClick={() => handleSendMessage(question)}
-                      className="text-left text-[13px] font-medium text-brand-navy bg-white border border-brand-navy/10 rounded-full px-4 py-2 hover:bg-brand-sky hover:border-brand-navy/25 transition-colors"
+                      className="text-left text-[13px] font-medium text-brand-navy bg-card border border-brand-navy/10 rounded-full px-4 py-2 hover:bg-brand-sky hover:border-brand-navy/25 transition-colors"
                     >
                       {question}
                     </button>
@@ -465,7 +465,7 @@ export default function StudyChat({
               <div key={msg.id || i} className="mt-4">
                 {hasSources && lead ? (
                   <>
-                    <div className="rounded-r-2xl rounded-l-md border border-brand-navy/10 border-l-[3px] border-l-brand-navy bg-gradient-to-br from-brand-sky/60 to-white px-4 sm:px-5 py-3.5">
+                    <div className="rounded-r-2xl rounded-l-md border border-brand-navy/10 border-l-[3px] border-l-brand-navy bg-gradient-to-br from-brand-sky/60 to-card px-4 sm:px-5 py-3.5">
                       <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-brand-navy mb-1">
                         Quick answer
                       </p>
@@ -509,7 +509,7 @@ export default function StudyChat({
                         <button
                           key={idx}
                           onClick={() => handleSendMessage(question)}
-                          className="text-left text-[13px] font-medium text-brand-navy bg-white border border-brand-navy/10 rounded-full px-4 py-2 hover:bg-brand-sky hover:border-brand-navy/25 transition-colors"
+                          className="text-left text-[13px] font-medium text-brand-navy bg-card border border-brand-navy/10 rounded-full px-4 py-2 hover:bg-brand-sky hover:border-brand-navy/25 transition-colors"
                         >
                           {question}
                         </button>
@@ -525,7 +525,7 @@ export default function StudyChat({
       </div>
 
       {/* Composer */}
-      <div className="flex-shrink-0 border-t border-brand-navy/10 bg-white px-4 sm:px-7 pt-3 pb-3.5">
+      <div className="flex-shrink-0 border-t border-brand-navy/10 bg-card px-4 sm:px-7 pt-3 pb-3.5">
         <div className="max-w-2xl mx-auto">
           <form
             onSubmit={(e) => {

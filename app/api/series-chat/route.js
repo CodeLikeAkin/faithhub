@@ -4,6 +4,8 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { voicePromptSection } from '@/lib/voice';
+import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { streamGroqAnswer, isGeminiQuotaError } from '@/lib/groq';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -99,6 +101,9 @@ function plainStreamResponse(text) {
 }
 
 export async function POST(req) {
+  const rl = rateLimit(req, { max: 8, windowMs: 60_000, prefix: 'series-chat' });
+  if (!rl.allowed) return rateLimitResponse(rl);
+
   try {
     const { seriesId, sermonId, message, chatHistory } = await req.json();
 
@@ -322,15 +327,41 @@ QUESTION: ${message}`;
 
     console.log(`[chat] ${relevantSegments.length} segments sent to Gemini`);
 
-    // 10. Call Gemini with streaming
+    // 10. Call Gemini with streaming. A 429 is purely a Gemini-side quota
+    // issue, so we retry the same prompt on Groq instead of failing the
+    // request — same fallback as /api/ask.
     const model = genAI.getGenerativeModel({
       // "-latest" alias — gemini-2.5-flash was retired (404) in mid-2026.
       model: 'gemini-flash-latest',
       systemInstruction: systemPrompt,
     });
 
-    const chat = model.startChat({ history: conversationHistory });
-    const result = await chat.sendMessageStream(userMessageWithContext);
+    let result;
+    let useGroqFallback = false;
+    try {
+      const chat = model.startChat({ history: conversationHistory });
+      result = await chat.sendMessageStream(userMessageWithContext);
+    } catch (genErr) {
+      console.error('[chat] Gemini sendMessageStream failed:', genErr.message);
+      if (isGeminiQuotaError(genErr)) {
+        console.warn('[chat] Gemini quota exhausted — falling back to Groq');
+        useGroqFallback = true;
+      } else {
+        return plainStreamResponse(
+          "The study service is busier than usual right now — please try that question again in a moment."
+        );
+      }
+    }
+
+    // Groq-format history (role: 'user'|'assistant', content: string), built
+    // from the same chatHistory used above for Gemini's history shape.
+    const groqHistory = (chatHistory || [])
+      .map((m) => ({
+        role: m.role === 'ai' || m.role === 'assistant' ? 'assistant' : 'user',
+        content: m.text || m.content || '',
+      }))
+      .filter((m) => m.content.trim() !== '')
+      .slice(-6);
 
     // 11. Stream back — prepend segment map as first line for frontend
     const encoder = new TextEncoder();
@@ -340,9 +371,19 @@ QUESTION: ${message}`;
       async start(controller) {
         try {
           controller.enqueue(encoder.encode(segmentMapHeader));
-          for await (const chunk of result.stream) {
-            const content = chunk.text();
-            if (content) controller.enqueue(encoder.encode(content));
+          if (useGroqFallback) {
+            for await (const content of streamGroqAnswer({
+              systemPrompt,
+              userMessage: userMessageWithContext,
+              history: groqHistory,
+            })) {
+              controller.enqueue(encoder.encode(content));
+            }
+          } else {
+            for await (const chunk of result.stream) {
+              const content = chunk.text();
+              if (content) controller.enqueue(encoder.encode(content));
+            }
           }
         } catch (err) {
           controller.error(err);

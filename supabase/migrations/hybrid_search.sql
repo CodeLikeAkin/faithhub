@@ -55,10 +55,14 @@ create index if not exists sermon_segments_sermon_id_idx
 --    - query_embedding is referenced DIRECTLY (not via a joined CTE column) so
 --      the planner can still use the HNSW index for the ORDER BY … <=> … LIMIT.
 -- ─────────────────────────────────────────────────────────────
+-- Return row shape changed (added vec_similarity), so CREATE OR REPLACE alone
+-- is rejected by Postgres (42P13) — the old signature must be dropped first.
+drop function if exists match_segments_hybrid(vector, text, uuid[], integer, integer);
+
 create or replace function match_segments_hybrid(
   query_embedding vector(384),
   query_text text,
-  filter_sermon_ids uuid[],
+  filter_sermon_ids uuid[] default null,
   match_count int default 40,
   rrf_k int default 50
 )
@@ -69,11 +73,27 @@ returns table (
   start_seconds int,
   video_id text,
   sermon_title text,
-  similarity float
+  similarity float,
+  vec_similarity float
 )
 language sql
 stable
 as $$
+  -- filter_sermon_ids may be NULL, meaning "search the whole library" (used by
+  -- the global Ask the Word endpoint). NULL is treated as "no filter" rather
+  -- than passing every sermon id, so the planner can run a clean top-K index
+  -- scan instead of evaluating a several-hundred-element array match on every
+  -- row for a filter that wouldn't have excluded anything anyway.
+  --
+  -- `similarity` is the RRF fused score — good for RANKING (blends keyword +
+  -- semantic recall) but it's a positional score (1/(rrf_k+rank)), so it's
+  -- nonzero and similarly-shaped for EVERY query, including off-topic or
+  -- gibberish ones — there is always a "rank 1". It must never be read as
+  -- "how relevant is this". `vec_similarity` is the actual cosine similarity
+  -- (1 - cosine distance) from the semantic leg, which the API can threshold
+  -- against to decide whether anything is genuinely grounded (see
+  -- match_segments_by_sermons.sql's 0.25 convention). Callers matched only by
+  -- keyword (not in the semantic top-60) get vec_similarity = 0.
   with q as (
     select case
              when coalesce(query_text, '') = '' then null
@@ -82,9 +102,10 @@ as $$
   ),
   semantic as (
     select ss.id,
-           row_number() over (order by ss.embedding <=> query_embedding) as rank
+           row_number() over (order by ss.embedding <=> query_embedding) as rank,
+           1 - (ss.embedding <=> query_embedding) as vec_sim
     from sermon_segments ss
-    where ss.sermon_id = any(filter_sermon_ids)
+    where (filter_sermon_ids is null or ss.sermon_id = any(filter_sermon_ids))
       and ss.embedding is not null
       and query_embedding is not null
     order by ss.embedding <=> query_embedding
@@ -94,7 +115,7 @@ as $$
     select ss.id,
            row_number() over (order by ts_rank_cd(ss.fts, q.ts) desc) as rank
     from sermon_segments ss, q
-    where ss.sermon_id = any(filter_sermon_ids)
+    where (filter_sermon_ids is null or ss.sermon_id = any(filter_sermon_ids))
       and q.ts is not null
       and ss.fts @@ q.ts
     limit 60
@@ -102,7 +123,8 @@ as $$
   fused as (
     select coalesce(s.id, k.id) as id,
            coalesce(1.0 / (rrf_k + s.rank), 0.0)
-             + coalesce(1.0 / (rrf_k + k.rank), 0.0) as score
+             + coalesce(1.0 / (rrf_k + k.rank), 0.0) as score,
+           coalesce(s.vec_sim, 0.0) as vec_sim
     from semantic s
     full outer join keyword k on s.id = k.id
   )
@@ -112,7 +134,8 @@ as $$
          ss.start_seconds,
          s.youtube_video_id as video_id,
          s.title            as sermon_title,
-         f.score            as similarity
+         f.score            as similarity,
+         f.vec_sim          as vec_similarity
   from fused f
   join sermon_segments ss on ss.id = f.id
   join sermons s on s.id = ss.sermon_id

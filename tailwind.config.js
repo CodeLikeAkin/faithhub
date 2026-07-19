@@ -24,7 +24,7 @@ module.exports = {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
+        background: "hsl(var(--background) / <alpha-value>)",
         foreground: "hsl(var(--foreground))",
         primary: {
           DEFAULT: "hsl(var(--primary))",
@@ -51,19 +51,21 @@ module.exports = {
           foreground: "hsl(var(--popover-foreground))",
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
+          DEFAULT: "hsl(var(--card) / <alpha-value>)",
           foreground: "hsl(var(--card-foreground))",
         },
-        /* HOF NG brand palette — hofng.org is the source of truth */
+        /* HOF NG brand palette — hofng.org is the source of truth.
+           navy/ink/sky/mist/gray/light are theme-flipping CSS vars (see globals.css);
+           deep + green stay static (photo overlays / rare accents). */
         brand: {
-          navy: "#173A68",  /* primary — the logo blue */
-          deep: "#102A4E",  /* darker blue for overlays/hover */
-          ink: "#17233B",   /* heading text */
-          sky: "#EAF2FB",   /* light blue tint surface */
-          mist: "#C6DAEE",  /* deeper tint for gradients */
-          green: "#489E3E", /* secondary — rare accents only */
-          gray: "#7A7A7A",  /* body text */
-          light: "#F8F9FA",
+          navy: "hsl(var(--brand-navy) / <alpha-value>)",  /* primary — the logo blue */
+          deep: "#102A4E",  /* darker blue for overlays/hover — static in both themes */
+          ink: "hsl(var(--brand-ink) / <alpha-value>)",    /* heading text */
+          sky: "hsl(var(--brand-sky) / <alpha-value>)",    /* light blue tint surface */
+          mist: "hsl(var(--brand-mist) / <alpha-value>)",  /* deeper tint for gradients */
+          green: "#489E3E", /* secondary — rare accents only — static */
+          gray: "hsl(var(--brand-gray) / <alpha-value>)",  /* body text */
+          light: "hsl(var(--brand-light) / <alpha-value>)",
         },
       },
       borderRadius: {

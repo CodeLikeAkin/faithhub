@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X, ArrowRight } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const navLinks = [
   { name: "Home", href: "/" },
@@ -16,7 +17,17 @@ const navLinks = [
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
+
+  // Ground the pill once you scroll off the top (works on any page —
+  // /series and /word open on white, home opens on the dark hero).
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   // Immersive app views (chat, study, admin) bring their own chrome
   const hidden =
@@ -28,10 +39,21 @@ export default function Navbar() {
   if (hidden) return null;
 
   return (
-    <header className="fixed top-3 sm:top-5 inset-x-0 z-50 px-4 sm:px-6">
-      <nav className="mx-auto max-w-6xl flex items-center justify-between gap-3">
-        {/* Floating pill: logo + links */}
-        <div className="flex items-center gap-3 sm:gap-6 bg-white/95 backdrop-blur-md border border-brand-navy/10 shadow-lg shadow-brand-navy/5 rounded-full pl-4 pr-4 sm:pr-6 py-2">
+    <header
+      className={`fixed inset-x-0 z-50 px-4 sm:px-6 transition-all duration-300 ${
+        scrolled ? "top-2 sm:top-3" : "top-3 sm:top-5"
+      }`}
+    >
+      <nav className="mx-auto max-w-6xl flex">
+        {/* One unified pill: logo · links · CTA — centered on desktop,
+            a full-width bar (logo + menu) on mobile. */}
+        <div
+          className={`w-full md:w-auto md:mx-auto flex items-center justify-between gap-3 sm:gap-5 rounded-full backdrop-blur-md border py-2 pl-4 pr-2 transition-all duration-300 ${
+            scrolled
+              ? "bg-white/95 dark:bg-card/95 border-brand-navy/10 shadow-lg shadow-brand-navy/10"
+              : "bg-white/80 dark:bg-card/80 border-brand-navy/5 shadow-md shadow-brand-navy/5"
+          }`}
+        >
           <Link href="/" onClick={() => setIsOpen(false)} className="flex items-center">
             <Image
               src="/hofng-logo.png"
@@ -42,7 +64,9 @@ export default function Navbar() {
               priority
             />
           </Link>
+
           <span className="hidden md:block w-px h-5 bg-brand-navy/15" />
+
           <div className="hidden md:flex items-center gap-5">
             {navLinks.map((link) => (
               <Link
@@ -58,31 +82,37 @@ export default function Navbar() {
               </Link>
             ))}
           </div>
-        </div>
 
-        <div className="flex items-center gap-2">
+          <span className="hidden md:block w-px h-5 bg-brand-navy/15" />
+
+          <ThemeToggle className="hidden md:flex w-9 h-9 items-center justify-center rounded-full text-brand-gray hover:text-brand-navy hover:bg-brand-sky transition-colors" />
+
           <Link
             href="/declarations"
-            className="hidden sm:inline-flex items-center gap-2 bg-brand-navy text-white text-sm font-bold rounded-full px-5 py-3 shadow-lg shadow-brand-navy/20 hover:bg-brand-deep transition-colors"
+            className="hidden md:inline-flex items-center gap-2 bg-brand-navy text-white text-sm font-bold rounded-full px-5 py-2.5 shadow-lg shadow-brand-navy/20 hover:bg-brand-deep transition-colors"
           >
             Start a declaration
             <ArrowRight className="w-4 h-4" />
           </Link>
 
-          {/* Mobile menu button */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            aria-label="Toggle menu"
-            className="md:hidden w-11 h-11 flex items-center justify-center bg-white/95 backdrop-blur-md border border-brand-navy/10 shadow-lg shadow-brand-navy/5 rounded-full text-brand-navy"
-          >
-            {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+          {/* Mobile controls — theme toggle + menu button live inside the pill on small screens */}
+          <div className="flex items-center gap-1 md:hidden">
+            <ThemeToggle className="w-9 h-9 flex items-center justify-center rounded-full text-brand-navy hover:bg-brand-sky transition-colors" />
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              aria-label="Toggle menu"
+              aria-expanded={isOpen}
+              className="w-9 h-9 flex items-center justify-center rounded-full text-brand-navy hover:bg-brand-sky transition-colors"
+            >
+              {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
       </nav>
 
       {/* Mobile panel */}
       {isOpen && (
-        <div className="md:hidden mx-auto max-w-6xl mt-2 bg-white rounded-3xl border border-brand-navy/10 shadow-xl p-3">
+        <div className="md:hidden mx-auto max-w-6xl mt-2 bg-white dark:bg-card rounded-3xl border border-brand-navy/10 shadow-xl p-3">
           {navLinks.map((link) => (
             <Link
               key={link.name}

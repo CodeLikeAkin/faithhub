@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { cleanTitle } from "@/lib/titles";
 import VideoModal from "@/components/VideoModal";
+import ThemeToggle from "@/components/ThemeToggle";
 
 /**
  * Ask the Word — global, cross-corpus search, laid out as a study workspace.
@@ -179,7 +180,7 @@ function SourceCard({ n, seg, blockId, highlighted, onWatch, idPrefix = "src", c
   return (
     <div
       id={`${idPrefix}-${blockId}-${n}`}
-      className={`rounded-2xl border bg-white overflow-hidden transition-all duration-500 ${
+      className={`rounded-2xl border bg-card overflow-hidden transition-all duration-500 ${
         highlighted
           ? "border-brand-navy ring-2 ring-brand-navy/30 shadow-lg shadow-brand-navy/10"
           : "border-brand-navy/10 hover:border-brand-navy/25 hover:shadow-md hover:shadow-brand-navy/5"
@@ -268,14 +269,14 @@ function InlineSourceRail({ blockId, sources, highlight, onWatch }) {
           <button
             onClick={() => nudge(-1)}
             aria-label="Scroll sources left"
-            className="w-8 h-8 rounded-full border border-brand-navy/15 bg-white text-brand-navy flex items-center justify-center hover:bg-brand-sky transition-colors"
+            className="w-8 h-8 rounded-full border border-brand-navy/15 bg-card text-brand-navy flex items-center justify-center hover:bg-brand-sky transition-colors"
           >
             <ChevronLeft size={15} />
           </button>
           <button
             onClick={() => nudge(1)}
             aria-label="Scroll sources right"
-            className="w-8 h-8 rounded-full border border-brand-navy/15 bg-white text-brand-navy flex items-center justify-center hover:bg-brand-sky transition-colors"
+            className="w-8 h-8 rounded-full border border-brand-navy/15 bg-card text-brand-navy flex items-center justify-center hover:bg-brand-sky transition-colors"
           >
             <ChevronRight size={15} />
           </button>
@@ -670,7 +671,7 @@ export default function AskPage() {
     .slice(0, 6);
 
   return (
-    <main className="h-dvh bg-white flex flex-col lg:grid lg:grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[250px_minmax(0,1fr)_304px]">
+    <main className="h-dvh bg-background flex flex-col lg:grid lg:grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[250px_minmax(0,1fr)_304px]">
       {/* ── Zone 1 · Study outline ─────────────────────────────────────────── */}
       <aside className="hidden lg:flex flex-col min-h-0 bg-brand-light border-r border-brand-navy/10">
         <div className="px-5 pt-5 pb-4">
@@ -782,7 +783,7 @@ export default function AskPage() {
       {/* ── Zone 2 · Reading column ────────────────────────────────────────── */}
       <section className="flex flex-col min-h-0 min-w-0 flex-1">
         {/* Top bar */}
-        <div className="flex items-center gap-3 px-4 sm:px-6 py-2.5 border-b border-brand-navy/10 flex-shrink-0 bg-white">
+        <div className="flex items-center gap-3 px-4 sm:px-6 py-2.5 border-b border-brand-navy/10 flex-shrink-0 bg-card">
           <Link href="/" className="lg:hidden flex-shrink-0">
             <Image
               src="/hofng-logo.png"
@@ -818,6 +819,7 @@ export default function AskPage() {
             <Plus size={12} />
             <span className="hidden sm:inline">New study</span>
           </button>
+          <ThemeToggle className="w-8 h-8 flex items-center justify-center rounded-full text-brand-gray hover:text-brand-navy hover:bg-brand-sky transition-colors flex-shrink-0" />
         </div>
 
         {/* Thread */}
@@ -827,7 +829,7 @@ export default function AskPage() {
             <div className="h-full flex flex-col items-center justify-center px-4 sm:px-6 py-10 relative">
               <div className="pointer-events-none absolute inset-x-0 top-0 h-[300px] bg-gradient-to-b from-brand-sky/70 to-transparent" />
               <div className="relative text-center max-w-xl">
-                <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-brand-navy/10 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-navy">
+                <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-card border border-brand-navy/10 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-navy">
                   <Sparkles size={13} />
                   Ask · every message
                 </span>
@@ -843,7 +845,7 @@ export default function AskPage() {
                     <button
                       key={s}
                       onClick={() => ask(s)}
-                      className="text-left text-[13px] font-medium text-brand-navy bg-white border border-brand-navy/10 rounded-full px-4 py-2 hover:bg-brand-sky hover:border-brand-navy/25 transition-colors"
+                      className="text-left text-[13px] font-medium text-brand-navy bg-card border border-brand-navy/10 rounded-full px-4 py-2 hover:bg-brand-sky hover:border-brand-navy/25 transition-colors"
                     >
                       {s}
                     </button>
@@ -920,7 +922,7 @@ export default function AskPage() {
 
                     {/* Quick answer — the opening sentence, called out */}
                     {lead && hasSources && b.status !== "error" && (
-                      <div className="mt-6 rounded-r-2xl rounded-l-md border border-brand-navy/10 border-l-[3px] border-l-brand-navy bg-gradient-to-br from-brand-sky/60 to-white px-5 py-4">
+                      <div className="mt-6 rounded-r-2xl rounded-l-md border border-brand-navy/10 border-l-[3px] border-l-brand-navy bg-gradient-to-br from-brand-sky/60 to-card px-5 py-4">
                         <p className="flex items-center gap-2 text-[10.5px] font-bold uppercase tracking-[0.16em] text-brand-navy mb-1.5">
                           Quick answer
                           {b.status === "answering" && rest.length === 0 && (
@@ -1020,7 +1022,7 @@ export default function AskPage() {
                             <button
                               key={si}
                               onClick={() => ask(s)}
-                              className="text-left text-[13px] font-medium text-brand-navy bg-white border border-brand-navy/10 rounded-full px-4 py-2 hover:bg-brand-sky hover:border-brand-navy/25 transition-colors"
+                              className="text-left text-[13px] font-medium text-brand-navy bg-card border border-brand-navy/10 rounded-full px-4 py-2 hover:bg-brand-sky hover:border-brand-navy/25 transition-colors"
                             >
                               {s}
                             </button>
@@ -1036,7 +1038,7 @@ export default function AskPage() {
         </div>
 
         {/* Composer — docked at the bottom */}
-        <div className="flex-shrink-0 border-t border-brand-navy/10 bg-white px-4 sm:px-6 pt-3 pb-3.5">
+        <div className="flex-shrink-0 border-t border-brand-navy/10 bg-card px-4 sm:px-6 pt-3 pb-3.5">
           <form
             onSubmit={(e) => {
               e.preventDefault();

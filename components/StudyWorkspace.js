@@ -17,12 +17,13 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { cleanTitle } from "@/lib/titles";
-import { fetchPassage } from "@/lib/bible";
+import { fetchPassage, TRANSLATIONS } from "@/lib/bible";
 import { parseYoutubeUrl } from "@/lib/youtube";
 import StudyChat from "@/components/StudyChat";
 import VerseExplorer from "@/components/VerseExplorer";
 import WordStudy from "@/components/WordStudy";
 import VideoModal from "@/components/VideoModal";
+import ThemeToggle from "@/components/ThemeToggle";
 import ReactMarkdown from "react-markdown";
 
 /**
@@ -45,33 +46,53 @@ const DECL_PREVIEW = 3;
 // ─────────────────────────────────────────────────────────
 const KeyVerses = ({ verses }) => {
   const [openRef, setOpenRef] = useState(null);
-  const [texts, setTexts] = useState({});
+  const [texts, setTexts] = useState({}); // reference -> { KJV?, NLT?: {loading}|{verses,translation}|{error} }
+  const [shownTranslation, setShownTranslation] = useState({}); // reference -> "KJV" | "NLT"
 
-  const toggle = async (v) => {
+  const loadText = async (v, translation) => {
+    setTexts((t) => ({
+      ...t,
+      [v.reference]: { ...t[v.reference], [translation]: { loading: true } },
+    }));
+    const passage = await fetchPassage(
+      {
+        book: v.book,
+        bookId: v.book_id,
+        chapter: v.chapter,
+        verseStart: v.verse_start,
+        verseEnd: v.verse_end,
+      },
+      translation
+    );
+    setTexts((t) => ({
+      ...t,
+      [v.reference]: {
+        ...t[v.reference],
+        [translation]: passage
+          ? { verses: passage.verses, translation: passage.translation }
+          : { error: true },
+      },
+    }));
+  };
+
+  const toggle = (v) => {
     if (openRef === v.reference) {
       setOpenRef(null);
       return;
     }
     setOpenRef(v.reference);
-    if (texts[v.reference]) return;
-    setTexts((t) => ({ ...t, [v.reference]: { loading: true } }));
-    const passage = await fetchPassage({
-      book: v.book,
-      bookId: v.book_id,
-      chapter: v.chapter,
-      verseStart: v.verse_start,
-      verseEnd: v.verse_end,
-    });
-    setTexts((t) => ({
-      ...t,
-      [v.reference]: passage
-        ? { verses: passage.verses, translation: passage.translation }
-        : { error: true },
-    }));
+    const t = shownTranslation[v.reference] || "KJV";
+    if (!texts[v.reference]?.[t]) loadText(v, t);
+  };
+
+  const switchTranslation = (v, translation) => {
+    setShownTranslation((st) => ({ ...st, [v.reference]: translation }));
+    if (!texts[v.reference]?.[translation]) loadText(v, translation);
   };
 
   const open = verses.find((v) => v.reference === openRef);
-  const vt = open ? texts[open.reference] : null;
+  const t = open ? shownTranslation[open.reference] || "KJV" : "KJV";
+  const vt = open ? texts[open.reference]?.[t] : null;
 
   return (
     <div>
@@ -101,29 +122,44 @@ const KeyVerses = ({ verses }) => {
         ))}
       </div>
       {open && (
-        <div className="mt-2.5 rounded-r-xl rounded-l-md border border-brand-navy/10 border-l-[3px] border-l-brand-navy bg-gradient-to-br from-brand-sky/60 to-white px-3.5 py-3">
+        <div className="mt-2.5 rounded-r-xl rounded-l-md border border-brand-navy/10 border-l-[3px] border-l-brand-navy bg-gradient-to-br from-brand-sky/60 to-card px-3.5 py-3">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-bold text-brand-navy">{open.reference}</span>
+            <span className="flex rounded-full border border-brand-navy/15 p-0.5 flex-shrink-0">
+              {TRANSLATIONS.map((tr) => (
+                <button
+                  key={tr}
+                  onClick={() => switchTranslation(open, tr)}
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold transition-colors ${
+                    t === tr
+                      ? "bg-brand-navy text-white"
+                      : "text-brand-gray hover:text-brand-navy"
+                  }`}
+                >
+                  {tr}
+                </button>
+              ))}
+            </span>
+          </div>
           {vt?.loading && (
-            <span className="flex items-center gap-2 text-xs text-brand-gray">
+            <span className="mt-1.5 flex items-center gap-2 text-xs text-brand-gray">
               <Loader2 className="w-3 h-3 animate-spin" />
               Loading verse…
             </span>
           )}
           {vt?.error && (
-            <p className="text-xs text-brand-gray italic">
+            <p className="mt-1.5 text-xs text-brand-gray italic">
               Couldn&apos;t load this verse right now.
             </p>
           )}
           {vt?.verses && (
-            <p className="text-[13px] leading-relaxed text-brand-ink">
+            <p className="mt-1.5 text-[13px] leading-relaxed text-brand-ink">
               {vt.verses.map((v) => (
                 <span key={v.number}>
                   <sup className="text-brand-navy/50 font-bold mr-0.5">{v.number}</sup>
                   {v.text}{" "}
                 </span>
               ))}
-              <span className="block mt-1 text-[10px] uppercase tracking-wider text-brand-gray">
-                {open.reference} · {vt.translation}
-              </span>
             </p>
           )}
         </div>
@@ -489,7 +525,7 @@ export default function StudyWorkspace({ entry }) {
   const shownSeriesDecls = seriesDecls.slice(0, 3);
 
   return (
-    <main className="h-dvh bg-white text-brand-ink flex flex-col lg:grid lg:grid-cols-[276px_minmax(0,1fr)] xl:grid-cols-[276px_minmax(0,1fr)_320px]">
+    <main className="h-dvh bg-background text-brand-ink flex flex-col lg:grid lg:grid-cols-[276px_minmax(0,1fr)] xl:grid-cols-[276px_minmax(0,1fr)_320px]">
       {/* ═══════════ Zone 1 · context + parts ═══════════ */}
       <aside className="hidden lg:flex flex-col min-h-0 bg-brand-light border-r border-brand-navy/10">
         <div className="px-5 pt-5 pb-3">
@@ -564,7 +600,7 @@ export default function StudyWorkspace({ entry }) {
                     onClick={goSeries}
                     className={`w-full group flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-left transition-colors ${
                       mode === "series"
-                        ? "bg-white shadow-sm shadow-brand-navy/10 border border-brand-navy/10"
+                        ? "bg-card shadow-sm shadow-brand-navy/10 border border-brand-navy/10"
                         : "border border-transparent hover:bg-brand-sky/70"
                     }`}
                   >
@@ -604,7 +640,7 @@ export default function StudyWorkspace({ entry }) {
                         onClick={() => goMessage(sermon.id)}
                         className={`w-full group flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-left transition-colors ${
                           current
-                            ? "bg-white shadow-sm shadow-brand-navy/10 border border-brand-navy/10"
+                            ? "bg-card shadow-sm shadow-brand-navy/10 border border-brand-navy/10"
                             : "border border-transparent hover:bg-brand-sky/70"
                         }`}
                       >
@@ -641,7 +677,7 @@ export default function StudyWorkspace({ entry }) {
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
                             title="Watch"
-                            className="w-6 h-6 rounded-md border border-brand-navy/15 bg-white text-brand-navy flex items-center justify-center hover:bg-brand-sky flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="w-6 h-6 rounded-md border border-brand-navy/15 bg-card text-brand-navy flex items-center justify-center hover:bg-brand-sky flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <Play size={9} fill="currentColor" />
                           </a>
@@ -669,14 +705,14 @@ export default function StudyWorkspace({ entry }) {
       {/* ═══════════ Zone 2 · workspace ═══════════ */}
       <section className="flex flex-col min-h-0 min-w-0 flex-1">
         {/* Header */}
-        <div className="flex-shrink-0 border-b border-brand-navy/10 bg-gradient-to-br from-brand-sky/50 to-white px-4 sm:px-7 pt-3.5">
+        <div className="flex-shrink-0 border-b border-brand-navy/10 bg-gradient-to-br from-brand-sky/50 to-card px-4 sm:px-7 pt-3.5">
           {/* Scope toggle */}
           {hasSeries && (
             <div className="flex items-center gap-3 flex-wrap">
               <div
                 role="tablist"
                 aria-label="Study scope"
-                className="inline-flex p-0.5 bg-[#E7EEF8] border border-brand-navy/10 rounded-full"
+                className="inline-flex p-0.5 bg-brand-sky border border-brand-navy/10 rounded-full"
               >
                 <button
                   role="tab"
@@ -684,7 +720,7 @@ export default function StudyWorkspace({ entry }) {
                   onClick={goSeries}
                   className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[12px] font-bold transition-colors ${
                     mode === "series"
-                      ? "bg-white text-brand-navy shadow-sm shadow-brand-navy/10"
+                      ? "bg-card text-brand-navy shadow-sm shadow-brand-navy/10"
                       : "text-brand-gray hover:text-brand-ink"
                   }`}
                 >
@@ -696,7 +732,7 @@ export default function StudyWorkspace({ entry }) {
                   onClick={() => goMessage()}
                   className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[12px] font-bold transition-colors ${
                     mode === "message"
-                      ? "bg-white text-brand-navy shadow-sm shadow-brand-navy/10"
+                      ? "bg-card text-brand-navy shadow-sm shadow-brand-navy/10"
                       : "text-brand-gray hover:text-brand-ink"
                   }`}
                 >
@@ -731,6 +767,7 @@ export default function StudyWorkspace({ entry }) {
                 {series?.series_sermons ? ` of ${parts.length}` : ""}
               </span>
             )}
+            <ThemeToggle className="ml-auto w-9 h-9 flex items-center justify-center rounded-full text-brand-gray hover:text-brand-navy hover:bg-brand-sky transition-colors flex-shrink-0" />
           </div>
 
           <div className="mt-1.5 text-[13px] text-brand-gray leading-relaxed max-w-2xl">
@@ -770,7 +807,7 @@ export default function StudyWorkspace({ entry }) {
                     {t.count != null && (
                       <span
                         className={`text-[10.5px] font-bold rounded-full px-1.5 py-0.5 ${
-                          active ? "bg-brand-navy text-white" : "bg-[#E7EEF8] text-brand-navy"
+                          active ? "bg-brand-navy text-white" : "bg-brand-sky text-brand-navy"
                         }`}
                       >
                         {t.count}
@@ -792,7 +829,7 @@ export default function StudyWorkspace({ entry }) {
                 className={`flex-shrink-0 rounded-full border px-3 py-1.5 text-[11.5px] font-bold transition-colors ${
                   mode === "series"
                     ? "bg-brand-navy text-white border-brand-navy"
-                    : "bg-white text-brand-navy border-brand-navy/15 hover:bg-brand-sky"
+                    : "bg-card text-brand-navy border-brand-navy/15 hover:bg-brand-sky"
                 }`}
               >
                 All parts
@@ -806,7 +843,7 @@ export default function StudyWorkspace({ entry }) {
                     className={`flex-shrink-0 rounded-full border px-3 py-1.5 text-[11.5px] font-bold transition-colors ${
                       current
                         ? "bg-brand-navy text-white border-brand-navy"
-                        : "bg-white text-brand-navy border-brand-navy/15 hover:bg-brand-sky"
+                        : "bg-card text-brand-navy border-brand-navy/15 hover:bg-brand-sky"
                     }`}
                   >
                     Part {sermon.part_number}
@@ -846,7 +883,7 @@ export default function StudyWorkspace({ entry }) {
             <div className="absolute inset-0 overflow-y-auto custom-scrollbar px-4 sm:px-7 py-6">
               <div className="max-w-3xl mx-auto">
                 {pd?.loading ? (
-                  <div className="rounded-3xl border border-brand-navy/10 bg-white p-6 flex items-center gap-3 text-brand-gray">
+                  <div className="rounded-3xl border border-brand-navy/10 bg-card p-6 flex items-center gap-3 text-brand-gray">
                     <Loader2 size={16} className="animate-spin text-brand-navy" />
                     <span className="text-sm">Loading scriptures…</span>
                   </div>
@@ -860,7 +897,7 @@ export default function StudyWorkspace({ entry }) {
           {isMsg && activeTab === "words" && (
             <div className="absolute inset-0 overflow-y-auto custom-scrollbar px-4 sm:px-7 py-6">
               <div className="max-w-3xl mx-auto">
-                <div className="rounded-3xl border border-brand-navy/10 bg-white p-4 sm:p-5">
+                <div className="rounded-3xl border border-brand-navy/10 bg-card p-4 sm:p-5">
                   <div className="flex items-center gap-3 mb-3 px-1">
                     <span className="w-9 h-9 rounded-xl bg-brand-sky text-brand-navy flex items-center justify-center flex-shrink-0">
                       <Languages size={18} />
@@ -881,7 +918,7 @@ export default function StudyWorkspace({ entry }) {
           {isMsg && activeTab === "notes" && pd?.notes && (
             <div className="absolute inset-0 overflow-y-auto custom-scrollbar px-4 sm:px-7 py-6">
               <div className="max-w-3xl mx-auto">
-                <div className="rounded-3xl border border-brand-navy/10 bg-white p-5 sm:p-6">
+                <div className="rounded-3xl border border-brand-navy/10 bg-card p-5 sm:p-6">
                   <div className="flex items-center gap-3 mb-4">
                     <span className="w-9 h-9 rounded-xl bg-brand-sky text-brand-navy flex items-center justify-center flex-shrink-0">
                       <FileText size={17} />
@@ -961,7 +998,7 @@ export default function StudyWorkspace({ entry }) {
             ).map(([n, label]) => (
               <div
                 key={label}
-                className="flex-1 rounded-xl border border-brand-navy/10 bg-white py-2.5 text-center"
+                className="flex-1 rounded-xl border border-brand-navy/10 bg-card py-2.5 text-center"
               >
                 <p className="text-lg font-bold text-brand-ink tabular-nums leading-tight">{n}</p>
                 <p className="text-[9.5px] font-bold uppercase tracking-wider text-brand-gray">
@@ -974,7 +1011,7 @@ export default function StudyWorkspace({ entry }) {
           {/* Verses */}
           {isMsg ? (
             msgTopRefs.length > 0 && (
-              <div className="rounded-2xl border border-brand-navy/10 bg-white p-4">
+              <div className="rounded-2xl border border-brand-navy/10 bg-card p-4">
                 <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand-gray mb-1 flex items-center gap-1.5">
                   <BookOpen size={11} className="text-brand-navy" />
                   Verses in this message
@@ -1008,7 +1045,7 @@ export default function StudyWorkspace({ entry }) {
             )
           ) : (
             scriptureStats?.top?.length > 0 && (
-              <div className="rounded-2xl border border-brand-navy/10 bg-white p-4">
+              <div className="rounded-2xl border border-brand-navy/10 bg-card p-4">
                 <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand-gray mb-1">
                   Key verses in this series
                 </h3>
@@ -1027,7 +1064,7 @@ export default function StudyWorkspace({ entry }) {
           )}
 
           {/* Declarations */}
-          <div className="rounded-2xl border border-brand-navy/10 bg-white p-4">
+          <div className="rounded-2xl border border-brand-navy/10 bg-card p-4">
             <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand-gray mb-3 flex items-center gap-1.5">
               <Quote size={11} className="text-brand-navy" />
               {isMsg ? "Declarations from this message" : "Key declarations"}
@@ -1118,7 +1155,7 @@ export default function StudyWorkspace({ entry }) {
           {isMsg && nextPart && (
             <button
               onClick={() => goMessage(nextPart.id)}
-              className="w-full text-left rounded-2xl border border-brand-navy/10 bg-white p-4 hover:border-brand-navy/30 transition-colors group"
+              className="w-full text-left rounded-2xl border border-brand-navy/10 bg-card p-4 hover:border-brand-navy/30 transition-colors group"
             >
               <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand-gray mb-3">
                 Up next in this series
@@ -1161,7 +1198,7 @@ export default function StudyWorkspace({ entry }) {
           {isMsg && hasSeries && (
             <button
               onClick={goSeries}
-              className="w-full flex items-center justify-between gap-3 rounded-2xl border border-brand-navy/10 bg-gradient-to-br from-brand-sky/70 to-white px-4 py-3.5 hover:border-brand-navy/40 transition-colors group text-left"
+              className="w-full flex items-center justify-between gap-3 rounded-2xl border border-brand-navy/10 bg-gradient-to-br from-brand-sky/70 to-card px-4 py-3.5 hover:border-brand-navy/40 transition-colors group text-left"
             >
               <span>
                 <span className="block text-[13px] font-bold text-brand-navy">

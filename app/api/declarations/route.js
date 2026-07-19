@@ -5,6 +5,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getDeclarations } from "@/lib/groq";
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 const serviceKey = process.env.SUPABASE_SERVICE_KEY;
 if (!serviceKey) {
@@ -75,8 +76,11 @@ async function fetchBibleVerse(ref) {
 }
 
 export async function POST(request) {
+  const rl = rateLimit(request, { max: 8, windowMs: 60_000, prefix: 'declarations' });
+  if (!rl.allowed) return rateLimitResponse(rl);
+
   try {
-    const { message, shownIds = [] } = await request.json();
+    const { message, shownIds = [], topic = null } = await request.json();
 
     if (!message || typeof message !== "string") {
       return NextResponse.json(
@@ -85,47 +89,69 @@ export async function POST(request) {
       );
     }
 
-    // ── 1. Embed the user's message ──────────────────────────
-    let queryEmbedding;
-    let embeddingFailed = false;
-    try {
-      queryEmbedding = await embedText(message);
-    } catch (embedErr) {
-      console.error("[declarations] Embed failed:", embedErr.message);
-      embeddingFailed = true;
-      queryEmbedding = null;
-    }
-
     let declarations = [];
+    let embeddingFailed = false;
+    // True when the freeform (non-topic) search found nothing relevant, so any
+    // declarations we end up showing come from the table-wide random fallback,
+    // not from anything actually matching what the user shared.
+    let noRelevantMatch = false;
 
-    // ── 2. Hybrid search (semantic + keyword, RRF-fused) ─────────────────────
-    // Keyword recall catches exact phrases/scripture the small embedding model
-    // misses. If embedding failed, queryEmbedding is null and the hybrid RPC
-    // degrades to keyword-only rather than falling straight to random.
-    if (queryEmbedding || message.trim()) {
-      const { data, error } = await supabase.rpc("match_declarations_hybrid", {
-        query_embedding: queryEmbedding, // may be null → keyword-only
-        query_text: message,
-        match_count: 30,
+    // ── Topic-grid browsing (Faith/Finances/etc.) is a filter over the fixed
+    // topic_tags taxonomy, not freeform retrieval — go straight to the tag
+    // column instead of the embed+hybrid path. See CLAUDE.md rule 2.
+    if (topic) {
+      // Fetch one extra beyond the 10-per-page slice so step 6 below can tell
+      // whether more remain in the (already random, already-excluded) tagged pool.
+      const { data, error } = await supabase.rpc("match_declarations_by_topic", {
+        topic,
+        match_count: 11,
         exclude_ids: shownIds.length > 0 ? shownIds : [],
       });
-
       if (error) {
-        // Hybrid RPC not applied yet (migration pending) or failed — fall back
-        // to the vector-only RPC when we have an embedding.
-        console.error("[declarations] Hybrid RPC error, falling back to vector-only:", error.message);
-        if (queryEmbedding) {
-          const { data: vec, error: vecErr } = await supabase.rpc("match_declarations", {
-            query_embedding: queryEmbedding,
-            match_threshold: 0.3,
-            match_count: 30,
-            exclude_ids: shownIds.length > 0 ? shownIds : [],
-          });
-          if (vecErr) console.error("[declarations] Vector fallback RPC error:", vecErr.message);
-          else if (vec && vec.length > 0) declarations = vec;
+        console.error("[declarations] Topic RPC error:", error.message);
+      } else {
+        declarations = data || [];
+      }
+    } else {
+      // ── 1. Embed the user's message ──────────────────────────
+      let queryEmbedding;
+      try {
+        queryEmbedding = await embedText(message);
+      } catch (embedErr) {
+        console.error("[declarations] Embed failed:", embedErr.message);
+        embeddingFailed = true;
+        queryEmbedding = null;
+      }
+
+      // ── 2. Hybrid search (semantic + keyword, RRF-fused) ─────────────────
+      // Keyword recall catches exact phrases/scripture the small embedding model
+      // misses. If embedding failed, queryEmbedding is null and the hybrid RPC
+      // degrades to keyword-only rather than falling straight to random.
+      if (queryEmbedding || message.trim()) {
+        const { data, error } = await supabase.rpc("match_declarations_hybrid", {
+          query_embedding: queryEmbedding, // may be null → keyword-only
+          query_text: message,
+          match_count: 30,
+          exclude_ids: shownIds.length > 0 ? shownIds : [],
+        });
+
+        if (error) {
+          // Hybrid RPC not applied yet (migration pending) or failed — fall back
+          // to the vector-only RPC when we have an embedding.
+          console.error("[declarations] Hybrid RPC error, falling back to vector-only:", error.message);
+          if (queryEmbedding) {
+            const { data: vec, error: vecErr } = await supabase.rpc("match_declarations", {
+              query_embedding: queryEmbedding,
+              match_threshold: 0.3,
+              match_count: 30,
+              exclude_ids: shownIds.length > 0 ? shownIds : [],
+            });
+            if (vecErr) console.error("[declarations] Vector fallback RPC error:", vecErr.message);
+            else if (vec && vec.length > 0) declarations = vec;
+          }
+        } else if (data && data.length > 0) {
+          declarations = data;
         }
-      } else if (data && data.length > 0) {
-        declarations = data;
       }
     }
 
@@ -135,6 +161,9 @@ export async function POST(request) {
         ? "embedding service unavailable"
         : "semantic search returned no results";
       console.warn(`[declarations] Using fallback (${reason}). User will receive random declarations instead of semantically relevant ones.`);
+      // Only the freeform path implies "these match what you said" — the topic
+      // grid's fallback above is already tag-filtered, so it stays relevant.
+      if (!topic) noRelevantMatch = true;
       let query = supabase
         .from("declarations")
         .select(`
@@ -144,6 +173,12 @@ export async function POST(request) {
           topic_tags,
           sermons (title)
         `);
+
+      // Keep the fallback topic-aware: if the topic RPC failed, don't degrade
+      // to table-wide random results — stay filtered to what was actually asked for.
+      if (topic) {
+        query = query.contains("topic_tags", [topic]);
+      }
 
       if (shownIds.length > 0) {
         query = query.not("id", "in", `(${shownIds.map(id => `'${id}'`).join(',')})`);
@@ -211,7 +246,14 @@ export async function POST(request) {
     }
 
     // ── 7. Generate pastoral AI response via Groq ────────────
-    const botResponse = await getDeclarations(message, toReturn);
+    // If nothing actually matched what the user shared, don't have the model
+    // write a "personal to what they said" reply around unrelated declarations
+    // — that's the same fabrication risk /ask and /series-chat already refuse.
+    // Say so plainly and let the (still real, still Rev. Peter's) declarations
+    // below stand on their own as general encouragement.
+    const botResponse = noRelevantMatch
+      ? "I couldn't find declarations that speak directly to what you shared, but here are some from across Rev. Peter's messages to stand on in the meantime."
+      : await getDeclarations(message, toReturn);
 
     return NextResponse.json({
       response: botResponse,

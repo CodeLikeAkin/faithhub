@@ -14,7 +14,7 @@ export default function SermonPage() {
   const { id } = useParams();
   if (!id)
     return (
-      <div className="h-dvh bg-white flex items-center justify-center">
+      <div className="h-dvh bg-background flex items-center justify-center">
         <Loader2 className="w-10 h-10 text-brand-navy animate-spin" />
       </div>
     );

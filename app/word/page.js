@@ -131,7 +131,7 @@ export default function WordPage() {
             className={`group relative flex flex-col justify-between rounded-2xl p-2.5 sm:p-3 h-[74px] sm:h-[84px] text-left transition-all ${
               active
                 ? "hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-navy/20 cursor-pointer"
-                : "bg-white border border-brand-navy/8 cursor-default"
+                : "bg-card border border-brand-navy/8 cursor-default"
             } ${
               selected?.name === name
                 ? "ring-2 ring-brand-navy ring-offset-2"
@@ -160,7 +160,7 @@ export default function WordPage() {
   );
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-background">
       {/* Heading */}
       <section className="mx-auto max-w-[1200px] px-4 sm:px-6 pt-28 sm:pt-36 pb-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -335,7 +335,7 @@ function BookDetail({ bookId, name, stats, onClose }) {
           <button
             onClick={onClose}
             aria-label="Close"
-            className="w-10 h-10 rounded-full bg-white border border-brand-navy/10 flex items-center justify-center text-brand-gray hover:text-brand-navy flex-shrink-0"
+            className="w-10 h-10 rounded-full bg-card border border-brand-navy/10 flex items-center justify-center text-brand-gray hover:text-brand-navy flex-shrink-0"
           >
             <X size={18} />
           </button>
@@ -358,7 +358,7 @@ function BookDetail({ bookId, name, stats, onClose }) {
                   {chapters.map(([ch, n]) => (
                     <span
                       key={ch}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-brand-navy/10 rounded-full text-xs font-bold text-brand-navy"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-card border border-brand-navy/10 rounded-full text-xs font-bold text-brand-navy"
                     >
                       {name} {ch}
                       <span className="text-[10px] text-brand-gray font-medium">
@@ -397,7 +397,7 @@ function BookDetail({ bookId, name, stats, onClose }) {
                   <Link
                     key={sermon.id}
                     href={`/sermon/${sermon.id}`}
-                    className="group flex gap-3 bg-white rounded-2xl border border-brand-navy/10 p-4 hover:border-brand-navy/25 hover:shadow-lg hover:shadow-brand-navy/10 transition-all"
+                    className="group flex gap-3 bg-card rounded-2xl border border-brand-navy/10 p-4 hover:border-brand-navy/25 hover:shadow-lg hover:shadow-brand-navy/10 transition-all"
                   >
                     {sermon.youtube_video_id && (
                       <div className="relative w-24 flex-shrink-0 rounded-xl overflow-hidden aspect-video">
@@ -447,7 +447,7 @@ function BookDetail({ bookId, name, stats, onClose }) {
               <div className="mt-6 text-center">
                 <button
                   onClick={() => setShowAll(true)}
-                  className="inline-flex items-center gap-2 bg-white border border-brand-navy/15 text-brand-navy font-bold text-sm rounded-full px-6 py-3 hover:bg-brand-sky transition-colors"
+                  className="inline-flex items-center gap-2 bg-card border border-brand-navy/15 text-brand-navy font-bold text-sm rounded-full px-6 py-3 hover:bg-brand-sky transition-colors"
                 >
                   Show all {bySermon.length} messages
                 </button>

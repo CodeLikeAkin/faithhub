@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
 import { createClient } from '@supabase/supabase-js';
+import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -10,6 +11,9 @@ const supabaseAdmin = createClient(
 );
 
 export async function POST(req) {
+  const rl = rateLimit(req, { max: 8, windowMs: 60_000, prefix: 'series-summary' });
+  if (!rl.allowed) return rateLimitResponse(rl);
+
   try {
     const { seriesId, title, sermonTitles } = await req.json();
 

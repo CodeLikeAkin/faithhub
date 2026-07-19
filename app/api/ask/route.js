@@ -10,6 +10,8 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { voicePromptSection } from '@/lib/voice';
+import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { streamGroqAnswer, isGeminiQuotaError } from '@/lib/groq';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -95,32 +97,10 @@ function plainStreamResponse(text) {
   });
 }
 
-// Cache the full sermon-id list briefly so we don't re-query it on every ask.
-// The corpus grows slowly (a few sermons a week), so a short TTL is plenty.
-let _idCache = { ids: null, at: 0 };
-async function allSermonIds() {
-  const now = Date.now();
-  if (_idCache.ids && now - _idCache.at < 5 * 60 * 1000) return _idCache.ids;
-
-  const ids = [];
-  const pageSize = 1000;
-  let from = 0;
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const { data, error } = await supabaseAdmin
-      .from('sermons')
-      .select('id')
-      .range(from, from + pageSize - 1);
-    if (error || !data?.length) break;
-    for (const r of data) ids.push(r.id);
-    if (data.length < pageSize) break;
-    from += pageSize;
-  }
-  _idCache = { ids, at: now };
-  return ids;
-}
-
 export async function POST(req) {
+  const rl = rateLimit(req, { max: 8, windowMs: 60_000, prefix: 'ask' });
+  if (!rl.allowed) return rateLimitResponse(rl);
+
   try {
     const { message } = await req.json();
 
@@ -137,39 +117,75 @@ export async function POST(req) {
     }
     const embedFailed = !queryEmbedding;
 
-    // 2. Hybrid search across the ENTIRE library (all sermon ids).
-    const sermonIds = await allSermonIds();
+    // 2. Hybrid search across the ENTIRE library. filter_sermon_ids is
+    //    omitted (null) — this is a global search by definition, and a filter
+    //    listing every sermon in the corpus wouldn't exclude anything, so we
+    //    let the RPC skip that clause entirely (see hybrid_search.sql).
     let relevantSegments = [];
+    let candidatePool = null;
 
-    if (sermonIds.length > 0) {
-      let candidatePool = null;
+    const { data: hybrid, error: hybridErr } = await supabaseAdmin.rpc('match_segments_hybrid', {
+      query_embedding: queryEmbedding, // may be null → keyword-only
+      query_text: message,
+      match_count: 60,
+    });
 
-      const { data: hybrid, error: hybridErr } = await supabaseAdmin.rpc('match_segments_hybrid', {
-        query_embedding: queryEmbedding, // may be null → keyword-only
-        query_text: message,
-        filter_sermon_ids: sermonIds,
-        match_count: 60,
+    if (hybridErr) {
+      console.error('[ask] Hybrid RPC error, falling back to vector-only:', hybridErr.message);
+      if (queryEmbedding) {
+        const { data: vec, error: vecErr } = await supabaseAdmin.rpc('match_segments_by_sermons', {
+          query_embedding: queryEmbedding,
+          match_threshold: 0.25,
+          match_count: 60,
+        });
+        if (vecErr) console.error('[ask] Vector fallback RPC error:', vecErr.message);
+        else candidatePool = vec;
+      }
+    } else {
+      candidatePool = hybrid;
+    }
+
+    // `similarity` from match_segments_hybrid is an RRF positional score
+    // (1/(rrf_k+rank)) — every query gets a nonzero "rank 1", including
+    // gibberish, so it can't tell us whether anything is actually relevant.
+    // `vec_similarity` (added by hybrid_search.sql) is real cosine similarity
+    // from the semantic leg; 0 means the row only matched via full-text
+    // keyword search (a genuine token match, always trusted — e.g. an exact
+    // scripture reference).
+    //
+    // CALIBRATION NOTE: gte-small's cosine similarities are anisotropic for
+    // this corpus — everything sits in a compressed high band regardless of
+    // topical relevance. Measured on-topic queries scored 0.863–0.912;
+    // measured off-topic/gibberish queries scored 0.765–0.857. The gap is
+    // razor-thin (~0.006) and not safe to use as a hard reject line — a
+    // precise cutoff there is overfit to a handful of samples and risks
+    // wrongly rejecting real, sparsely-worded questions. So this floor is
+    // deliberately conservative: it only drops the clearest noise (bare
+    // keyboard-mash, wholly unrelated general trivia), not edge cases like
+    // "cryptocurrency investing" — those are left to the prompt, which
+    // already handles them correctly (see WEAK GROUNDING instruction below
+    // and the 20-question case study). Rows from the vector-only fallback
+    // RPC are already thresholded server-side and have no vec_similarity
+    // field, so they pass through untouched.
+    const MIN_VEC_SIMILARITY = 0.8;
+    // Separate, higher bar used only to flag weak grounding to the prompt
+    // (never to filter) — roughly the floor of the on-topic calibration band.
+    const CONFIDENT_VEC_SIMILARITY = 0.86;
+    let weakGrounding = false;
+    if (Array.isArray(candidatePool) && candidatePool.length > 0) {
+      const grounded = candidatePool.filter((r) => {
+        if (r.vec_similarity === undefined) return true; // vector-only fallback, already thresholded
+        return r.vec_similarity === 0 || r.vec_similarity >= MIN_VEC_SIMILARITY;
       });
-
-      if (hybridErr) {
-        console.error('[ask] Hybrid RPC error, falling back to vector-only:', hybridErr.message);
-        if (queryEmbedding) {
-          const { data: vec, error: vecErr } = await supabaseAdmin.rpc('match_segments_by_sermons', {
-            query_embedding: queryEmbedding,
-            filter_sermon_ids: sermonIds,
-            match_threshold: 0.25,
-            match_count: 60,
-          });
-          if (vecErr) console.error('[ask] Vector fallback RPC error:', vecErr.message);
-          else candidatePool = vec;
-        }
-      } else {
-        candidatePool = hybrid;
-      }
-
-      if (Array.isArray(candidatePool) && candidatePool.length > 0) {
-        relevantSegments = rerankSegments(candidatePool, 18);
-      }
+      relevantSegments = rerankSegments(grounded, 18);
+      weakGrounding =
+        relevantSegments.length > 0 &&
+        !relevantSegments.some(
+          (r) =>
+            r.vec_similarity === undefined ||
+            r.vec_similarity === 0 ||
+            r.vec_similarity >= CONFIDENT_VEC_SIMILARITY
+        );
     }
 
     // 3. Nothing grounded → be honest, never fabricate.
@@ -220,7 +236,14 @@ CITATION RULES — MANDATORY
 - Every factual claim MUST end with [N] matching a segment number.
 - When a point is echoed across multiple messages, cite each relevant one, e.g. "...faith comes by hearing [2][7]."
 - Only cite segments you actually used. Citations are inline only — no CITATIONS section, no URLs.
-
+${weakGrounding ? `
+═══════════════════════════════════════
+WEAK GROUNDING — THIS QUESTION
+═══════════════════════════════════════
+- None of the segments below are a confident, on-topic match for this question — they're the closest the search found, but the connection is loose.
+- Say plainly, in one or two sentences, that Rev. Peter's messages don't clearly address this. Do this FIRST, before anything else.
+- Do not pad the answer with paragraphs stitched from these loosely-related segments just to seem thorough. If one segment is genuinely worth a short mention after the disclaimer, fine — otherwise stop there.
+` : ''}
 ═══════════════════════════════════════
 RESPONSE SHAPE
 ═══════════════════════════════════════
@@ -251,7 +274,26 @@ QUESTION: ${message}`;
       systemInstruction: systemPrompt,
     });
 
-    const result = await model.generateContentStream(userMessageWithContext);
+    // Gemini can reject here (429 quota, 503 overload) before any streaming
+    // starts — that's exactly what we saw during testing. A 429 is purely a
+    // Gemini-side capacity issue, so we retry the same prompt on Groq instead
+    // of failing the request. Anything else (bad request, network) would fail
+    // the same way on Groq, so we still answer honestly for those.
+    let result;
+    let useGroqFallback = false;
+    try {
+      result = await model.generateContentStream(userMessageWithContext);
+    } catch (genErr) {
+      console.error('[ask] Gemini generateContentStream failed:', genErr.message);
+      if (isGeminiQuotaError(genErr)) {
+        console.warn('[ask] Gemini quota exhausted — falling back to Groq');
+        useGroqFallback = true;
+      } else {
+        return plainStreamResponse(
+          "The study service is busier than usual right now — please try that question again in a moment."
+        );
+      }
+    }
 
     const encoder = new TextEncoder();
     const segmentMapHeader = `SEGMENT_MAP:${JSON.stringify(segmentMap)}\n`;
@@ -260,9 +302,18 @@ QUESTION: ${message}`;
       async start(controller) {
         try {
           controller.enqueue(encoder.encode(segmentMapHeader));
-          for await (const chunk of result.stream) {
-            const content = chunk.text();
-            if (content) controller.enqueue(encoder.encode(content));
+          if (useGroqFallback) {
+            for await (const content of streamGroqAnswer({
+              systemPrompt,
+              userMessage: userMessageWithContext,
+            })) {
+              controller.enqueue(encoder.encode(content));
+            }
+          } else {
+            for await (const chunk of result.stream) {
+              const content = chunk.text();
+              if (content) controller.enqueue(encoder.encode(content));
+            }
           }
         } catch (err) {
           controller.error(err);

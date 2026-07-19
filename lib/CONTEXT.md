@@ -42,6 +42,17 @@ For server-side routes needing elevated access (bypassing RLS), API routes creat
 
 ---
 
+### `bible.js`
+Verse text + book maps. `fetchPassage({ book, bookId, chapter, verseStart, verseEnd }, translation)`
+— `translation` defaults to `"KJV"`. KJV fetches live from the AO Lab API
+(`bible.helloao.org`, translation id `eng_kjv`); `"NLT"` reads from the local `bible_nlt`
+Supabase table instead (NLT is Tyndale-copyrighted, not on the free API — loaded once via
+`.claude/faithhub-pipeline/backfill-bible-nlt.js`). Also exports `TRANSLATIONS` (`["KJV","NLT"]`),
+`BOOK_ORDER`, `BOOK_ABBR`, `OT_COUNT`, `bookIdFor()`. Used by `VerseExplorer.js`,
+`StudyWorkspace.js` (key verses), and `word/page.js` (book lookups only, no verse text).
+
+---
+
 ### `utils.js`
 Exports `cn()` — a Tailwind class merging utility.
 
@@ -58,5 +69,4 @@ Used throughout components for conditional class names.
 
 - Gemini client → `app/api/series-chat/route.js` and `app/api/ask/route.js`
 - Embedding logic → `supabase/functions/embed/index.ts`
-- Bible API fetch → `app/api/declarations/route.js`
 - Supabase service-role client → instantiated inline in each API route that needs it

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BookOpen, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { fetchPassage, BOOK_ORDER, BOOK_ABBR } from "@/lib/bible";
+import { fetchPassage, BOOK_ORDER, BOOK_ABBR, TRANSLATIONS } from "@/lib/bible";
 
 /**
  * Verse Explorer — every scripture a sermon opened, grouped by book as chips.
@@ -20,7 +20,8 @@ export default function VerseExplorer({ sermonId, scriptures: preloaded }) {
   const [fetched, setFetched] = useState([]);
   const [view, setView] = useState("book"); // "book" | "spoken"
   const [expandedId, setExpandedId] = useState(null);
-  const [verseText, setVerseText] = useState({}); // id -> {loading}|{verses,translation}|{error}
+  const [verseText, setVerseText] = useState({}); // id -> { KJV?, NLT?: {loading}|{verses,translation}|{error} }
+  const [shownTranslation, setShownTranslation] = useState({}); // id -> "KJV" | "NLT"
 
   const scriptures = preloaded ?? fetched;
 
@@ -74,28 +75,45 @@ export default function VerseExplorer({ sermonId, scriptures: preloaded }) {
 
   if (!scriptures.length) return null;
 
-  const toggleVerse = async (s) => {
+  const loadVerseText = async (s, translation) => {
+    setVerseText((v) => ({
+      ...v,
+      [s.id]: { ...v[s.id], [translation]: { loading: true } },
+    }));
+    const passage = await fetchPassage(
+      {
+        book: s.book,
+        bookId: s.book_id,
+        chapter: s.chapter,
+        verseStart: s.verse_start,
+        verseEnd: s.verse_end,
+      },
+      translation
+    );
+    setVerseText((v) => ({
+      ...v,
+      [s.id]: {
+        ...v[s.id],
+        [translation]: passage
+          ? { verses: passage.verses, translation: passage.translation }
+          : { error: true },
+      },
+    }));
+  };
+
+  const toggleVerse = (s) => {
     if (expandedId === s.id) {
       setExpandedId(null);
       return;
     }
     setExpandedId(s.id);
-    if (verseText[s.id]) return;
+    const t = shownTranslation[s.id] || "KJV";
+    if (!verseText[s.id]?.[t]) loadVerseText(s, t);
+  };
 
-    setVerseText((v) => ({ ...v, [s.id]: { loading: true } }));
-    const passage = await fetchPassage({
-      book: s.book,
-      bookId: s.book_id,
-      chapter: s.chapter,
-      verseStart: s.verse_start,
-      verseEnd: s.verse_end,
-    });
-    setVerseText((v) => ({
-      ...v,
-      [s.id]: passage
-        ? { verses: passage.verses, translation: passage.translation }
-        : { error: true },
-    }));
+  const switchTranslation = (s, translation) => {
+    setShownTranslation((st) => ({ ...st, [s.id]: translation }));
+    if (!verseText[s.id]?.[translation]) loadVerseText(s, translation);
   };
 
   const Chip = ({ s, label }) => (
@@ -113,10 +131,28 @@ export default function VerseExplorer({ sermonId, scriptures: preloaded }) {
   );
 
   const Reveal = ({ s }) => {
-    const vt = verseText[s.id];
+    const t = shownTranslation[s.id] || "KJV";
+    const vt = verseText[s.id]?.[t];
     return (
-      <div className="mt-2.5 rounded-r-2xl rounded-l-md border border-brand-navy/10 border-l-[3px] border-l-brand-navy bg-gradient-to-br from-brand-sky/60 to-white px-4 sm:px-5 py-4">
-        <p className="text-[13px] font-bold text-brand-navy">{s.reference}</p>
+      <div className="mt-2.5 rounded-r-2xl rounded-l-md border border-brand-navy/10 border-l-[3px] border-l-brand-navy bg-gradient-to-br from-brand-sky/60 to-card px-4 sm:px-5 py-4">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[13px] font-bold text-brand-navy">{s.reference}</p>
+          <span className="flex rounded-full border border-brand-navy/15 p-0.5 flex-shrink-0">
+            {TRANSLATIONS.map((tr) => (
+              <button
+                key={tr}
+                onClick={() => switchTranslation(s, tr)}
+                className={`rounded-full px-2.5 py-0.5 text-[10.5px] font-bold transition-colors ${
+                  t === tr
+                    ? "bg-brand-navy text-white"
+                    : "text-brand-gray hover:text-brand-navy"
+                }`}
+              >
+                {tr}
+              </button>
+            ))}
+          </span>
+        </div>
         {vt?.loading && (
           <span className="mt-2 flex items-center gap-2 text-sm text-brand-gray">
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -136,9 +172,6 @@ export default function VerseExplorer({ sermonId, scriptures: preloaded }) {
                 {v.text}{" "}
               </span>
             ))}
-            <span className="block mt-1.5 text-[11px] uppercase tracking-wider text-brand-gray">
-              {vt.translation}
-            </span>
           </p>
         )}
         {s.theme && (
@@ -167,7 +200,7 @@ export default function VerseExplorer({ sermonId, scriptures: preloaded }) {
   };
 
   return (
-    <div className="rounded-3xl border border-brand-navy/10 bg-white p-5 sm:p-6">
+    <div className="rounded-3xl border border-brand-navy/10 bg-card p-5 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="flex items-center gap-3">
           <span className="w-9 h-9 rounded-xl bg-brand-sky text-brand-navy flex items-center justify-center flex-shrink-0">
