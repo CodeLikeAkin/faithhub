@@ -739,18 +739,6 @@ export default function StudyWorkspace({ entry }) {
                   <FileText size={14} /> This message
                 </button>
               </div>
-              <span className="text-[11px] text-brand-gray">
-                {mode === "series" ? (
-                  <>
-                    Grounded in{" "}
-                    <b className="text-brand-navy font-bold">all {parts.length} parts</b>
-                  </>
-                ) : (
-                  <>
-                    Grounded in <b className="text-brand-navy font-bold">this message only</b>
-                  </>
-                )}
-              </span>
             </div>
           )}
 

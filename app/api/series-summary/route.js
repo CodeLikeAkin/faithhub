@@ -82,7 +82,11 @@ ${preacherContext} Only credit the preacher(s) named above — do not invent or 
           },
           {
             role: 'user',
-            content: `Based on this sermon teaching response, generate exactly 3 specific follow-up questions a member of the congregation would naturally want to ask next. Ask in the first person plural — use "we", "us", "our" — as one of us who just heard this teaching and wants to go deeper. The questions must be directly based on the content just taught — not generic. Output only a JSON array of 3 strings, nothing else. Example format:\n["Question one?","Question two?","Question three?"]\n\nTeaching Response:\n${summary}`
+            content: `Based on this sermon teaching response, generate exactly 3 short tappable suggestion prompts a member of the congregation would want to explore next. Write in the first person plural — "we", "us", "our" — as one of us who just heard this teaching and wants to go deeper. Each one must be directly based on the content just taught — not generic.
+
+STRICT LENGTH RULE: each suggestion is a short phrase or single simple question, 4-8 words, one idea only — never a compound sentence, never multiple clauses joined by "and"/"or". These are tap targets, not essay prompts. Think chip labels, not paragraphs.
+
+Output only a JSON array of 3 strings, nothing else. Example format:\n["Living out our new identity","What born again really means","Facing doubt after the altar call"]\n\nTeaching Response:\n${summary}`
           }
         ],
         model: 'llama-3.1-8b-instant',

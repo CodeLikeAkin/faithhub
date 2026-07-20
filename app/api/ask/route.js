@@ -257,8 +257,9 @@ RESPONSE SHAPE
 ═══════════════════════════════════════
 FOLLOW-UP SUGGESTIONS — STRICT
 ═══════════════════════════════════════
-- End with EXACTLY: SUGGESTIONS:["Question one?","Question two?","Question three?"]
-- Each suggestion MUST be answerable from the segments you were given — specific, not generic.${voicePromptSection()}`;
+- End with EXACTLY: SUGGESTIONS:["Suggestion one","Suggestion two","Suggestion three"]
+- Each suggestion MUST be answerable from the segments you were given — specific, not generic.
+- Each suggestion is a short tappable phrase or simple question, 4-8 words, ONE idea only — never a compound sentence, never multiple clauses joined by "and"/"or". These are tap targets, not essay prompts.${voicePromptSection()}`;
 
     const userMessageWithContext = `TRANSCRIPT SEGMENTS FROM ACROSS REV. PETER'S MESSAGES — USE ONLY THESE:
 ${segmentList}

@@ -422,13 +422,6 @@ export default function StudyChat({
                   }}
                   className="mt-7 first:mt-0"
                 >
-                  <p
-                    className={`text-[11px] font-bold uppercase tracking-[0.2em] mb-1.5 ${
-                      isLatestQuestion ? "text-brand-navy/60" : "text-brand-navy/35"
-                    }`}
-                  >
-                    You asked
-                  </p>
                   <h3
                     className={`tracking-tight leading-snug ${
                       isLatestQuestion
