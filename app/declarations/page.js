@@ -16,12 +16,14 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  Check,
+  Volume2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { cleanTitle } from "@/lib/titles";
 import { parseYoutubeUrl } from "@/lib/youtube";
+import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import VideoModal from "@/components/VideoModal";
-import ThemeToggle from "@/components/ThemeToggle";
 
 /**
  * Faith Declarations — a chat-first devotional surface in two screens on one
@@ -54,48 +56,88 @@ const GOLD_ON_NAVY = "#D9BE7E";
  * numeral, the proclamation in serif at reading-aloud size, the source moment
  * beneath it, and a quiet copy icon next to the Watch affordance.
  */
-function DeclarationRow({ declaration, index, onCopy, onWatch }) {
+function DeclarationRow({ declaration, index, onCopy, onWatch, selectMode, picked, onTogglePick }) {
   const parsed = parseYoutubeUrl(declaration.youtube_url_with_timestamp);
   return (
     <div
-      className="flex items-start gap-3 sm:gap-4 px-5 sm:px-7 py-5 animate-in fade-in duration-500"
+      className="flex items-start gap-3 px-5 sm:px-7 py-3 animate-in fade-in duration-500"
       style={{ animationDelay: `${Math.min(index, 10) * 55}ms`, animationFillMode: "backwards" }}
     >
-      <span className="font-serif text-[17px] tabular-nums w-6 text-center flex-shrink-0 pt-0.5 text-brand-navy/35">
-        {index + 1}
-      </span>
+      {selectMode ? (
+        <button
+          type="button"
+          onClick={() => onTogglePick(declaration)}
+          aria-label={picked ? "Remove from selection" : "Add to selection"}
+          aria-pressed={picked}
+          className={`w-5 h-5 rounded-md border-[1.5px] flex-shrink-0 mt-0.5 flex items-center justify-center transition-colors ${
+            picked
+              ? "bg-brand-navy border-brand-navy text-white"
+              : "border-brand-navy/25 text-transparent hover:border-brand-navy/50"
+          }`}
+        >
+          <Check size={11} strokeWidth={3} />
+        </button>
+      ) : (
+        <span className="font-serif text-sm tabular-nums w-5 text-center flex-shrink-0 pt-0.5 text-brand-navy/35">
+          {index + 1}
+        </span>
+      )}
       <div className="min-w-0 flex-1">
-        <blockquote className="font-serif text-[16.5px] sm:text-[19px] leading-[1.45] text-brand-ink max-w-[40ch]">
+        <blockquote className="font-serif text-sm sm:text-base leading-[1.35] text-brand-ink max-w-[46ch]">
           {declaration.declaration_text}
         </blockquote>
-        <span className="mt-2 flex items-center gap-1.5 min-w-0 text-[12px] text-brand-gray">
-          <Play size={8} style={{ color: GOLD }} className="flex-shrink-0" fill="currentColor" />
-          <span className="truncate max-w-[200px] sm:max-w-[320px] font-semibold">
-            {cleanTitle(declaration.sermon_title)}
-          </span>
-        </span>
       </div>
-      <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
+      <div className="flex items-center gap-1 flex-shrink-0">
         <button
           onClick={() => onCopy(declaration.declaration_text)}
           title="Copy this declaration"
           aria-label="Copy this declaration"
-          className="w-8 h-8 rounded-full text-brand-gray flex items-center justify-center hover:bg-brand-sky hover:text-brand-navy transition-colors"
+          className="w-9 h-9 rounded-full text-brand-gray flex items-center justify-center hover:bg-brand-sky hover:text-brand-navy transition-colors"
         >
-          <Copy size={13} />
+          <Copy size={12} />
         </button>
         {parsed && (
           <button
             type="button"
             onClick={() => onWatch({ ...parsed, sermon_title: declaration.sermon_title })}
-            className="inline-flex items-center gap-1.5 h-[33px] rounded-full px-3.5 text-[12.5px] font-semibold text-brand-ink bg-card border border-brand-navy/15 hover:bg-brand-sky hover:border-brand-navy/40 transition-colors"
+            title="Watch this moment"
+            aria-label="Watch this moment"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-brand-ink bg-white border border-brand-navy/15 hover:bg-brand-sky hover:border-brand-navy/40 transition-colors"
           >
-            <Play size={9} style={{ color: GOLD }} fill="currentColor" />
-            <span className="hidden sm:inline">Watch</span>
+            <Play size={12} style={{ color: GOLD }} fill="currentColor" className="ml-0.5" />
           </button>
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * The one control that turns select mode on/off — a checkbox, not a button,
+ * so it reads as a state toggle rather than an action. Reused near the Themes
+ * row and inside each card's tools row; both instances drive the same global
+ * select-mode state on DeclarationsPage.
+ */
+function SelectToggle({ on, onClick, className = "" }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={on}
+      title={on ? "Stop selecting declarations" : "Select declarations"}
+      aria-label={on ? "Stop selecting declarations" : "Select declarations"}
+      className={`flex-shrink-0 w-11 h-11 flex items-center justify-center ${className}`}
+    >
+      <span
+        className={`w-5 h-5 rounded-md border-[1.5px] flex items-center justify-center transition-colors ${
+          on
+            ? "bg-brand-navy border-brand-navy text-white"
+            : "border-brand-navy/30 text-transparent"
+        }`}
+      >
+        <Check size={11} strokeWidth={3} />
+      </span>
+    </button>
   );
 }
 
@@ -108,6 +150,16 @@ function SpeakMode({ items, onClose, onCopy, onWatch, canLoadMore, loadingMore, 
   const [i, setI] = useState(0);
   const [playing, setPlaying] = useState(false);
   const move = (n) => setI((p) => (p + n + items.length) % items.length);
+
+  // Lock body scroll while the full-screen view is open (same pattern as
+  // VideoModal / StudyWorkspace) so the page behind doesn't scroll on touch.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -160,16 +212,16 @@ function SpeakMode({ items, onClose, onCopy, onWatch, canLoadMore, loadingMore, 
       }}
     >
       <div className="flex items-center gap-3 flex-shrink-0">
-        <span className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: GOLD_ON_NAVY }}>
+        <span className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: GOLD_ON_NAVY }}>
           Speak mode
         </span>
-        <span className="text-[11px] font-semibold text-white/40 tabular-nums">
+        <span className="text-xs font-semibold text-white/40 tabular-nums">
           {i + 1} / {items.length}
         </span>
         <button
           onClick={onClose}
           aria-label="Close speak mode"
-          className="ml-auto w-10 h-10 rounded-xl border border-white/20 bg-white/5 text-white flex items-center justify-center hover:bg-white/15 transition-colors"
+          className="ml-auto w-11 h-11 rounded-xl border border-white/20 bg-white/5 text-white flex items-center justify-center hover:bg-white/15 transition-colors"
         >
           <X size={18} />
         </button>
@@ -187,7 +239,7 @@ function SpeakMode({ items, onClose, onCopy, onWatch, canLoadMore, loadingMore, 
             &ldquo;{d.declaration_text}&rdquo;
           </blockquote>
           {d.sermon_title && (
-            <p className="mt-7 text-[13px] text-white/60">
+            <p className="mt-7 text-sm text-white/60">
               From{" "}
               <span className="font-semibold text-white/85">
                 {cleanTitle(d.sermon_title)}
@@ -197,7 +249,7 @@ function SpeakMode({ items, onClose, onCopy, onWatch, canLoadMore, loadingMore, 
           <div className="mt-6 flex items-center justify-center gap-2.5 flex-wrap">
             <button
               onClick={() => onCopy(d.declaration_text)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/25 px-4 py-2 text-[12px] font-bold text-white hover:bg-white/20 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/25 px-4 py-2 text-xs font-bold text-white hover:bg-white/20 transition-colors"
             >
               <Copy size={12} />
               Copy
@@ -205,7 +257,7 @@ function SpeakMode({ items, onClose, onCopy, onWatch, canLoadMore, loadingMore, 
             {parsed && (
               <button
                 onClick={() => onWatch({ ...parsed, sermon_title: d.sermon_title })}
-                className="inline-flex items-center gap-1.5 rounded-full bg-white text-brand-navy px-4 py-2 text-[12px] font-bold hover:bg-brand-sky transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-full bg-white text-brand-navy px-4 py-2 text-xs font-bold hover:bg-brand-sky transition-colors"
               >
                 <Play size={11} fill="currentColor" />
                 Watch the moment
@@ -275,7 +327,7 @@ function SpeakMode({ items, onClose, onCopy, onWatch, canLoadMore, loadingMore, 
               onClick={onLoadMore}
               disabled={loadingMore}
               aria-label="Load 10 more declarations"
-              className="inline-flex items-center gap-1.5 h-12 rounded-full border border-white/25 bg-white/5 px-4 text-[13px] font-bold text-white hover:bg-white/15 transition-colors disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 h-12 rounded-full border border-white/25 bg-white/5 px-4 text-sm font-bold text-white hover:bg-white/15 transition-colors disabled:opacity-60"
             >
               {loadingMore ? (
                 <Loader2 size={14} className="animate-spin" />
@@ -300,16 +352,24 @@ export default function DeclarationsPage() {
   const [fetchingMore, setFetchingMore] = useState(false);
   const [outOfResults, setOutOfResults] = useState(false);
   const [lastQuery, setLastQuery] = useState("");
-  const [lastTopic, setLastTopic] = useState(null);
+  const [activeTopics, setActiveTopics] = useState(new Set()); // chips currently on, lowercase
+  const [lastTopics, setLastTopics] = useState([]); // topics behind the on-screen card, for "load more"
+  const [topicCardId, setTopicCardId] = useState(null); // AI message that topic chips update in place
+  const [topicUserMsgId, setTopicUserMsgId] = useState(null); // its paired "Declarations on X" bubble, kept in sync
   const [toast, setToast] = useState(null);
   const [featured, setFeatured] = useState(null); // today's declaration
   const [streak, setStreak] = useState(0);
   const [watching, setWatching] = useState(null); // segment currently open in the video modal
   const [speakMsgId, setSpeakMsgId] = useState(null); // AI message whose declarations are open in speak mode (live — grows with +10)
+  const [speakFromCart, setSpeakFromCart] = useState(false); // speak mode opened from the picked-declarations cart instead
+  const [selectMode, setSelectMode] = useState(false); // checkbox picking, on/off across the whole thread
+  const [picked, setPicked] = useState(new Map()); // id -> declaration, the cross-topic cart
+  const [cartOpen, setCartOpen] = useState(false); // preview panel listing what's in the cart
   const textareaRef = useRef(null);
   const threadRef = useRef(null);
   const userMessageRefs = useRef({});
   const toastTimer = useRef(null);
+  const keyboardInset = useKeyboardInset();
 
   const hasSearched = messages.length > 0;
 
@@ -398,8 +458,41 @@ export default function DeclarationsPage() {
     }
   };
 
-  const handleTopicClick = (topic) => {
-    startSearch(`I need declarations about ${topic.toLowerCase()}`, topic, topic.toLowerCase());
+  // Topic chips are a live filter, not a chat message — tapping a second or
+  // third chip re-mixes the same on-screen card across all active tags rather
+  // than piling up a new user bubble per tap (see match_declarations_by_topic).
+  // Leaving select mode clears the cart — select mode off means nothing is
+  // selected, so the floating "Speak these" pill never lingers after you're
+  // done picking.
+  const toggleSelectMode = () => {
+    setSelectMode((v) => {
+      const next = !v;
+      if (!next) {
+        setPicked(new Map());
+        setCartOpen(false);
+      }
+      return next;
+    });
+  };
+
+  const togglePick = (declaration) => {
+    const key = declaration.id || declaration.declaration_text;
+    setPicked((prev) => {
+      const next = new Map(prev);
+      if (next.has(key)) next.delete(key);
+      else next.set(key, declaration);
+      return next;
+    });
+  };
+
+  const handleTopicClick = (topicName) => {
+    const t = topicName.toLowerCase();
+    const next = new Set(activeTopics);
+    if (next.has(t)) next.delete(t);
+    else next.add(t);
+    if (next.size === 0) next.add(t); // always leave at least one chip active
+    setActiveTopics(next);
+    runTopicSearch(Array.from(next));
   };
 
   const goHome = () => {
@@ -407,14 +500,113 @@ export default function DeclarationsPage() {
     setHasMore(false);
     setOutOfResults(false);
     setLastQuery("");
-    setLastTopic(null);
+    setActiveTopics(new Set());
+    setLastTopics([]);
+    setTopicCardId(null);
+    setTopicUserMsgId(null);
+    setSelectMode(false);
+    setPicked(new Map());
+    setCartOpen(false);
   };
 
-  const startSearch = async (msg, displayAs = null, topicTag = null) => {
+  const runTopicSearch = async (topics) => {
+    if (!topics.length || loading) return;
+
+    setLastQuery(`declarations about ${topics.join(" and ")}`);
+    setLastTopics(topics);
+    setOutOfResults(false);
+    setHasMore(false);
+    setLoading(true);
+
+    const displayAs = topics
+      .map((t) => t[0].toUpperCase() + t.slice(1))
+      .join(" + ");
+
+    // Only the first tap creates a user bubble; later taps update that same
+    // AI card in place so switching chips reads as filtering, not re-asking.
+    const reuseCard = topicCardId !== null;
+    let userMsgId = null;
+    if (!reuseCard) {
+      userMsgId = Date.now();
+      setTopicUserMsgId(userMsgId);
+      setMessages((prev) => [
+        ...prev,
+        { id: userMsgId, role: "user", text: `Declarations on ${displayAs}` },
+      ]);
+      setTimeout(() => {
+        const el = userMessageRefs.current[userMsgId];
+        const c = threadRef.current;
+        if (el && c)
+          c.scrollTo({ top: el.offsetTop - c.offsetTop - 8, behavior: "smooth" });
+      }, 100);
+    }
+
+    try {
+      const res = await fetch("/api/declarations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: `declarations about ${topics.join(" and ")}`,
+          shownIds: [],
+          topics,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Unknown error");
+
+      const cardTitle = `Declarations on ${displayAs}`;
+      if (reuseCard) {
+        setMessages((prev) =>
+          prev.map((m) => {
+            if (m.id === topicCardId)
+              return { ...m, title: cardTitle, text: data.response, declarations: data.declarations || [] };
+            if (m.id === topicUserMsgId) return { ...m, text: `Declarations on ${displayAs}` };
+            return m;
+          })
+        );
+      } else {
+        const aiMsgId = Date.now() + 1;
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: aiMsgId,
+            role: "ai",
+            title: cardTitle,
+            isTopicCard: true, // its title just repeats the bubble above — skip the h2
+            text: data.response,
+            declarations: data.declarations || [],
+          },
+        ]);
+        setTopicCardId(aiMsgId);
+      }
+
+      if (data.declarations && data.declarations.length >= 10) setHasMore(true);
+    } catch (err) {
+      if (!reuseCard) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now() + 1,
+            role: "ai",
+            title: "Something went wrong",
+            text: "I'm sorry, something went wrong. Please try again in a moment.",
+            declarations: [],
+          },
+        ]);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startSearch = async (msg) => {
     if (!msg.trim() || loading) return;
 
     setLastQuery(msg.trim());
-    setLastTopic(topicTag);
+    setLastTopics([]);
+    setTopicCardId(null); // a freeform ask breaks out of the topic-filter card
+    setActiveTopics(new Set());
     setOutOfResults(false);
     setHasMore(false);
 
@@ -422,7 +614,7 @@ export default function DeclarationsPage() {
     const userMsg = {
       id: userMsgId,
       role: "user",
-      text: displayAs || msg.trim(),
+      text: msg.trim(),
     };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
@@ -442,7 +634,7 @@ export default function DeclarationsPage() {
         body: JSON.stringify({
           message: msg.trim(),
           shownIds: [],
-          topic: topicTag,
+          topics: [],
         }),
       });
 
@@ -454,7 +646,7 @@ export default function DeclarationsPage() {
         {
           id: Date.now() + 1,
           role: "ai",
-          title: displayAs ? `Declarations on ${displayAs}` : "A word for you",
+          title: "A word for you",
           text: data.response,
           declarations: data.declarations || [],
         },
@@ -495,7 +687,7 @@ export default function DeclarationsPage() {
         body: JSON.stringify({
           message: lastQuery,
           shownIds: allIds,
-          topic: lastTopic,
+          topics: lastTopics,
         }),
       });
 
@@ -543,7 +735,7 @@ export default function DeclarationsPage() {
   /* The pill composer — the essence of the page. Rendered in-flow at the
      heart of the home screen, and docked at the bottom of the thread. */
   const composer = (placeholder) => (
-    <div className="flex items-end gap-1.5 bg-card rounded-[28px] border-[1.5px] border-brand-navy/15 focus-within:border-brand-navy/50 shadow-[0_14px_44px_-20px_rgba(14,36,71,0.5)] p-2 pl-5 transition-colors">
+    <div className="flex items-end gap-1.5 bg-white rounded-[28px] border-[1.5px] border-brand-navy/15 focus-within:border-brand-navy/50 shadow-[0_14px_44px_-20px_rgba(14,36,71,0.5)] p-2 pl-5 transition-colors">
       <Sparkles size={17} style={{ color: GOLD }} className="flex-shrink-0 mb-[13px]" />
       <textarea
         ref={textareaRef}
@@ -554,7 +746,7 @@ export default function DeclarationsPage() {
         onKeyDown={handleKeyDown}
         disabled={loading}
         aria-label="Share your situation or need"
-        className="flex-1 bg-transparent py-2.5 font-serif text-[16px] text-brand-ink placeholder:text-brand-gray/70 focus:outline-none resize-none min-w-0 max-h-[120px] leading-relaxed"
+        className="flex-1 bg-transparent py-2.5 font-serif text-base text-brand-ink placeholder:text-brand-gray/70 focus:outline-none resize-none min-w-0 max-h-[120px] leading-relaxed"
       />
       <button
         onClick={handleSend}
@@ -571,115 +763,151 @@ export default function DeclarationsPage() {
     </div>
   );
 
-  return (
-    <main className="h-dvh bg-background flex flex-col">
-      {/* Header */}
-      <header
-        className="flex items-center gap-3.5 px-4 sm:px-6 py-3 flex-shrink-0 backdrop-blur-md bg-gradient-to-b from-brand-sky/55 to-card/90"
-        style={{
-          borderBottom: "1px solid rgba(184,134,47,0.22)",
-        }}
+  const themeChip = (name, vertical) => {
+    const active = activeTopics.has(name.toLowerCase());
+    return (
+      <button
+        key={name}
+        onClick={() => handleTopicClick(name)}
+        className={
+          vertical
+            ? `flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-left transition-all ${
+                active
+                  ? "text-white"
+                  : "text-brand-gray hover:text-brand-ink hover:bg-white"
+              }`
+            : `flex-shrink-0 inline-flex items-center gap-2 rounded-full px-[17px] min-h-11 text-sm font-semibold transition-all ${
+                active
+                  ? "text-white -translate-y-px"
+                  : "text-brand-gray border border-transparent hover:text-brand-ink hover:bg-brand-sky/70 hover:border-brand-navy/10"
+              }`
+        }
+        style={
+          active
+            ? {
+                background: "linear-gradient(150deg, #173A68, #102A4E)",
+                boxShadow: "inset 0 0 0 1px rgba(201,162,39,0.4), 0 6px 18px -8px rgba(14,36,71,0.55)",
+              }
+            : undefined
+        }
       >
-        <button
-          type="button"
-          onClick={() => (hasSearched ? goHome() : router.push("/"))}
-          aria-label={hasSearched ? "Back to declarations home" : "Back to home"}
-          className="w-10 h-10 rounded-full border border-brand-navy/15 bg-card text-brand-navy flex items-center justify-center shadow-sm hover:-translate-x-0.5 transition-transform flex-shrink-0"
-          style={{ transitionDuration: "150ms" }}
-        >
-          <ArrowLeft size={16} />
-        </button>
-        <div className="flex items-center gap-3 min-w-0">
-          <span
-            className="w-[34px] h-[34px] rounded-[10px] flex-shrink-0 font-serif text-[19px] leading-none flex items-center justify-center"
-            style={{
-              background: "linear-gradient(150deg, #173A68, #102A4E)",
-              color: GOLD_ON_NAVY,
-              boxShadow: "inset 0 0 0 1px rgba(201,162,39,0.35)",
-            }}
-          >
-            &rdquo;
-          </span>
-          <div className="min-w-0">
-            <h1 className="text-base font-bold text-brand-ink leading-tight tracking-tight">
-              Faith Declarations
-            </h1>
-            <p className="flex items-center gap-1.5 text-[11.5px] text-brand-gray">
-              <span className="w-3.5 h-px opacity-70" style={{ background: GOLD }} />
-              Speak God&rsquo;s Word over your life
-            </p>
-          </div>
-        </div>
-        <div className="ml-auto flex items-center gap-2 flex-shrink-0">
-          {streak >= 2 && (
-            <span
-              title="Days you've come to declare the Word"
-              className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12px] font-bold"
-              style={{
-                color: GOLD,
-                background: "linear-gradient(150deg, rgba(184,134,47,0.16), rgba(184,134,47,0.05))",
-                borderColor: "rgba(184,134,47,0.40)",
-                boxShadow: "0 2px 12px -6px rgba(184,134,47,0.55)",
-              }}
-            >
-              <Flame size={12} />
-              <span className="font-serif text-[15px] tabular-nums">{streak}</span>
-              -day streak
-            </span>
-          )}
-          <ThemeToggle className="w-9 h-9 flex items-center justify-center rounded-full text-brand-gray hover:text-brand-navy hover:bg-brand-sky transition-colors" />
-        </div>
-      </header>
+        <span
+          className={`w-[5px] h-[5px] rounded-full flex-shrink-0 transition-transform ${
+            active ? "scale-100" : "scale-0"
+          }`}
+          style={{ background: GOLD_ON_NAVY }}
+        />
+        {name}
+      </button>
+    );
+  };
 
-      {/* Theme chips — only in the thread view */}
+  const header = (
+    <header
+      className="flex items-center gap-3.5 px-4 sm:px-6 py-3 backdrop-blur-md"
+      style={{
+        background: "linear-gradient(180deg, rgba(234,242,251,0.55), rgba(255,255,255,0.9))",
+        borderBottom: "1px solid rgba(184,134,47,0.22)",
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => (hasSearched ? goHome() : router.push("/"))}
+        aria-label={hasSearched ? "Back to declarations home" : "Back to home"}
+        className="w-10 h-10 rounded-full border border-brand-navy/15 bg-white text-brand-navy flex items-center justify-center shadow-sm hover:-translate-x-0.5 transition-transform flex-shrink-0"
+        style={{ transitionDuration: "150ms" }}
+      >
+        <ArrowLeft size={16} />
+      </button>
+      <div className="flex items-center gap-3 min-w-0">
+        <span
+          className="w-[34px] h-[34px] rounded-[10px] flex-shrink-0 font-serif text-lg leading-none flex items-center justify-center"
+          style={{
+            background: "linear-gradient(150deg, #173A68, #102A4E)",
+            color: GOLD_ON_NAVY,
+            boxShadow: "inset 0 0 0 1px rgba(201,162,39,0.35)",
+          }}
+        >
+          &rdquo;
+        </span>
+        <div className="min-w-0">
+          <h1 className="text-base font-bold text-brand-ink leading-tight tracking-tight">
+            Faith Declarations
+          </h1>
+          <p className="flex items-center gap-1.5 text-xs text-brand-gray">
+            <span className="w-3.5 h-px opacity-70" style={{ background: GOLD }} />
+            Speak God&rsquo;s Word over your life
+          </p>
+        </div>
+      </div>
+      {streak >= 2 && (
+        <span
+          title="Days you've come to declare the Word"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold flex-shrink-0"
+          style={{
+            color: GOLD,
+            background: "linear-gradient(150deg, rgba(184,134,47,0.16), rgba(184,134,47,0.05))",
+            borderColor: "rgba(184,134,47,0.40)",
+            boxShadow: "0 2px 12px -6px rgba(184,134,47,0.55)",
+          }}
+        >
+          <Flame size={12} />
+          <span className="font-serif text-base tabular-nums">{streak}</span>
+          -day streak
+        </span>
+      )}
+    </header>
+  );
+
+  return (
+    <main className="h-dvh bg-white flex overflow-hidden">
+      {/* Themes sidebar — left side, thread view only, stays put while the
+          header and thread scroll past it. Collapses to a horizontal row
+          (rendered inline in the scroll column below) on narrow screens. */}
       {hasSearched && (
-        <div className="flex-shrink-0 border-b border-brand-navy/10 bg-card/90 backdrop-blur-md">
-          <div className="max-w-3xl mx-auto flex items-center gap-1.5 px-4 sm:px-6 py-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-brand-gray mr-2 whitespace-nowrap">
+        <aside className="hidden sm:flex sm:w-[196px] md:w-[220px] flex-shrink-0 flex-col h-full border-r border-brand-navy/10 bg-brand-sky/40 overflow-y-auto custom-scrollbar px-3 py-5">
+          <div className="flex items-center justify-between px-1 mb-3">
+            <span className="text-xs font-bold uppercase tracking-[0.22em] text-brand-gray">
               Themes
             </span>
-            {TOPICS.map(({ name }) => {
-              const active = lastTopic === name.toLowerCase();
-              return (
-                <button
-                  key={name}
-                  onClick={() => handleTopicClick(name)}
-                  className={`flex-shrink-0 inline-flex items-center gap-2 rounded-full px-[17px] py-2 text-[13px] font-semibold transition-all ${
-                    active
-                      ? "text-white -translate-y-px"
-                      : "text-brand-gray border border-transparent hover:text-brand-ink hover:bg-brand-sky/70 hover:border-brand-navy/10"
-                  }`}
-                  style={
-                    active
-                      ? {
-                          background: "linear-gradient(150deg, #173A68, #102A4E)",
-                          boxShadow:
-                            "inset 0 0 0 1px rgba(201,162,39,0.4), 0 6px 18px -8px rgba(14,36,71,0.55)",
-                        }
-                      : undefined
-                  }
-                >
-                  <span
-                    className={`w-[5px] h-[5px] rounded-full transition-transform ${
-                      active ? "scale-100" : "scale-0"
-                    }`}
-                    style={{ background: GOLD_ON_NAVY }}
-                  />
-                  {name}
-                </button>
-              );
-            })}
+            <SelectToggle on={selectMode} onClick={toggleSelectMode} />
           </div>
-        </div>
+          <div className="flex flex-col gap-0.5">
+            {TOPICS.map(({ name }) => themeChip(name, true))}
+          </div>
+        </aside>
       )}
 
-      {/* Scrollable stage */}
-      <div
-        ref={threadRef}
-        className="flex-1 min-h-0 overflow-y-auto custom-scrollbar"
-        aria-live="polite"
-      >
-        {!hasSearched ? (
+      {/* Right column: header + thread scroll together, composer stays docked */}
+      <div className="flex-1 min-w-0 flex flex-col h-full">
+        {/* Scrollable stage — header scrolls away with the content now */}
+        <div
+          ref={threadRef}
+          className="flex-1 min-h-0 overflow-y-auto custom-scrollbar"
+          aria-live="polite"
+        >
+          {header}
+
+          {/* Theme chips — mobile only; desktop uses the left sidebar */}
+          {hasSearched && (
+            <div className="sm:hidden border-b border-brand-navy/10 bg-white/90 backdrop-blur-md">
+              <div className="flex items-center gap-2 px-4 py-2.5">
+                <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <span className="text-xs font-bold uppercase tracking-[0.22em] text-brand-gray mr-2 whitespace-nowrap">
+                    Themes
+                  </span>
+                  {TOPICS.map(({ name }) => themeChip(name, false))}
+                </div>
+                <SelectToggle
+                  on={selectMode}
+                  onClick={toggleSelectMode}
+                  className="pl-2.5 border-l border-brand-navy/10"
+                />
+              </div>
+            </div>
+          )}
+
+          {!hasSearched ? (
           /* ══ Screen 1 · Home ══ */
           <div className="max-w-[980px] mx-auto px-4 sm:px-6 py-6 sm:py-9">
             {/* Today's declaration */}
@@ -699,18 +927,18 @@ export default function DeclarationsPage() {
                   className="absolute -top-10 -right-2 text-white/[0.07] pointer-events-none"
                 />
                 <p
-                  className="relative flex items-center gap-2.5 text-[11px] font-bold uppercase tracking-[0.22em]"
+                  className="relative flex items-center gap-2.5 text-xs font-bold uppercase tracking-[0.22em]"
                   style={{ color: GOLD_ON_NAVY }}
                 >
                   <span className="w-[26px] h-px" style={{ background: GOLD_ON_NAVY }} />
                   Today&rsquo;s Declaration · {todayLabel}
                 </p>
-                <blockquote className="relative mt-4.5 font-serif font-medium leading-[1.18] tracking-tight text-balance max-w-[24ch] text-[26px] sm:text-[42px] mt-5">
+                <blockquote className="relative mt-4.5 font-serif font-medium leading-[1.18] tracking-tight text-balance max-w-[24ch] text-2xl sm:text-4xl mt-5">
                   &ldquo;{featured.declaration_text}&rdquo;
                 </blockquote>
                 <div className="relative mt-7 flex items-center gap-3.5 flex-wrap">
                   {featured.sermon_title && (
-                    <span className="text-[13px] text-white/70 mr-auto">
+                    <span className="text-sm text-white/70 mr-auto">
                       Spoken by Rev. Peter in{" "}
                       <span className="font-semibold text-white">
                         {cleanTitle(featured.sermon_title)}
@@ -721,7 +949,7 @@ export default function DeclarationsPage() {
                     onClick={() => copyDeclaration(featured.declaration_text)}
                     title="Copy"
                     aria-label="Copy today's declaration"
-                    className="w-[38px] h-[38px] rounded-full border border-white/35 text-white flex items-center justify-center hover:border-white/80 transition-colors flex-shrink-0"
+                    className="w-11 h-11 rounded-full border border-white/35 text-white flex items-center justify-center hover:border-white/80 transition-colors flex-shrink-0"
                   >
                     <Copy size={13} />
                   </button>
@@ -734,7 +962,7 @@ export default function DeclarationsPage() {
                         onClick={() =>
                           setWatching({ ...parsed, sermon_title: featured.sermon_title })
                         }
-                        className="inline-flex items-center gap-2 rounded-full border border-white/35 px-5 py-2.5 text-[13.5px] font-semibold text-white hover:border-white/80 hover:-translate-y-px transition-all"
+                        className="inline-flex items-center gap-2 rounded-full border border-white/35 px-5 py-2.5 text-sm font-semibold text-white hover:border-white/80 hover:-translate-y-px transition-all"
                       >
                         <Play size={11} fill="currentColor" />
                         Watch the moment
@@ -745,7 +973,7 @@ export default function DeclarationsPage() {
               </div>
             ) : (
               <div className="rounded-3xl bg-brand-sky/70 border border-brand-navy/10 px-7 py-12 text-center">
-                <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-card border border-brand-navy/10 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-navy">
+                <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-brand-navy/10 text-xs font-bold uppercase tracking-[0.18em] text-brand-navy">
                   <Quote size={12} />
                   Declarations
                 </span>
@@ -757,7 +985,7 @@ export default function DeclarationsPage() {
 
             {/* The ask box — the essence of the page */}
             <div className="mt-10 mx-auto max-w-[760px] text-center">
-              <h2 className="font-serif text-[22px] sm:text-[30px] font-medium tracking-tight text-brand-ink text-balance mb-5">
+              <h2 className="font-serif text-xl sm:text-3xl font-medium tracking-tight text-brand-ink text-balance mb-5">
                 What do you need the Word for today?
               </h2>
               {composer("Tell us what's on your heart…")}
@@ -768,7 +996,7 @@ export default function DeclarationsPage() {
                   <button
                     key={name}
                     onClick={() => handleTopicClick(name)}
-                    className="inline-flex items-baseline gap-2 rounded-full border border-brand-navy/12 bg-card px-[18px] py-2.5 hover:-translate-y-px transition-all"
+                    className="inline-flex items-baseline gap-2 rounded-full border border-brand-navy/12 bg-white px-[18px] py-2.5 hover:-translate-y-px transition-all"
                     style={{ transitionDuration: "160ms" }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.borderColor = GOLD;
@@ -779,16 +1007,16 @@ export default function DeclarationsPage() {
                       e.currentTarget.style.background = "";
                     }}
                   >
-                    <span className="font-serif text-[15px] font-semibold text-brand-ink">
+                    <span className="font-serif text-base font-semibold text-brand-ink">
                       {name}
                     </span>
-                    <span className="hidden sm:inline text-[12px] text-brand-gray">{sub}</span>
+                    <span className="hidden sm:inline text-xs text-brand-gray">{sub}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            <p className="mt-9 text-center text-[12px] text-brand-gray">
+            <p className="mt-9 text-center text-xs text-brand-gray">
               Every declaration was spoken by Rev. Peter in a real message — watch the
               moment behind each one.
             </p>
@@ -806,7 +1034,7 @@ export default function DeclarationsPage() {
                     }}
                     className="flex justify-end mt-8 first:mt-0 mb-5"
                   >
-                    <p className="font-serif text-[15px] text-white bg-brand-navy rounded-[20px] rounded-br-[4px] px-5 py-3 max-w-[75%] capitalize">
+                    <p className="font-serif text-base text-white bg-brand-navy rounded-[20px] rounded-br-[4px] px-5 py-3 max-w-[75%] capitalize">
                       {msg.text}
                     </p>
                   </div>
@@ -820,21 +1048,22 @@ export default function DeclarationsPage() {
               return (
                 <article
                   key={msg.id}
-                  className="rounded-[22px] border border-brand-navy/10 bg-card overflow-hidden shadow-sm shadow-brand-navy/5 animate-in fade-in slide-in-from-bottom-3 duration-500"
+                  className="rounded-[22px] border border-brand-navy/10 bg-white overflow-hidden shadow-sm shadow-brand-navy/5 animate-in fade-in slide-in-from-bottom-3 duration-500"
                 >
-                  {/* Response head */}
-                  <div className="px-5 sm:px-7 pt-6 pb-5 border-b border-brand-navy/[0.07] bg-gradient-to-b from-brand-sky/70 to-transparent">
-                    <p
-                      className="text-[11px] font-bold uppercase tracking-[0.22em]"
-                      style={{ color: GOLD }}
-                    >
-                      You asked for
-                    </p>
-                    <h2 className="mt-2 font-serif text-[24px] sm:text-[32px] font-medium tracking-tight text-brand-ink leading-tight">
-                      {msg.title}
-                    </h2>
+                  {/* Response head — the topic-card title is skipped since it
+                      just repeats the user bubble right above it */}
+                  <div className="px-5 sm:px-7 pt-5 pb-4 border-b border-brand-navy/[0.07] bg-gradient-to-b from-brand-sky/70 to-transparent">
+                    {!msg.isTopicCard && (
+                      <h2 className="font-serif text-2xl sm:text-3xl font-medium tracking-tight text-brand-ink leading-tight">
+                        {msg.title}
+                      </h2>
+                    )}
                     {msg.text && (
-                      <p className="mt-2.5 text-[14.5px] leading-[1.65] text-brand-gray max-w-[62ch] whitespace-pre-wrap">
+                      <p
+                        className={`text-sm leading-[1.6] text-brand-gray whitespace-pre-wrap ${
+                          msg.isTopicCard ? "" : "mt-2.5"
+                        }`}
+                      >
                         {msg.text}
                       </p>
                     )}
@@ -844,18 +1073,25 @@ export default function DeclarationsPage() {
                     <>
                       {/* Tools row */}
                       <div className="flex items-center justify-between gap-3.5 flex-wrap px-5 sm:px-7 py-3.5 border-b border-brand-navy/[0.07]">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gray">
+                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-gray">
                           Speak these over your life ·{" "}
                           <span className="text-brand-ink">{msg.declarations.length}</span>
                         </p>
-                        <button
-                          type="button"
-                          onClick={() => setSpeakMsgId(msg.id)}
-                          className="inline-flex items-center gap-1.5 rounded-full bg-brand-navy text-white text-[13px] font-semibold px-5 py-2.5 hover:bg-brand-deep hover:-translate-y-px transition-all shadow-sm shadow-brand-navy/20"
-                        >
-                          <Play size={11} fill="currentColor" />
-                          Speak mode
-                        </button>
+                        <div className="flex items-center gap-3">
+                          <SelectToggle on={selectMode} onClick={toggleSelectMode} />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSpeakFromCart(false);
+                              setSpeakMsgId(msg.id);
+                            }}
+                            title="Speak mode"
+                            aria-label="Speak mode"
+                            className="w-11 h-11 rounded-full bg-brand-navy text-white flex items-center justify-center hover:bg-brand-deep hover:-translate-y-px transition-all shadow-sm shadow-brand-navy/20"
+                          >
+                            <Volume2 size={16} />
+                          </button>
+                        </div>
                       </div>
 
                       {/* Litany lines */}
@@ -867,6 +1103,9 @@ export default function DeclarationsPage() {
                             index={i}
                             onCopy={copyDeclaration}
                             onWatch={setWatching}
+                            selectMode={selectMode}
+                            picked={picked.has(d.id || d.declaration_text)}
+                            onTogglePick={togglePick}
                           />
                         ))}
                       </div>
@@ -878,7 +1117,7 @@ export default function DeclarationsPage() {
                             <button
                               onClick={handleLoadMore}
                               disabled={fetchingMore}
-                              className="inline-flex items-center gap-2 rounded-full border-[1.5px] border-brand-navy text-brand-navy text-[13.5px] font-semibold px-6 py-2.5 hover:bg-brand-navy hover:text-white transition-colors disabled:opacity-60"
+                              className="inline-flex items-center gap-2 rounded-full border-[1.5px] border-brand-navy text-brand-navy text-sm font-semibold px-6 py-2.5 hover:bg-brand-navy hover:text-white transition-colors disabled:opacity-60"
                             >
                               {fetchingMore ? (
                                 <Loader2 size={15} className="animate-spin" />
@@ -887,7 +1126,7 @@ export default function DeclarationsPage() {
                               )}
                             </button>
                           ) : (
-                            <p className="text-[13px] text-brand-gray max-w-xs mx-auto leading-relaxed">
+                            <p className="text-sm text-brand-gray max-w-xs mx-auto leading-relaxed">
                               You&rsquo;ve seen every declaration for this need. Try asking
                               about something else on your heart.
                             </p>
@@ -916,7 +1155,7 @@ export default function DeclarationsPage() {
               </div>
             )}
 
-            <p className="mt-6 text-center text-[12px] text-brand-gray">
+            <p className="mt-6 text-center text-xs text-brand-gray">
               Every declaration was spoken by Rev. Peter in a real message — watch the
               moment behind each one.
             </p>
@@ -926,9 +1165,89 @@ export default function DeclarationsPage() {
 
       {/* Docked composer — thread view only; home has it in-flow */}
       {hasSearched && (
-        <div className="flex-shrink-0 px-4 sm:px-6 pt-2 pb-4 bg-gradient-to-t from-background via-background/95 to-transparent">
+        <div
+          className="flex-shrink-0 px-4 sm:px-6 pt-2 pb-4 bg-gradient-to-t from-white via-white/95 to-transparent transition-transform duration-150"
+          style={{
+            transform: keyboardInset ? `translateY(-${keyboardInset}px)` : undefined,
+            paddingBottom: keyboardInset
+              ? undefined
+              : "calc(1rem + env(safe-area-inset-bottom))",
+          }}
+        >
           <div className="max-w-[760px] mx-auto">
             {composer("Ask for more, or something else on your heart…")}
+          </div>
+        </div>
+      )}
+      </div>
+      {/* ↑ closes the right column (header + thread scroll + composer) */}
+
+      {/* Picked-declarations cart — persists across topic switches; tap to
+          open Speak mode scoped to only what's been checked off. */}
+      {selectMode && picked.size > 0 && (
+        <div
+          className="fixed left-1/2 -translate-x-1/2 z-40 flex flex-col items-stretch gap-2 w-[min(360px,calc(100vw-32px))] animate-in fade-in slide-in-from-bottom-2 duration-300"
+          style={{ bottom: `calc(88px + ${keyboardInset || 0}px + env(safe-area-inset-bottom))` }}
+        >
+          {/* Preview — what's actually in the cart, so picking across topics
+              doesn't rely on memory before you commit to Speak mode. */}
+          {cartOpen && (
+            <div className="rounded-2xl bg-white border border-brand-navy/10 shadow-xl shadow-brand-navy/15 max-h-64 overflow-y-auto custom-scrollbar">
+              {Array.from(picked.values()).map((d) => (
+                <div
+                  key={d.id || d.declaration_text}
+                  className="flex items-start gap-2 px-3.5 py-2.5 border-b border-brand-navy/[0.06] last:border-0"
+                >
+                  <p className="flex-1 font-serif text-sm leading-snug text-brand-ink">
+                    {d.declaration_text}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => togglePick(d)}
+                    aria-label="Remove from selection"
+                    className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-brand-gray hover:bg-brand-sky hover:text-brand-navy transition-colors"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div
+            className="flex items-center gap-3 rounded-full pl-4 pr-1.5 py-1.5 text-white shadow-lg shadow-brand-navy/30"
+            style={{ background: "linear-gradient(150deg, #173A68, #102A4E)" }}
+          >
+            <button
+              type="button"
+              onClick={() => setCartOpen((v) => !v)}
+              aria-expanded={cartOpen}
+              className="flex items-center gap-1.5 text-sm font-semibold whitespace-nowrap"
+            >
+              <span
+                className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold"
+                style={{ background: GOLD_ON_NAVY, color: "#102A4E" }}
+              >
+                {picked.size}
+              </span>
+              selected
+              <ChevronRight
+                size={14}
+                className={`transition-transform ${cartOpen ? "-rotate-90" : "rotate-90"}`}
+              />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSpeakFromCart(true);
+                setSpeakMsgId(null);
+              }}
+              className="ml-auto inline-flex items-center gap-1.5 rounded-full text-sm font-bold px-4 py-2 hover:-translate-y-px transition-all"
+              style={{ background: GOLD_ON_NAVY, color: "#102A4E" }}
+            >
+              <Play size={11} fill="currentColor" />
+              Speak these
+            </button>
           </div>
         </div>
       )}
@@ -941,6 +1260,23 @@ export default function DeclarationsPage() {
       )}
 
       {(() => {
+        if (speakFromCart) {
+          if (picked.size === 0) return null;
+          return (
+            <SpeakMode
+              items={Array.from(picked.values())}
+              canLoadMore={false}
+              loadingMore={false}
+              onLoadMore={() => {}}
+              onClose={() => setSpeakFromCart(false)}
+              onCopy={copyDeclaration}
+              onWatch={(seg) => {
+                setSpeakFromCart(false);
+                setWatching(seg);
+              }}
+            />
+          );
+        }
         const speakMsg = messages.find((m) => m.id === speakMsgId);
         if (!speakMsg?.declarations?.length) return null;
         const lastAi = [...messages].reverse().find((m) => m.role === "ai");

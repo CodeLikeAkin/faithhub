@@ -5,7 +5,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X, ArrowRight } from "lucide-react";
-import ThemeToggle from "@/components/ThemeToggle";
 
 const navLinks = [
   { name: "Home", href: "/" },
@@ -50,8 +49,8 @@ export default function Navbar() {
         <div
           className={`w-full md:w-auto md:mx-auto flex items-center justify-between gap-3 sm:gap-5 rounded-full backdrop-blur-md border py-2 pl-4 pr-2 transition-all duration-300 ${
             scrolled
-              ? "bg-white/95 dark:bg-card/95 border-brand-navy/10 shadow-lg shadow-brand-navy/10"
-              : "bg-white/80 dark:bg-card/80 border-brand-navy/5 shadow-md shadow-brand-navy/5"
+              ? "bg-white/95 border-brand-navy/10 shadow-lg shadow-brand-navy/10"
+              : "bg-white/80 border-brand-navy/5 shadow-md shadow-brand-navy/5"
           }`}
         >
           <Link href="/" onClick={() => setIsOpen(false)} className="flex items-center">
@@ -85,8 +84,6 @@ export default function Navbar() {
 
           <span className="hidden md:block w-px h-5 bg-brand-navy/15" />
 
-          <ThemeToggle className="hidden md:flex w-9 h-9 items-center justify-center rounded-full text-brand-gray hover:text-brand-navy hover:bg-brand-sky transition-colors" />
-
           <Link
             href="/declarations"
             className="hidden md:inline-flex items-center gap-2 bg-brand-navy text-white text-sm font-bold rounded-full px-5 py-2.5 shadow-lg shadow-brand-navy/20 hover:bg-brand-deep transition-colors"
@@ -95,24 +92,21 @@ export default function Navbar() {
             <ArrowRight className="w-4 h-4" />
           </Link>
 
-          {/* Mobile controls — theme toggle + menu button live inside the pill on small screens */}
-          <div className="flex items-center gap-1 md:hidden">
-            <ThemeToggle className="w-9 h-9 flex items-center justify-center rounded-full text-brand-navy hover:bg-brand-sky transition-colors" />
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              aria-label="Toggle menu"
-              aria-expanded={isOpen}
-              className="w-9 h-9 flex items-center justify-center rounded-full text-brand-navy hover:bg-brand-sky transition-colors"
-            >
-              {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-          </div>
+          {/* Mobile menu button — lives inside the pill on small screens */}
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            aria-label="Toggle menu"
+            aria-expanded={isOpen}
+            className="md:hidden w-9 h-9 flex items-center justify-center rounded-full text-brand-navy hover:bg-brand-sky transition-colors"
+          >
+            {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
       </nav>
 
       {/* Mobile panel */}
       {isOpen && (
-        <div className="md:hidden mx-auto max-w-6xl mt-2 bg-white dark:bg-card rounded-3xl border border-brand-navy/10 shadow-xl p-3">
+        <div className="md:hidden mx-auto max-w-6xl mt-2 bg-white rounded-3xl border border-brand-navy/10 shadow-xl p-3">
           {navLinks.map((link) => (
             <Link
               key={link.name}

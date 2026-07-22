@@ -115,7 +115,7 @@ export default function WordStudy({ sermonId, words: wordsProp, embedded = false
     <button
       onClick={() => setExpandedId(expandedId === w.id ? null : w.id)}
       aria-expanded={expandedId === w.id}
-      className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12.5px] font-bold transition-colors ${
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 min-h-11 text-xs font-bold transition-colors ${
         expandedId === w.id
           ? "bg-brand-navy text-white border-brand-navy"
           : "bg-brand-sky text-brand-navy border-brand-navy/10 hover:border-brand-navy/40"
@@ -123,7 +123,7 @@ export default function WordStudy({ sermonId, words: wordsProp, embedded = false
     >
       {w.word}
       <span
-        className={`text-[9px] font-bold uppercase tracking-wider rounded-full px-1.5 py-0.5 ${
+        className={`text-xs font-bold uppercase tracking-wider rounded-full px-1.5 py-0.5 ${
           expandedId === w.id ? "bg-white/15 text-white/80" : "bg-brand-navy/5 text-brand-navy/50"
         }`}
       >
@@ -133,7 +133,7 @@ export default function WordStudy({ sermonId, words: wordsProp, embedded = false
   );
 
   const Reveal = ({ w }) => (
-    <div className="mt-2.5 rounded-r-2xl rounded-l-md border border-brand-navy/10 border-l-[3px] border-l-brand-navy bg-gradient-to-br from-brand-sky/60 to-card px-4 sm:px-5 py-4 space-y-2.5">
+    <div className="mt-2.5 rounded-r-2xl rounded-l-md border border-brand-navy/10 border-l-[3px] border-l-brand-navy bg-gradient-to-br from-brand-sky/60 to-white px-4 sm:px-5 py-4 space-y-2.5">
       {(w.pronunciation || w.phonetic_spelling) && (
         <p className="text-2xl font-bold text-brand-navy">
           {w.pronunciation}
@@ -146,14 +146,14 @@ export default function WordStudy({ sermonId, words: wordsProp, embedded = false
         <p className="text-sm text-brand-gray">{w.original_script}</p>
       )}
       {w.strongs_number && (
-        <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-brand-navy/60 bg-brand-navy/5 rounded-full px-2 py-0.5">
+        <span className="inline-block text-xs font-bold uppercase tracking-wider text-brand-navy/60 bg-brand-navy/5 rounded-full px-2 py-0.5">
           Strong&apos;s {w.strongs_number}
           {primaryEnglishWord(w.kjv_def) && (
             <span className="normal-case font-medium text-brand-navy/50"> · {primaryEnglishWord(w.kjv_def)}</span>
           )}
         </span>
       )}
-      <p className="text-[15px] leading-relaxed text-brand-ink">
+      <p className="text-base leading-relaxed text-brand-ink">
         {[w.meaning?.trim(), w.kjv_def && `— ${w.kjv_def}.`].filter(Boolean).join(" ")}
       </p>
       {w.derivation && (
@@ -165,12 +165,12 @@ export default function WordStudy({ sermonId, words: wordsProp, embedded = false
             type="button"
             onClick={() => toggleVerse(w)}
             aria-expanded={openVerseId === w.id}
-            className="text-[11px] font-bold uppercase tracking-wider text-brand-navy underline decoration-brand-navy/30 underline-offset-2 hover:decoration-brand-navy"
+            className="text-xs font-bold uppercase tracking-wider text-brand-navy underline decoration-brand-navy/30 underline-offset-2 hover:decoration-brand-navy"
           >
             {w.reference}
           </button>
           {openVerseId === w.id && (
-            <div className="mt-2 rounded-xl bg-white/70 dark:bg-white/5 border border-brand-navy/10 px-3 py-2.5">
+            <div className="mt-2 rounded-xl bg-white/70 border border-brand-navy/10 px-3 py-2.5">
               {verseText[w.id]?.loading && (
                 <span className="flex items-center gap-2 text-xs text-brand-gray">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -197,7 +197,7 @@ export default function WordStudy({ sermonId, words: wordsProp, embedded = false
         </div>
       )}
       {w.note && (
-        <div className="flex items-start gap-2 rounded-xl bg-white/70 dark:bg-white/5 border border-brand-navy/10 px-3 py-2.5">
+        <div className="flex items-start gap-2 rounded-xl bg-white/70 border border-brand-navy/10 px-3 py-2.5">
           <Info className="w-3.5 h-3.5 text-brand-navy/60 flex-shrink-0 mt-0.5" />
           <p className="text-xs text-brand-gray leading-relaxed">{w.note}</p>
         </div>
@@ -209,7 +209,7 @@ export default function WordStudy({ sermonId, words: wordsProp, embedded = false
           <button
             type="button"
             onClick={() => setWatching({ ...parsed, sermon_title: w.word })}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-navy bg-card border border-brand-navy/15 rounded-full px-3 py-1.5 hover:bg-brand-sky/70 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-navy bg-white border border-brand-navy/15 rounded-full px-3 py-1.5 hover:bg-brand-sky/70 transition-colors"
           >
             <Play className="w-3 h-3 fill-current" />
             Watch moment
@@ -242,7 +242,7 @@ export default function WordStudy({ sermonId, words: wordsProp, embedded = false
     );
 
   return (
-    <div className="rounded-3xl border border-brand-navy/10 bg-card overflow-hidden">
+    <div className="rounded-3xl border border-brand-navy/10 bg-white overflow-hidden">
       {/* Header — reveal toggle */}
       <button
         onClick={() => setOpen((o) => !o)}

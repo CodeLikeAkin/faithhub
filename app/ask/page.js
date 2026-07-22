@@ -18,10 +18,11 @@ import {
   RotateCcw,
   Plus,
   Copy,
+  X,
 } from "lucide-react";
 import { cleanTitle } from "@/lib/titles";
+import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import VideoModal from "@/components/VideoModal";
-import ThemeToggle from "@/components/ThemeToggle";
 
 /**
  * Ask the Word — global, cross-corpus search, laid out as a study workspace.
@@ -148,7 +149,7 @@ function CitationPill({ n, onJump }) {
   return (
     <button
       onClick={() => onJump(n)}
-      className="inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-brand-navy/10 border border-brand-navy/20 text-[10px] font-bold text-brand-navy align-super -translate-y-0.5 mx-0.5 hover:bg-brand-navy hover:text-white transition-colors"
+      className="inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-brand-navy/10 border border-brand-navy/20 text-xs font-bold text-brand-navy align-super -translate-y-0.5 mx-0.5 hover:bg-brand-navy hover:text-white transition-colors"
       title="Jump to this source"
     >
       {n}
@@ -180,7 +181,7 @@ function SourceCard({ n, seg, blockId, highlighted, onWatch, idPrefix = "src", c
   return (
     <div
       id={`${idPrefix}-${blockId}-${n}`}
-      className={`rounded-2xl border bg-card overflow-hidden transition-all duration-500 ${
+      className={`rounded-2xl border bg-white overflow-hidden transition-all duration-500 ${
         highlighted
           ? "border-brand-navy ring-2 ring-brand-navy/30 shadow-lg shadow-brand-navy/10"
           : "border-brand-navy/10 hover:border-brand-navy/25 hover:shadow-md hover:shadow-brand-navy/5"
@@ -199,10 +200,10 @@ function SourceCard({ n, seg, blockId, highlighted, onWatch, idPrefix = "src", c
             loading="lazy"
             className="w-full h-full object-cover"
           />
-          <span className="absolute top-2 left-2 w-6 h-6 rounded-full bg-white/95 text-brand-navy text-[11px] font-bold flex items-center justify-center shadow">
+          <span className="absolute top-2 left-2 w-6 h-6 rounded-full bg-white/95 text-brand-navy text-xs font-bold flex items-center justify-center shadow">
             {n}
           </span>
-          <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-md bg-black/75 px-1.5 py-0.5 text-[10.5px] font-bold text-white tabular-nums">
+          <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-md bg-black/75 px-1.5 py-0.5 text-xs font-bold text-white tabular-nums">
             <Play size={9} fill="currentColor" />
             {fmtTime(seg.start_seconds)}
           </span>
@@ -214,7 +215,7 @@ function SourceCard({ n, seg, blockId, highlighted, onWatch, idPrefix = "src", c
         </button>
       ) : (
         <div className="flex items-center gap-2 px-3.5 pt-3.5">
-          <span className="w-6 h-6 rounded-full bg-brand-navy text-white text-[11px] font-bold flex items-center justify-center">
+          <span className="w-6 h-6 rounded-full bg-brand-navy text-white text-xs font-bold flex items-center justify-center">
             {n}
           </span>
         </div>
@@ -223,7 +224,7 @@ function SourceCard({ n, seg, blockId, highlighted, onWatch, idPrefix = "src", c
         <p className="text-xs font-bold text-brand-ink leading-snug line-clamp-2">
           {seg.sermon_title}
         </p>
-        <p className="mt-1.5 text-[12.5px] italic text-brand-gray leading-relaxed line-clamp-3">
+        <p className="mt-1.5 text-xs italic text-brand-gray leading-relaxed line-clamp-3">
           &ldquo;{seg.text}&rdquo;
         </p>
         <div className="mt-2.5 flex items-center gap-3">
@@ -231,7 +232,7 @@ function SourceCard({ n, seg, blockId, highlighted, onWatch, idPrefix = "src", c
             <button
               type="button"
               onClick={() => onWatch(seg)}
-              className="inline-flex items-center gap-1.5 text-[11px] font-bold text-brand-navy hover:underline"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-navy hover:underline"
             >
               <Play size={10} fill="currentColor" />
               Watch this moment
@@ -240,7 +241,7 @@ function SourceCard({ n, seg, blockId, highlighted, onWatch, idPrefix = "src", c
           {seg.sermon_id && (
             <Link
               href={`/sermon/${seg.sermon_id}`}
-              className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-gray hover:text-brand-navy"
+              className="inline-flex items-center gap-1 text-xs font-bold text-brand-gray hover:text-brand-navy"
             >
               Message
               <ArrowUpRight size={11} />
@@ -269,14 +270,14 @@ function InlineSourceRail({ blockId, sources, highlight, onWatch }) {
           <button
             onClick={() => nudge(-1)}
             aria-label="Scroll sources left"
-            className="w-8 h-8 rounded-full border border-brand-navy/15 bg-card text-brand-navy flex items-center justify-center hover:bg-brand-sky transition-colors"
+            className="w-8 h-8 rounded-full border border-brand-navy/15 bg-white text-brand-navy flex items-center justify-center hover:bg-brand-sky transition-colors"
           >
             <ChevronLeft size={15} />
           </button>
           <button
             onClick={() => nudge(1)}
             aria-label="Scroll sources right"
-            className="w-8 h-8 rounded-full border border-brand-navy/15 bg-card text-brand-navy flex items-center justify-center hover:bg-brand-sky transition-colors"
+            className="w-8 h-8 rounded-full border border-brand-navy/15 bg-white text-brand-navy flex items-center justify-center hover:bg-brand-sky transition-colors"
           >
             <ChevronRight size={15} />
           </button>
@@ -313,14 +314,29 @@ export default function AskPage() {
   const [restored, setRestored] = useState(false);
   const [toast, setToast] = useState(null);
   const [watching, setWatching] = useState(null); // segment currently open in the video modal
+  const [studiesOpen, setStudiesOpen] = useState(false); // mobile "Studies" bottom sheet
   const inputRef = useRef(null);
   const toastTimer = useRef(null);
+  const keyboardInset = useKeyboardInset();
 
   const active = studies.find((s) => s.id === activeId) || null;
   const blocks = active?.blocks ?? [];
   const hasBlocks = blocks.length > 0;
   const openBlock = blocks.find((b) => b.id === openId) || null;
   const openSources = Object.entries(openBlock?.segmentMap || {});
+
+  // Lock body scroll + close on Escape while the mobile studies sheet is open.
+  useEffect(() => {
+    if (!studiesOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e) => e.key === "Escape" && setStudiesOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [studiesOpen]);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -508,6 +524,7 @@ export default function AskPage() {
     const last = st.blocks[st.blocks.length - 1]?.id ?? null;
     setOpenId(last);
     setRailExpanded(false);
+    setStudiesOpen(false);
     if (last) scrollToBlock(last);
   };
 
@@ -671,7 +688,7 @@ export default function AskPage() {
     .slice(0, 6);
 
   return (
-    <main className="h-dvh bg-background flex flex-col lg:grid lg:grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[250px_minmax(0,1fr)_304px]">
+    <main className="h-dvh bg-white flex flex-col lg:grid lg:grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[250px_minmax(0,1fr)_304px]">
       {/* ── Zone 1 · Study outline ─────────────────────────────────────────── */}
       <aside className="hidden lg:flex flex-col min-h-0 bg-brand-light border-r border-brand-navy/10">
         <div className="px-5 pt-5 pb-4">
@@ -685,7 +702,7 @@ export default function AskPage() {
               priority
             />
           </Link>
-          <p className="mt-3 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-navy">
+          <p className="mt-3 flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.18em] text-brand-navy">
             <Sparkles size={12} />
             Ask the Word
           </p>
@@ -695,13 +712,13 @@ export default function AskPage() {
           {active ? (
             <>
               <div className="px-2 pb-2">
-                <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-brand-gray">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-gray">
                   This study
                 </p>
-                <p className="mt-1 text-[14.5px] font-bold text-brand-ink leading-snug">
+                <p className="mt-1 text-sm font-bold text-brand-ink leading-snug">
                   {active.title}
                 </p>
-                <p className="mt-0.5 text-[11.5px] text-brand-gray">
+                <p className="mt-0.5 text-xs text-brand-gray">
                   {blocks.length} {blocks.length === 1 ? "question" : "questions"} ·{" "}
                   {fmtDate(active.createdAt)}
                 </p>
@@ -711,14 +728,14 @@ export default function AskPage() {
                   <li key={b.id}>
                     <button
                       onClick={() => activateBlock(b.id)}
-                      className={`w-full flex gap-2.5 items-baseline text-left rounded-xl px-2.5 py-2 text-[12.5px] leading-snug transition-colors ${
+                      className={`w-full flex gap-2.5 items-baseline text-left rounded-xl px-2.5 py-2 text-xs leading-snug transition-colors ${
                         openId === b.id
                           ? "bg-brand-sky text-brand-ink font-semibold shadow-[inset_2.5px_0_0_#173A68]"
                           : "text-brand-ink/80 hover:bg-brand-sky/60"
                       }`}
                     >
                       <span
-                        className={`text-[10.5px] font-bold tabular-nums flex-shrink-0 ${
+                        className={`text-xs font-bold tabular-nums flex-shrink-0 ${
                           openId === b.id ? "text-brand-navy" : "text-brand-gray"
                         }`}
                       >
@@ -731,14 +748,14 @@ export default function AskPage() {
               </ul>
               <button
                 onClick={() => inputRef.current?.focus()}
-                className="mt-3 mx-2.5 inline-flex items-center gap-1.5 text-[12.5px] font-bold text-brand-navy hover:underline"
+                className="mt-3 mx-2.5 inline-flex items-center gap-1.5 text-xs font-bold text-brand-navy hover:underline"
               >
                 <Plus size={13} />
                 Ask a new question
               </button>
             </>
           ) : (
-            <p className="px-2 text-[12.5px] text-brand-gray leading-relaxed">
+            <p className="px-2 text-xs text-brand-gray leading-relaxed">
               Ask your first question and this study will build its own outline
               here.
             </p>
@@ -747,7 +764,7 @@ export default function AskPage() {
           {recentStudies.length > 0 && (
             <>
               <hr className="border-brand-navy/10 my-4 mx-2" />
-              <p className="px-2 text-[10.5px] font-bold uppercase tracking-[0.14em] text-brand-gray mb-1.5">
+              <p className="px-2 text-xs font-bold uppercase tracking-[0.14em] text-brand-gray mb-1.5">
                 Recent studies
               </p>
               <ul className="flex flex-col gap-0.5">
@@ -757,10 +774,10 @@ export default function AskPage() {
                       onClick={() => switchStudy(s.id)}
                       className="w-full text-left rounded-xl px-2.5 py-2 hover:bg-brand-sky/60 transition-colors"
                     >
-                      <span className="block text-[12.5px] font-semibold text-brand-ink leading-snug line-clamp-1">
+                      <span className="block text-xs font-semibold text-brand-ink leading-snug line-clamp-1">
                         {s.title}
                       </span>
-                      <span className="block text-[11px] text-brand-gray mt-0.5">
+                      <span className="block text-xs text-brand-gray mt-0.5">
                         {fmtDate(s.createdAt)} · {s.blocks.length}{" "}
                         {s.blocks.length === 1 ? "question" : "questions"}
                       </span>
@@ -773,7 +790,7 @@ export default function AskPage() {
         </div>
 
         <div className="px-5 py-4 border-t border-brand-navy/10">
-          <p className="text-[11px] text-brand-gray leading-relaxed">
+          <p className="text-xs text-brand-gray leading-relaxed">
             Every answer is grounded in Rev. Peter&rsquo;s recorded messages.
             Studies save automatically on this device.
           </p>
@@ -783,7 +800,7 @@ export default function AskPage() {
       {/* ── Zone 2 · Reading column ────────────────────────────────────────── */}
       <section className="flex flex-col min-h-0 min-w-0 flex-1">
         {/* Top bar */}
-        <div className="flex items-center gap-3 px-4 sm:px-6 py-2.5 border-b border-brand-navy/10 flex-shrink-0 bg-card">
+        <div className="flex items-center gap-3 px-4 sm:px-6 py-2.5 border-b border-brand-navy/10 flex-shrink-0 bg-white">
           <Link href="/" className="lg:hidden flex-shrink-0">
             <Image
               src="/hofng-logo.png"
@@ -793,7 +810,7 @@ export default function AskPage() {
               className="h-6 w-auto object-contain"
             />
           </Link>
-          <p className="flex-1 min-w-0 truncate text-[12.5px] text-brand-gray">
+          <p className="flex-1 min-w-0 truncate text-xs text-brand-gray">
             {active ? (
               <>
                 Studying:{" "}
@@ -803,10 +820,21 @@ export default function AskPage() {
               "New study"
             )}
           </p>
+          {recentStudies.length > 0 && (
+            <button
+              onClick={() => setStudiesOpen(true)}
+              aria-label="Past studies"
+              className="lg:hidden inline-flex items-center gap-1.5 text-xs font-bold text-brand-navy border border-brand-navy/15 rounded-full px-3.5 py-1.5 hover:bg-brand-sky transition-colors flex-shrink-0"
+            >
+              <BookOpen size={12} />
+              <span className="hidden sm:inline">Studies</span>
+            </button>
+          )}
           {active && (
             <button
               onClick={copyStudy}
-              className="inline-flex items-center gap-1.5 text-[12px] font-bold text-brand-navy border border-brand-navy/15 rounded-full px-3.5 py-1.5 hover:bg-brand-sky transition-colors flex-shrink-0"
+              aria-label="Copy study"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-navy border border-brand-navy/15 rounded-full px-3.5 py-1.5 hover:bg-brand-sky transition-colors flex-shrink-0"
             >
               <Copy size={12} />
               <span className="hidden sm:inline">Copy study</span>
@@ -814,12 +842,12 @@ export default function AskPage() {
           )}
           <button
             onClick={newStudy}
-            className="inline-flex items-center gap-1.5 text-[12px] font-bold text-brand-navy border border-brand-navy/15 rounded-full px-3.5 py-1.5 hover:bg-brand-sky transition-colors flex-shrink-0"
+            aria-label="New study"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-navy border border-brand-navy/15 rounded-full px-3.5 py-1.5 hover:bg-brand-sky transition-colors flex-shrink-0"
           >
             <Plus size={12} />
             <span className="hidden sm:inline">New study</span>
           </button>
-          <ThemeToggle className="w-8 h-8 flex items-center justify-center rounded-full text-brand-gray hover:text-brand-navy hover:bg-brand-sky transition-colors flex-shrink-0" />
         </div>
 
         {/* Thread */}
@@ -829,7 +857,7 @@ export default function AskPage() {
             <div className="h-full flex flex-col items-center justify-center px-4 sm:px-6 py-10 relative">
               <div className="pointer-events-none absolute inset-x-0 top-0 h-[300px] bg-gradient-to-b from-brand-sky/70 to-transparent" />
               <div className="relative text-center max-w-xl">
-                <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-card border border-brand-navy/10 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-navy">
+                <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-brand-navy/10 text-xs font-bold uppercase tracking-[0.18em] text-brand-navy">
                   <Sparkles size={13} />
                   Ask · every message
                 </span>
@@ -845,7 +873,7 @@ export default function AskPage() {
                     <button
                       key={s}
                       onClick={() => ask(s)}
-                      className="text-left text-[13px] font-medium text-brand-navy bg-card border border-brand-navy/10 rounded-full px-4 py-2 hover:bg-brand-sky hover:border-brand-navy/25 transition-colors"
+                      className="text-left text-sm font-medium text-brand-navy bg-white border border-brand-navy/10 rounded-full px-4 py-2 hover:bg-brand-sky hover:border-brand-navy/25 transition-colors"
                     >
                       {s}
                     </button>
@@ -868,14 +896,14 @@ export default function AskPage() {
                         aria-expanded={false}
                         className="w-full flex items-center gap-3.5 text-left rounded-2xl border border-brand-navy/10 bg-brand-light px-4 py-3.5 hover:border-brand-navy/30 hover:bg-brand-sky/40 transition-colors"
                       >
-                        <span className="flex-shrink-0 text-[11px] font-bold text-brand-navy/40 tabular-nums">
+                        <span className="flex-shrink-0 text-xs font-bold text-brand-navy/40 tabular-nums">
                           {num}
                         </span>
-                        <span className="min-w-0 flex-1 text-[14.5px] font-bold text-brand-ink leading-snug line-clamp-1">
+                        <span className="min-w-0 flex-1 text-sm font-bold text-brand-ink leading-snug line-clamp-1">
                           {b.question}
                         </span>
                         {sources.length > 0 && (
-                          <span className="hidden sm:block flex-shrink-0 text-[11px] text-brand-gray">
+                          <span className="hidden sm:block flex-shrink-0 text-xs text-brand-gray">
                             {sources.length} moments
                           </span>
                         )}
@@ -895,10 +923,10 @@ export default function AskPage() {
                 return (
                   <article key={b.id} id={`block-${b.id}`} className="scroll-mt-3 mb-8 pt-3">
                     {/* Question */}
-                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-brand-navy/60 mb-2">
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-navy/60 mb-2">
                       Question {num}
                     </p>
-                    <h2 className="text-2xl sm:text-[28px] font-bold text-brand-ink tracking-tight leading-tight">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-brand-ink tracking-tight leading-tight">
                       {b.question}
                     </h2>
 
@@ -922,8 +950,8 @@ export default function AskPage() {
 
                     {/* Quick answer — the opening sentence, called out */}
                     {lead && hasSources && b.status !== "error" && (
-                      <div className="mt-6 rounded-r-2xl rounded-l-md border border-brand-navy/10 border-l-[3px] border-l-brand-navy bg-gradient-to-br from-brand-sky/60 to-card px-5 py-4">
-                        <p className="flex items-center gap-2 text-[10.5px] font-bold uppercase tracking-[0.16em] text-brand-navy mb-1.5">
+                      <div className="mt-6 rounded-r-2xl rounded-l-md border border-brand-navy/10 border-l-[3px] border-l-brand-navy bg-gradient-to-br from-brand-sky/60 to-white px-5 py-4">
+                        <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-brand-navy mb-1.5">
                           Quick answer
                           {b.status === "answering" && rest.length === 0 && (
                             <Loader2 size={12} className="animate-spin text-brand-navy/40" />
@@ -933,7 +961,7 @@ export default function AskPage() {
                           text={lead}
                           onJump={(n) => jumpToSource(b.id, n)}
                           pKey={`${b.id}-lead`}
-                          className="text-[15.5px] sm:text-base font-semibold text-brand-ink leading-[1.6]"
+                          className="text-base font-semibold text-brand-ink leading-[1.6]"
                         />
                       </div>
                     )}
@@ -950,7 +978,7 @@ export default function AskPage() {
                             <Loader2 size={13} className="animate-spin text-brand-navy/40 ml-auto" />
                           )}
                         </p>
-                        <div className="space-y-4 text-[15px] leading-[1.78] text-brand-ink/90">
+                        <div className="space-y-4 text-base leading-[1.78] text-brand-ink/90">
                           {rest.map((para, pi) => (
                             <RichParagraph
                               key={pi}
@@ -966,7 +994,7 @@ export default function AskPage() {
                     {/* No sources (honest refusal) or error */}
                     {b.answer && !hasSources && (
                       <div className="mt-6 rounded-2xl border border-brand-navy/10 bg-brand-light px-5 py-4">
-                        <p className="text-[15px] leading-[1.7] text-brand-ink/90">
+                        <p className="text-base leading-[1.7] text-brand-ink/90">
                           {plainText(b.answer)}
                         </p>
                         {b.status === "error" && (
@@ -991,7 +1019,7 @@ export default function AskPage() {
                           {scriptures.map((v) => (
                             <span
                               key={v}
-                              className="inline-flex items-center gap-1.5 text-[12.5px] font-bold text-brand-navy bg-brand-sky border border-brand-navy/10 rounded-full px-3.5 py-1.5"
+                              className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-navy bg-brand-sky border border-brand-navy/10 rounded-full px-3.5 py-1.5"
                             >
                               <BookOpen size={12} />
                               {v}
@@ -1022,7 +1050,7 @@ export default function AskPage() {
                             <button
                               key={si}
                               onClick={() => ask(s)}
-                              className="text-left text-[13px] font-medium text-brand-navy bg-card border border-brand-navy/10 rounded-full px-4 py-2 hover:bg-brand-sky hover:border-brand-navy/25 transition-colors"
+                              className="text-left text-sm font-medium text-brand-navy bg-white border border-brand-navy/10 rounded-full px-4 py-2 hover:bg-brand-sky hover:border-brand-navy/25 transition-colors"
                             >
                               {s}
                             </button>
@@ -1038,7 +1066,15 @@ export default function AskPage() {
         </div>
 
         {/* Composer — docked at the bottom */}
-        <div className="flex-shrink-0 border-t border-brand-navy/10 bg-card px-4 sm:px-6 pt-3 pb-3.5">
+        <div
+          className="flex-shrink-0 border-t border-brand-navy/10 bg-white px-4 sm:px-6 pt-3 pb-3.5 transition-transform duration-150"
+          style={{
+            transform: keyboardInset ? `translateY(-${keyboardInset}px)` : undefined,
+            paddingBottom: keyboardInset
+              ? undefined
+              : "calc(0.875rem + env(safe-area-inset-bottom))",
+          }}
+        >
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -1057,7 +1093,7 @@ export default function AskPage() {
                     ? "Ask a follow-up — it stays in this study…"
                     : "Ask anything across every message…"
                 }
-                className="flex-1 bg-transparent py-2 text-[15px] text-brand-ink placeholder:text-brand-gray/60 focus:outline-none min-w-0"
+                className="flex-1 bg-transparent py-2 text-base text-brand-ink placeholder:text-brand-gray/60 focus:outline-none min-w-0"
               />
               <button
                 type="submit"
@@ -1072,7 +1108,7 @@ export default function AskPage() {
                 )}
               </button>
             </div>
-            <p className="mt-1.5 text-center text-[11px] text-brand-gray">
+            <p className="mt-1.5 text-center text-xs text-brand-gray">
               Answers come only from Rev. Peter&rsquo;s recorded messages — every
               claim is cited.
             </p>
@@ -1083,19 +1119,19 @@ export default function AskPage() {
       {/* ── Zone 3 · Moments rail (wide screens) ───────────────────────────── */}
       <aside className="hidden xl:flex flex-col min-h-0 bg-brand-light border-l border-brand-navy/10">
         <div className="flex items-baseline justify-between px-4 pt-5 pb-3 flex-shrink-0">
-          <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-brand-gray">
+          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-brand-gray">
             <Quote size={12} className="text-brand-navy" />
             Heard in these moments
           </p>
           {openSources.length > 0 && (
-            <span className="text-[11px] font-bold text-brand-gray">
+            <span className="text-xs font-bold text-brand-gray">
               {openSources.length}
             </span>
           )}
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-4 pb-4">
           {openSources.length === 0 ? (
-            <p className="text-[12.5px] text-brand-gray leading-relaxed pt-1">
+            <p className="text-xs text-brand-gray leading-relaxed pt-1">
               The exact sermon moments behind each answer will appear here as
               you ask.
             </p>
@@ -1121,7 +1157,7 @@ export default function AskPage() {
               {openSources.length > RAIL_PREVIEW && (
                 <button
                   onClick={() => setRailExpanded((v) => !v)}
-                  className="mt-3 w-full text-center text-[12px] font-bold text-brand-navy border border-dashed border-brand-navy/20 rounded-xl py-2.5 hover:bg-brand-sky transition-colors"
+                  className="mt-3 w-full text-center text-xs font-bold text-brand-navy border border-dashed border-brand-navy/20 rounded-xl py-2.5 hover:bg-brand-sky transition-colors"
                 >
                   {railExpanded
                     ? "Show fewer"
@@ -1139,6 +1175,65 @@ export default function AskPage() {
           {toast}
         </div>
       )}
+
+      {/* ── Mobile studies sheet (Zone 1 sidebar is hidden below lg) ──────── */}
+      {studiesOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-brand-ink/40 lg:hidden"
+          onClick={() => setStudiesOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      <aside
+        className={`lg:hidden fixed inset-x-0 bottom-0 top-16 z-50 flex flex-col min-h-0 rounded-t-3xl border-t border-brand-navy/10 bg-brand-light shadow-2xl transition-transform duration-300 ${
+          studiesOpen ? "translate-y-0" : "translate-y-full pointer-events-none"
+        }`}
+      >
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 bg-brand-light/95 backdrop-blur px-4 py-3 border-b border-brand-navy/10">
+          <p className="text-sm font-bold text-brand-ink">Your studies</p>
+          <button
+            onClick={() => setStudiesOpen(false)}
+            aria-label="Close"
+            className="w-11 h-11 -mr-2 flex items-center justify-center rounded-full text-brand-gray hover:text-brand-navy hover:bg-brand-sky transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          <ul className="flex flex-col gap-1">
+            {recentStudies.map((s) => (
+              <li key={s.id}>
+                <button
+                  onClick={() => switchStudy(s.id)}
+                  className={`w-full text-left rounded-2xl px-4 py-3 transition-colors ${
+                    s.id === activeId
+                      ? "bg-brand-sky shadow-[inset_2.5px_0_0_#173A68]"
+                      : "hover:bg-brand-sky/60"
+                  }`}
+                >
+                  <span className="block text-sm font-semibold text-brand-ink leading-snug line-clamp-1">
+                    {s.title}
+                  </span>
+                  <span className="block text-xs text-brand-gray mt-0.5">
+                    {fmtDate(s.createdAt)} · {s.blocks.length}{" "}
+                    {s.blocks.length === 1 ? "question" : "questions"}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <button
+            onClick={() => {
+              newStudy();
+              setStudiesOpen(false);
+            }}
+            className="mt-2 w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-brand-navy/15 bg-white px-4 py-3 text-sm font-bold text-brand-navy hover:bg-brand-sky transition-colors"
+          >
+            <Plus size={15} />
+            Start a new study
+          </button>
+        </div>
+      </aside>
 
       <VideoModal seg={watching} onClose={() => setWatching(null)} />
     </main>

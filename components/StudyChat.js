@@ -1,29 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState, Fragment, isValidElement, cloneElement } from "react";
-import { Play, Send, Loader2, Sparkles } from "lucide-react";
-import { cleanTitle } from "@/lib/titles";
+import { Send, Loader2, Sparkles } from "lucide-react";
+import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import ReactMarkdown from "react-markdown";
 import VideoModal from "@/components/VideoModal";
 
 /**
  * StudyChat — the grounded study thread used by both the series studio
  * (whole-series scope) and the message page (single-sermon scope, since
- * /api/series-chat lets sermonId win). Owns the streaming, the answer
- * anatomy (quick answer → cited teaching → watch-the-moment cards →
- * follow-ups) and the docked composer. The parent controls the height:
+ * /api/series-chat lets sermonId win). Owns the streaming, the cited-answer
+ * rendering, and the docked composer. The parent controls the height:
  * render inside a flex column with min-h-0 and StudyChat fills it.
  */
-
-const fmtTime = (secs) => {
-  const s = Math.max(0, Math.floor(secs || 0));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  return h
-    ? `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`
-    : `${m}:${String(sec).padStart(2, "0")}`;
-};
 
 const THINKING_MESSAGES = [
   "Searching the sermons...",
@@ -36,14 +25,14 @@ const THINKING_MESSAGES = [
 const CitationBadge = ({ num, segmentMap, onWatch }) => {
   const seg = segmentMap?.[num];
   if (!seg?.video_id)
-    return <sup className="text-gray-400 text-[9px]">[{num}]</sup>;
+    return <sup className="text-gray-400 text-xs">[{num}]</sup>;
 
   return (
     <button
       type="button"
       onClick={() => onWatch(seg)}
       title={`"${seg.text}" — ${seg.sermon_title}`}
-      className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-brand-navy/10 border border-brand-navy/20 text-[9px] font-bold text-brand-navy hover:text-white hover:border-brand-navy hover:bg-brand-navy transition-all ml-0.5 -translate-y-0.5 cursor-pointer"
+      className="relative inline-flex items-center justify-center w-5 h-5 rounded-full bg-brand-navy/10 border border-brand-navy/20 text-xs font-bold text-brand-navy hover:text-white hover:border-brand-navy hover:bg-brand-navy transition-all ml-0.5 -translate-y-0.5 cursor-pointer before:content-[''] before:absolute before:-inset-3"
     >
       {num}
     </button>
@@ -99,7 +88,7 @@ const RichAIResponse = ({ text, segmentMap, onWatch }) => {
   };
 
   return (
-    <div className="text-[15px] leading-[1.75] text-brand-ink/90">
+    <div className="text-base leading-[1.75] text-brand-ink/90">
       <ReactMarkdown
         components={{
           strong: ({ node, children, ...props }) => (
@@ -165,62 +154,10 @@ const RichAIResponse = ({ text, segmentMap, onWatch }) => {
   );
 };
 
-// The cited segments behind an answer, as small watch cards.
-const MomentCards = ({ text, segmentMap, onWatch }) => {
-  if (!segmentMap || !text) return null;
-  const citedNums = [...text.matchAll(/\[(\d+)\]/g)].map((m) => m[1]);
-  const seen = new Set();
-  const moments = [];
-  for (const n of citedNums) {
-    const seg = segmentMap[n];
-    if (!seg?.video_id) continue;
-    const key = `${seg.video_id}-${seg.start_seconds}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    moments.push(seg);
-    if (moments.length >= 3) break;
-  }
-  if (!moments.length) return null;
-
-  return (
-    <div className="mt-4 flex flex-wrap gap-2.5">
-      {moments.map((seg, i) => (
-        <button
-          key={i}
-          type="button"
-          onClick={() => onWatch(seg)}
-          className="flex items-center gap-2.5 rounded-xl border border-brand-navy/10 bg-card px-2.5 py-2 hover:border-brand-navy/40 hover:shadow-md hover:shadow-brand-navy/5 transition-all min-w-0 text-left"
-        >
-          <span className="relative w-[62px] aspect-video rounded-lg overflow-hidden bg-brand-sky flex-shrink-0">
-            <img
-              src={`https://img.youtube.com/vi/${seg.video_id}/mqdefault.jpg`}
-              alt=""
-              loading="lazy"
-              className="w-full h-full object-cover"
-            />
-            <span className="absolute inset-0 flex items-center justify-center">
-              <span className="w-5 h-5 rounded-full bg-white/90 text-brand-navy flex items-center justify-center">
-                <Play size={8} fill="currentColor" className="translate-x-px" />
-              </span>
-            </span>
-          </span>
-          <span className="min-w-0 pr-1">
-            <span className="block text-[11.5px] font-bold text-brand-ink leading-tight truncate max-w-[180px]">
-              {cleanTitle(seg.sermon_title)}
-            </span>
-            <span className="block text-[10.5px] text-brand-gray tabular-nums">
-              Watch at {fmtTime(seg.start_seconds)}
-            </span>
-          </span>
-        </button>
-      ))}
-    </div>
-  );
-};
-
 export default function StudyChat({
   seriesId = null,
   sermonId = null,
+  summary = "",
   openers = [],
   openersLabel = "Start studying",
   emptyNote = "Ask anything — the exact moments behind each answer come with it.",
@@ -235,6 +172,7 @@ export default function StudyChat({
   const threadRef = useRef(null);
   const inputRef = useRef(null);
   const userMessageRefs = useRef({});
+  const keyboardInset = useKeyboardInset();
 
   const handleSendMessage = async (textToSubmit) => {
     const actualText =
@@ -379,6 +317,16 @@ export default function StudyChat({
         className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-4 sm:px-7 py-5"
       >
         <div className="max-w-2xl mx-auto">
+          {summary && (
+            <div className="pt-2 mb-6">
+              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-brand-gray mb-2">
+                <Sparkles size={13} className="text-brand-navy" />
+                Series summary
+              </p>
+              <RichAIResponse text={summary} segmentMap={{}} onWatch={() => {}} />
+            </div>
+          )}
+
           {chatHistory.length === 0 && (
             <div className="pt-2">
               <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-brand-gray mb-3">
@@ -391,7 +339,7 @@ export default function StudyChat({
                     <button
                       key={i}
                       onClick={() => handleSendMessage(question)}
-                      className="text-left text-[13px] font-medium text-brand-navy bg-card border border-brand-navy/10 rounded-full px-4 py-2 hover:bg-brand-sky hover:border-brand-navy/25 transition-colors"
+                      className="text-left text-sm font-medium text-brand-navy bg-white border border-brand-navy/10 rounded-full px-4 py-2 hover:bg-brand-sky hover:border-brand-navy/25 transition-colors"
                     >
                       {question}
                     </button>
@@ -420,17 +368,13 @@ export default function StudyChat({
                   ref={(el) => {
                     userMessageRefs.current[msg.id] = el;
                   }}
-                  className="mt-7 first:mt-0"
+                  className={`flex justify-end mt-7 first:mt-0 ${
+                    isLatestQuestion ? "" : "opacity-65"
+                  }`}
                 >
-                  <h3
-                    className={`tracking-tight leading-snug ${
-                      isLatestQuestion
-                        ? "text-lg sm:text-xl font-bold text-brand-ink"
-                        : "text-base sm:text-lg font-medium text-brand-ink/65"
-                    }`}
-                  >
+                  <p className="text-sm sm:text-base font-medium text-white bg-brand-navy rounded-[20px] rounded-br-[4px] px-4 sm:px-5 py-2.5 max-w-[85%] leading-snug">
                     {msg.text}
-                  </h3>
+                  </p>
                 </div>
               );
             }
@@ -449,46 +393,11 @@ export default function StudyChat({
               );
             }
 
-            const paras = (msg.text || "").split(/\n{2,}/).filter((p) => p.trim());
-            const lead = paras[0] || "";
-            const rest = paras.slice(1).join("\n\n");
-            const hasSources = Object.keys(msg.segmentMap || {}).length > 0;
-
             return (
               <div key={msg.id || i} className="mt-4">
-                {hasSources && lead ? (
-                  <>
-                    <div className="rounded-r-2xl rounded-l-md border border-brand-navy/10 border-l-[3px] border-l-brand-navy bg-gradient-to-br from-brand-sky/60 to-card px-4 sm:px-5 py-3.5">
-                      <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-brand-navy mb-1">
-                        Quick answer
-                      </p>
-                      <RichAIResponse
-                        text={lead}
-                        segmentMap={msg.segmentMap}
-                        onWatch={setActiveVideo}
-                      />
-                    </div>
-                    {rest && (
-                      <div className="mt-4">
-                        <RichAIResponse
-                          text={rest}
-                          segmentMap={msg.segmentMap}
-                          onWatch={setActiveVideo}
-                        />
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <RichAIResponse
-                    text={msg.text}
-                    segmentMap={msg.segmentMap || {}}
-                    onWatch={setActiveVideo}
-                  />
-                )}
-
-                <MomentCards
+                <RichAIResponse
                   text={msg.text}
-                  segmentMap={msg.segmentMap}
+                  segmentMap={msg.segmentMap || {}}
                   onWatch={setActiveVideo}
                 />
 
@@ -502,7 +411,7 @@ export default function StudyChat({
                         <button
                           key={idx}
                           onClick={() => handleSendMessage(question)}
-                          className="text-left text-[13px] font-medium text-brand-navy bg-card border border-brand-navy/10 rounded-full px-4 py-2 hover:bg-brand-sky hover:border-brand-navy/25 transition-colors"
+                          className="text-left text-sm font-medium text-brand-navy bg-white border border-brand-navy/10 rounded-full px-4 py-2 hover:bg-brand-sky hover:border-brand-navy/25 transition-colors"
                         >
                           {question}
                         </button>
@@ -518,7 +427,15 @@ export default function StudyChat({
       </div>
 
       {/* Composer */}
-      <div className="flex-shrink-0 border-t border-brand-navy/10 bg-card px-4 sm:px-7 pt-3 pb-3.5">
+      <div
+        className="flex-shrink-0 border-t border-brand-navy/10 bg-white px-4 sm:px-7 pt-3 pb-3.5 transition-transform duration-150"
+        style={{
+          transform: keyboardInset ? `translateY(-${keyboardInset}px)` : undefined,
+          paddingBottom: keyboardInset
+            ? undefined
+            : "calc(0.875rem + env(safe-area-inset-bottom))",
+        }}
+      >
         <div className="max-w-2xl mx-auto">
           <form
             onSubmit={(e) => {
@@ -532,7 +449,7 @@ export default function StudyChat({
               ref={inputRef}
               type="text"
               placeholder={placeholder}
-              className="flex-1 bg-transparent py-2 text-[15px] text-brand-ink placeholder:text-brand-gray/60 focus:outline-none min-w-0"
+              className="flex-1 bg-transparent py-2 text-base text-brand-ink placeholder:text-brand-gray/60 focus:outline-none min-w-0"
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
             />
@@ -549,7 +466,7 @@ export default function StudyChat({
               )}
             </button>
           </form>
-          <p className="mt-1.5 text-center text-[11px] text-brand-gray">{hint}</p>
+          <p className="mt-1.5 text-center text-xs text-brand-gray">{hint}</p>
         </div>
       </div>
     </div>

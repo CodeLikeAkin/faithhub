@@ -120,7 +120,7 @@ export default function VerseExplorer({ sermonId, scriptures: preloaded }) {
     <button
       onClick={() => toggleVerse(s)}
       aria-expanded={expandedId === s.id}
-      className={`inline-flex items-center rounded-full border px-3.5 py-1.5 text-[12.5px] font-bold transition-colors ${
+      className={`inline-flex items-center rounded-full border px-3.5 min-h-11 text-xs font-bold transition-colors ${
         expandedId === s.id
           ? "bg-brand-navy text-white border-brand-navy"
           : "bg-brand-sky text-brand-navy border-brand-navy/10 hover:border-brand-navy/40"
@@ -134,15 +134,15 @@ export default function VerseExplorer({ sermonId, scriptures: preloaded }) {
     const t = shownTranslation[s.id] || "KJV";
     const vt = verseText[s.id]?.[t];
     return (
-      <div className="mt-2.5 rounded-r-2xl rounded-l-md border border-brand-navy/10 border-l-[3px] border-l-brand-navy bg-gradient-to-br from-brand-sky/60 to-card px-4 sm:px-5 py-4">
+      <div className="mt-2.5 rounded-r-2xl rounded-l-md border border-brand-navy/10 border-l-[3px] border-l-brand-navy bg-gradient-to-br from-brand-sky/60 to-white px-4 sm:px-5 py-4">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[13px] font-bold text-brand-navy">{s.reference}</p>
+          <p className="text-sm font-bold text-brand-navy">{s.reference}</p>
           <span className="flex rounded-full border border-brand-navy/15 p-0.5 flex-shrink-0">
             {TRANSLATIONS.map((tr) => (
               <button
                 key={tr}
                 onClick={() => switchTranslation(s, tr)}
-                className={`rounded-full px-2.5 py-0.5 text-[10.5px] font-bold transition-colors ${
+                className={`relative rounded-full px-2.5 py-0.5 text-xs font-bold transition-colors before:content-[''] before:absolute before:-inset-2.5 ${
                   t === tr
                     ? "bg-brand-navy text-white"
                     : "text-brand-gray hover:text-brand-navy"
@@ -165,7 +165,7 @@ export default function VerseExplorer({ sermonId, scriptures: preloaded }) {
           </p>
         )}
         {vt?.verses && (
-          <p className="mt-2 text-[15px] leading-relaxed text-brand-ink">
+          <p className="mt-2 text-base leading-relaxed text-brand-ink">
             {vt.verses.map((v) => (
               <span key={v.number}>
                 <sup className="text-brand-navy/50 font-bold mr-1">{v.number}</sup>
@@ -200,7 +200,7 @@ export default function VerseExplorer({ sermonId, scriptures: preloaded }) {
   };
 
   return (
-    <div className="rounded-3xl border border-brand-navy/10 bg-card p-5 sm:p-6">
+    <div className="rounded-3xl border border-brand-navy/10 bg-white p-5 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="flex items-center gap-3">
           <span className="w-9 h-9 rounded-xl bg-brand-sky text-brand-navy flex items-center justify-center flex-shrink-0">
@@ -224,7 +224,7 @@ export default function VerseExplorer({ sermonId, scriptures: preloaded }) {
               <button
                 key={key}
                 onClick={() => setView(key)}
-                className={`rounded-full px-3 py-1 text-[11.5px] font-bold transition-colors ${
+                className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${
                   view === key
                     ? "bg-brand-navy text-white"
                     : "text-brand-gray hover:text-brand-navy"
@@ -245,8 +245,8 @@ export default function VerseExplorer({ sermonId, scriptures: preloaded }) {
           {groups.main.map(({ book, refs }) => (
             <div key={book}>
               <p className="mb-2 flex items-baseline gap-2">
-                <span className="text-[13.5px] font-bold text-brand-ink">{book}</span>
-                <span className="text-[11px] font-bold text-brand-gray">
+                <span className="text-sm font-bold text-brand-ink">{book}</span>
+                <span className="text-xs font-bold text-brand-gray">
                   · {refs.length} readings
                 </span>
               </p>
@@ -256,8 +256,8 @@ export default function VerseExplorer({ sermonId, scriptures: preloaded }) {
           {groups.also.length > 0 && (
             <div>
               <p className="mb-2 flex items-baseline gap-2">
-                <span className="text-[13.5px] font-bold text-brand-ink">Also read</span>
-                <span className="text-[11px] font-bold text-brand-gray">
+                <span className="text-sm font-bold text-brand-ink">Also read</span>
+                <span className="text-xs font-bold text-brand-gray">
                   · {groups.also.length} across {groups.also.length}{" "}
                   {groups.also.length === 1 ? "book" : "books"}
                 </span>

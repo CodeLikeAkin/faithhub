@@ -38,15 +38,6 @@
     --ring: 214 64% 25%;
 
     --radius: 1rem;
-
-    /* Brand palette as theme-flipping HSL tokens (light values == the source hex).
-       navy/ink/gray/sky/mist/light flip in dark; deep + green stay static (see config). */
-    --brand-navy: 214 64% 25%; /* #173A68 */
-    --brand-ink: 220 44% 16%;  /* #17233B */
-    --brand-gray: 0 0% 48%;    /* #7A7A7A */
-    --brand-sky: 212 63% 95%;  /* #EAF2FB */
-    --brand-mist: 210 54% 85%; /* #C6DAEE */
-    --brand-light: 210 20% 98%;/* #F8F9FA */
   }
 
   .dark {
@@ -77,15 +68,6 @@
     --border: 216 35% 22%;
     --input: 216 35% 22%;
     --ring: 214 60% 60%;
-
-    /* Brand palette flipped for dark: navy → readable light-blue (also works as a
-       button fill under white text); ink/gray → light text; sky/mist/light → dark surfaces. */
-    --brand-navy: 213 68% 62%;
-    --brand-ink: 210 40% 96%;
-    --brand-gray: 214 15% 63%;
-    --brand-sky: 216 40% 22%;
-    --brand-mist: 216 38% 27%;
-    --brand-light: 217 44% 14%;
   }
 }
 

@@ -68,11 +68,11 @@ export default function SeriesBrowsePage() {
   };
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-white">
       {/* Page heading */}
       <section className="mx-auto max-w-[1400px] px-4 sm:px-6 pt-28 sm:pt-36 pb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.22em] text-brand-navy">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-navy">
             Study
           </p>
           <h1 className="mt-3 text-3xl sm:text-5xl font-bold text-brand-ink tracking-tight">
@@ -96,7 +96,7 @@ export default function SeriesBrowsePage() {
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-brand-sky/60 border border-brand-navy/10 p-4 sm:p-5 rounded-3xl">
           <div className="flex items-center gap-3">
             <Filter size={18} className="text-brand-navy flex-shrink-0" />
-            <div className="flex p-1 bg-card rounded-2xl border border-brand-navy/10">
+            <div className="flex p-1 bg-white rounded-2xl border border-brand-navy/10">
               {serviceTypes.map((type) => (
                 <button
                   key={type}
@@ -119,7 +119,7 @@ export default function SeriesBrowsePage() {
               <select
                 value={filterYear}
                 onChange={(e) => setFilterYear(e.target.value)}
-                className="w-full appearance-none bg-card border border-brand-navy/10 rounded-2xl px-5 py-3 text-sm font-bold text-brand-ink focus:outline-none focus:border-brand-navy/40 transition-colors cursor-pointer"
+                className="w-full appearance-none bg-white border border-brand-navy/10 rounded-2xl px-5 py-3 text-sm font-bold text-brand-ink focus:outline-none focus:border-brand-navy/40 transition-colors cursor-pointer"
               >
                 {years.map((year) => (
                   <option key={year} value={year}>{year}</option>
@@ -157,7 +157,7 @@ export default function SeriesBrowsePage() {
                 <Link
                   key={s.id}
                   href={`/series/${s.id}`}
-                  className="group relative flex flex-col bg-card rounded-3xl overflow-hidden border border-brand-navy/10 hover:border-brand-navy/25 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-navy/10"
+                  className="group relative flex flex-col bg-white rounded-3xl overflow-hidden border border-brand-navy/10 hover:border-brand-navy/25 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-navy/10"
                 >
                   {/* Thumbnail */}
                   <div className="aspect-[16/10] relative overflow-hidden">
@@ -175,7 +175,7 @@ export default function SeriesBrowsePage() {
                     {/* Part count badge */}
                     <div className="absolute bottom-4 right-4 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-full flex items-center gap-1.5">
                       <List size={12} className="text-white" />
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-white">
+                      <span className="text-xs font-bold uppercase tracking-wider text-white">
                         {s.total_parts || s.series_sermons?.length || 0} Parts
                       </span>
                     </div>

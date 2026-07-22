@@ -14,6 +14,8 @@ import {
   BookOpen,
   Languages,
   FileText,
+  Sparkles,
+  X,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { cleanTitle } from "@/lib/titles";
@@ -23,7 +25,6 @@ import StudyChat from "@/components/StudyChat";
 import VerseExplorer from "@/components/VerseExplorer";
 import WordStudy from "@/components/WordStudy";
 import VideoModal from "@/components/VideoModal";
-import ThemeToggle from "@/components/ThemeToggle";
 import ReactMarkdown from "react-markdown";
 
 /**
@@ -102,7 +103,7 @@ const KeyVerses = ({ verses }) => {
             key={v.reference}
             onClick={() => toggle(v)}
             aria-expanded={openRef === v.reference}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11.5px] font-bold transition-colors ${
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${
               openRef === v.reference
                 ? "bg-brand-navy text-white border-brand-navy"
                 : "bg-brand-sky text-brand-navy border-brand-navy/10 hover:border-brand-navy/40"
@@ -111,7 +112,7 @@ const KeyVerses = ({ verses }) => {
             {v.reference}
             {v.count > 1 && (
               <span
-                className={`text-[10px] font-semibold ${
+                className={`text-xs font-semibold ${
                   openRef === v.reference ? "text-white/70" : "text-brand-navy/50"
                 }`}
               >
@@ -122,15 +123,15 @@ const KeyVerses = ({ verses }) => {
         ))}
       </div>
       {open && (
-        <div className="mt-2.5 rounded-r-xl rounded-l-md border border-brand-navy/10 border-l-[3px] border-l-brand-navy bg-gradient-to-br from-brand-sky/60 to-card px-3.5 py-3">
+        <div className="mt-2.5 rounded-r-xl rounded-l-md border border-brand-navy/10 border-l-[3px] border-l-brand-navy bg-gradient-to-br from-brand-sky/60 to-white px-3.5 py-3">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-bold text-brand-navy">{open.reference}</span>
+            <span className="text-xs font-bold text-brand-navy">{open.reference}</span>
             <span className="flex rounded-full border border-brand-navy/15 p-0.5 flex-shrink-0">
               {TRANSLATIONS.map((tr) => (
                 <button
                   key={tr}
                   onClick={() => switchTranslation(open, tr)}
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold transition-colors ${
+                  className={`rounded-full px-2 py-0.5 text-xs font-bold transition-colors ${
                     t === tr
                       ? "bg-brand-navy text-white"
                       : "text-brand-gray hover:text-brand-navy"
@@ -153,7 +154,7 @@ const KeyVerses = ({ verses }) => {
             </p>
           )}
           {vt?.verses && (
-            <p className="mt-1.5 text-[13px] leading-relaxed text-brand-ink">
+            <p className="mt-1.5 text-sm leading-relaxed text-brand-ink">
               {vt.verses.map((v) => (
                 <span key={v.number}>
                   <sup className="text-brand-navy/50 font-bold mr-0.5">{v.number}</sup>
@@ -189,9 +190,23 @@ export default function StudyWorkspace({ entry }) {
   const [activeTab, setActiveTab] = useState("study");
   const [showAllDecls, setShowAllDecls] = useState(false);
   const [watching, setWatching] = useState(null); // segment currently open in the video modal
+  const [sheetOpen, setSheetOpen] = useState(false); // mobile "At a glance" bottom sheet
   const loadedParts = useRef(new Set()); // sermonIds whose data is loaded / in-flight
 
   const hasSeries = !!series;
+
+  // Lock body scroll + close on Escape while the mobile sheet is open.
+  useEffect(() => {
+    if (!sheetOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e) => e.key === "Escape" && setSheetOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [sheetOpen]);
 
   // ── boot: resolve the entry point into a full bundle ──────────────
   useEffect(() => {
@@ -339,6 +354,7 @@ export default function StudyWorkspace({ entry }) {
             seriesId: series.id,
             title: series.title,
             sermonTitles: parts.map((s) => s.title),
+            sermonIds: parts.map((s) => s.id),
           }),
         });
         const data = await res.json();
@@ -428,6 +444,7 @@ export default function StudyWorkspace({ entry }) {
     setMode("series");
     setActiveTab("study");
     setShowAllDecls(false);
+    setSheetOpen(false);
     syncUrl(`/series/${series.id}`);
   };
 
@@ -438,8 +455,15 @@ export default function StudyWorkspace({ entry }) {
     setMode("message");
     setActiveTab("study");
     setShowAllDecls(false);
+    setSheetOpen(false);
     if (!partData[id]) loadPartData(id);
     syncUrl(`/sermon/${id}`);
+  };
+
+  // From inside the mobile sheet: switch tab and close so the result is visible.
+  const openTab = (tab) => {
+    setActiveTab(tab);
+    setSheetOpen(false);
   };
 
   // ── derived ──────────────────────────────────────────────────────
@@ -518,14 +542,14 @@ export default function StudyWorkspace({ entry }) {
   const headerSub = isMsg
     ? activePart?.summary ||
       "Study this message on its own — every answer is grounded in it alone."
-    : summary || "Ask anything — every answer is grounded in these messages.";
+    : "Ask anything — every answer is grounded in these messages.";
 
   const msgDecls = pd?.declarations || [];
   const shownMsgDecls = showAllDecls ? msgDecls : msgDecls.slice(0, DECL_PREVIEW);
   const shownSeriesDecls = seriesDecls.slice(0, 3);
 
   return (
-    <main className="h-dvh bg-background text-brand-ink flex flex-col lg:grid lg:grid-cols-[276px_minmax(0,1fr)] xl:grid-cols-[276px_minmax(0,1fr)_320px]">
+    <main className="h-dvh bg-white text-brand-ink flex flex-col lg:grid lg:grid-cols-[276px_minmax(0,1fr)] xl:grid-cols-[276px_minmax(0,1fr)_320px]">
       {/* ═══════════ Zone 1 · context + parts ═══════════ */}
       <aside className="hidden lg:flex flex-col min-h-0 bg-brand-light border-r border-brand-navy/10">
         <div className="px-5 pt-5 pb-3">
@@ -538,7 +562,7 @@ export default function StudyWorkspace({ entry }) {
           <h2 className="mt-3 text-lg font-bold text-brand-ink leading-tight">
             {series ? series.title : cleanTitle(activePart?.title)}
           </h2>
-          <p className="mt-1 text-[11.5px] text-brand-gray">
+          <p className="mt-1 text-xs text-brand-gray">
             {series
               ? `${parts.length} ${parts.length === 1 ? "part" : "parts"} · ${formatDateRange(
                   series.start_date,
@@ -579,7 +603,7 @@ export default function StudyWorkspace({ entry }) {
                 href={activePart.youtube_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2.5 flex items-center justify-center gap-2 w-full bg-brand-navy text-white text-[12.5px] font-bold rounded-xl py-2.5 hover:bg-brand-deep transition-colors"
+                className="mt-2.5 flex items-center justify-center gap-2 w-full bg-brand-navy text-white text-xs font-bold rounded-xl py-2.5 hover:bg-brand-deep transition-colors"
               >
                 <Play size={13} fill="currentColor" /> Watch the message
               </a>
@@ -589,7 +613,7 @@ export default function StudyWorkspace({ entry }) {
 
         {hasSeries && (
           <>
-            <p className="px-5 pt-2 pb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-brand-gray">
+            <p className="px-5 pt-2 pb-1.5 text-xs font-bold uppercase tracking-[0.14em] text-brand-gray">
               Choose your lens
             </p>
             <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-3 pb-3">
@@ -600,7 +624,7 @@ export default function StudyWorkspace({ entry }) {
                     onClick={goSeries}
                     className={`w-full group flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-left transition-colors ${
                       mode === "series"
-                        ? "bg-card shadow-sm shadow-brand-navy/10 border border-brand-navy/10"
+                        ? "bg-white shadow-sm shadow-brand-navy/10 border border-brand-navy/10"
                         : "border border-transparent hover:bg-brand-sky/70"
                     }`}
                   >
@@ -615,20 +639,20 @@ export default function StudyWorkspace({ entry }) {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span
-                        className={`block text-[13px] font-bold leading-snug ${
+                        className={`block text-sm font-bold leading-snug ${
                           mode === "series" ? "text-brand-navy" : "text-brand-ink"
                         }`}
                       >
                         Whole series
                       </span>
-                      <span className="block text-[11px] text-brand-gray mt-0.5">
+                      <span className="block text-xs text-brand-gray mt-0.5">
                         Study across all {parts.length} parts
                       </span>
                     </span>
                   </button>
                 </li>
 
-                <li className="px-2.5 pt-2.5 pb-1 text-[9.5px] font-bold uppercase tracking-[0.14em] text-brand-gray">
+                <li className="px-2.5 pt-2.5 pb-1 text-xs font-bold uppercase tracking-[0.14em] text-brand-gray">
                   Or a single message
                 </li>
 
@@ -640,12 +664,12 @@ export default function StudyWorkspace({ entry }) {
                         onClick={() => goMessage(sermon.id)}
                         className={`w-full group flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-left transition-colors ${
                           current
-                            ? "bg-card shadow-sm shadow-brand-navy/10 border border-brand-navy/10"
+                            ? "bg-white shadow-sm shadow-brand-navy/10 border border-brand-navy/10"
                             : "border border-transparent hover:bg-brand-sky/70"
                         }`}
                       >
                         <span
-                          className={`w-6 h-6 rounded-lg text-[11.5px] font-bold flex items-center justify-center flex-shrink-0 transition-colors ${
+                          className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center flex-shrink-0 transition-colors ${
                             current
                               ? "bg-brand-navy text-white"
                               : "bg-brand-sky text-brand-navy group-hover:bg-brand-navy group-hover:text-white"
@@ -655,13 +679,13 @@ export default function StudyWorkspace({ entry }) {
                         </span>
                         <span className="min-w-0 flex-1">
                           <span
-                            className={`block text-[13px] font-bold leading-snug ${
+                            className={`block text-sm font-bold leading-snug ${
                               current ? "text-brand-navy" : "text-brand-ink"
                             }`}
                           >
                             Part {sermon.part_number}
                           </span>
-                          <span className="block text-[11px] text-brand-gray mt-0.5 line-clamp-1">
+                          <span className="block text-xs text-brand-gray mt-0.5 line-clamp-1">
                             {cleanTitle(sermon.title)}
                             {sermon.sermon_date &&
                               ` · ${new Date(sermon.sermon_date).toLocaleDateString("en-US", {
@@ -677,7 +701,7 @@ export default function StudyWorkspace({ entry }) {
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
                             title="Watch"
-                            className="w-6 h-6 rounded-md border border-brand-navy/15 bg-card text-brand-navy flex items-center justify-center hover:bg-brand-sky flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="w-6 h-6 rounded-md border border-brand-navy/15 bg-white text-brand-navy flex items-center justify-center hover:bg-brand-sky flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <Play size={9} fill="currentColor" />
                           </a>
@@ -692,7 +716,7 @@ export default function StudyWorkspace({ entry }) {
         )}
 
         <div className="px-5 py-3.5 border-t border-brand-navy/10">
-          <p className="text-[11px] text-brand-gray leading-relaxed">
+          <p className="text-xs text-brand-gray leading-relaxed">
             {!hasSeries
               ? "This message isn’t part of a series."
               : isMsg
@@ -705,22 +729,22 @@ export default function StudyWorkspace({ entry }) {
       {/* ═══════════ Zone 2 · workspace ═══════════ */}
       <section className="flex flex-col min-h-0 min-w-0 flex-1">
         {/* Header */}
-        <div className="flex-shrink-0 border-b border-brand-navy/10 bg-gradient-to-br from-brand-sky/50 to-card px-4 sm:px-7 pt-3.5">
+        <div className="flex-shrink-0 border-b border-brand-navy/10 bg-gradient-to-br from-brand-sky/50 to-white px-4 sm:px-7 pt-3.5">
           {/* Scope toggle */}
           {hasSeries && (
             <div className="flex items-center gap-3 flex-wrap">
               <div
                 role="tablist"
                 aria-label="Study scope"
-                className="inline-flex p-0.5 bg-brand-sky border border-brand-navy/10 rounded-full"
+                className="inline-flex p-0.5 bg-[#E7EEF8] border border-brand-navy/10 rounded-full"
               >
                 <button
                   role="tab"
                   aria-selected={mode === "series"}
                   onClick={goSeries}
-                  className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[12px] font-bold transition-colors ${
+                  className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors ${
                     mode === "series"
-                      ? "bg-card text-brand-navy shadow-sm shadow-brand-navy/10"
+                      ? "bg-white text-brand-navy shadow-sm shadow-brand-navy/10"
                       : "text-brand-gray hover:text-brand-ink"
                   }`}
                 >
@@ -730,9 +754,9 @@ export default function StudyWorkspace({ entry }) {
                   role="tab"
                   aria-selected={mode === "message"}
                   onClick={() => goMessage()}
-                  className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[12px] font-bold transition-colors ${
+                  className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors ${
                     mode === "message"
-                      ? "bg-card text-brand-navy shadow-sm shadow-brand-navy/10"
+                      ? "bg-white text-brand-navy shadow-sm shadow-brand-navy/10"
                       : "text-brand-gray hover:text-brand-ink"
                   }`}
                 >
@@ -743,22 +767,32 @@ export default function StudyWorkspace({ entry }) {
           )}
 
           <div className="flex items-center gap-2.5 flex-wrap mt-3">
-            <Link href="/series" className="lg:hidden text-brand-gray hover:text-brand-navy">
-              <ArrowLeft size={16} />
+            <Link
+              href={hasSeries ? "/series" : "/"}
+              aria-label={hasSeries ? "Back to series" : "Back home"}
+              className="lg:hidden -ml-2 w-11 h-11 flex items-center justify-center rounded-full text-brand-gray hover:text-brand-navy hover:bg-brand-sky transition-colors flex-shrink-0"
+            >
+              <ArrowLeft size={20} />
             </Link>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-brand-ink">
               {headerTitle}
             </h1>
             {isMsg && activePart?.part_number && (
-              <span className="px-2.5 py-1 bg-brand-navy/10 border border-brand-navy/15 text-brand-navy rounded-full text-[9.5px] font-bold uppercase tracking-wider">
+              <span className="px-2.5 py-1 bg-brand-navy/10 border border-brand-navy/15 text-brand-navy rounded-full text-xs font-bold uppercase tracking-wider">
                 Part {activePart.part_number}
                 {series?.series_sermons ? ` of ${parts.length}` : ""}
               </span>
             )}
-            <ThemeToggle className="ml-auto w-9 h-9 flex items-center justify-center rounded-full text-brand-gray hover:text-brand-navy hover:bg-brand-sky transition-colors flex-shrink-0" />
+            <button
+              onClick={() => setSheetOpen(true)}
+              className="xl:hidden ml-auto inline-flex items-center gap-1.5 rounded-full border border-brand-navy/15 bg-white px-3 h-11 text-xs font-bold text-brand-navy hover:bg-brand-sky transition-colors flex-shrink-0"
+            >
+              <Sparkles size={14} />
+              At a glance
+            </button>
           </div>
 
-          <div className="mt-1.5 text-[13px] text-brand-gray leading-relaxed max-w-2xl">
+          <div className="mt-1.5 text-sm text-brand-gray leading-relaxed max-w-2xl">
             {!isMsg && summaryLoading ? (
               <span className="flex items-center gap-2">
                 <Loader2 size={12} className="animate-spin text-brand-navy" />
@@ -784,7 +818,7 @@ export default function StudyWorkspace({ entry }) {
                     role="tab"
                     aria-selected={active}
                     onClick={() => setActiveTab(t.key)}
-                    className={`inline-flex items-center gap-2 whitespace-nowrap px-3.5 pt-2.5 pb-3 text-[13px] font-bold border-b-2 transition-colors ${
+                    className={`inline-flex items-center gap-2 whitespace-nowrap px-3.5 pt-2.5 pb-3 text-sm font-bold border-b-2 transition-colors ${
                       active
                         ? "text-brand-navy border-brand-navy"
                         : "text-brand-gray border-transparent hover:text-brand-ink"
@@ -794,8 +828,8 @@ export default function StudyWorkspace({ entry }) {
                     {t.label}
                     {t.count != null && (
                       <span
-                        className={`text-[10.5px] font-bold rounded-full px-1.5 py-0.5 ${
-                          active ? "bg-brand-navy text-white" : "bg-brand-sky text-brand-navy"
+                        className={`text-xs font-bold rounded-full px-1.5 py-0.5 ${
+                          active ? "bg-brand-navy text-white" : "bg-[#E7EEF8] text-brand-navy"
                         }`}
                       >
                         {t.count}
@@ -814,10 +848,10 @@ export default function StudyWorkspace({ entry }) {
             <div className="lg:hidden mt-3 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <button
                 onClick={goSeries}
-                className={`flex-shrink-0 rounded-full border px-3 py-1.5 text-[11.5px] font-bold transition-colors ${
+                className={`flex-shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${
                   mode === "series"
                     ? "bg-brand-navy text-white border-brand-navy"
-                    : "bg-card text-brand-navy border-brand-navy/15 hover:bg-brand-sky"
+                    : "bg-white text-brand-navy border-brand-navy/15 hover:bg-brand-sky"
                 }`}
               >
                 All parts
@@ -828,10 +862,10 @@ export default function StudyWorkspace({ entry }) {
                   <button
                     key={sermon.id}
                     onClick={() => goMessage(sermon.id)}
-                    className={`flex-shrink-0 rounded-full border px-3 py-1.5 text-[11.5px] font-bold transition-colors ${
+                    className={`flex-shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${
                       current
                         ? "bg-brand-navy text-white border-brand-navy"
-                        : "bg-card text-brand-navy border-brand-navy/15 hover:bg-brand-sky"
+                        : "bg-white text-brand-navy border-brand-navy/15 hover:bg-brand-sky"
                     }`}
                   >
                     Part {sermon.part_number}
@@ -851,6 +885,7 @@ export default function StudyWorkspace({ entry }) {
                 key={isMsg ? `msg-${activePartId}` : "series"}
                 seriesId={series?.id || null}
                 sermonId={isMsg ? activePartId : null}
+                summary={isMsg ? "" : summary}
                 openers={isMsg ? [] : summarySuggestions}
                 placeholder={isMsg ? "Ask about this message…" : "Ask about this series…"}
                 hint={
@@ -871,7 +906,7 @@ export default function StudyWorkspace({ entry }) {
             <div className="absolute inset-0 overflow-y-auto custom-scrollbar px-4 sm:px-7 py-6">
               <div className="max-w-3xl mx-auto">
                 {pd?.loading ? (
-                  <div className="rounded-3xl border border-brand-navy/10 bg-card p-6 flex items-center gap-3 text-brand-gray">
+                  <div className="rounded-3xl border border-brand-navy/10 bg-white p-6 flex items-center gap-3 text-brand-gray">
                     <Loader2 size={16} className="animate-spin text-brand-navy" />
                     <span className="text-sm">Loading scriptures…</span>
                   </div>
@@ -885,7 +920,7 @@ export default function StudyWorkspace({ entry }) {
           {isMsg && activeTab === "words" && (
             <div className="absolute inset-0 overflow-y-auto custom-scrollbar px-4 sm:px-7 py-6">
               <div className="max-w-3xl mx-auto">
-                <div className="rounded-3xl border border-brand-navy/10 bg-card p-4 sm:p-5">
+                <div className="rounded-3xl border border-brand-navy/10 bg-white p-4 sm:p-5">
                   <div className="flex items-center gap-3 mb-3 px-1">
                     <span className="w-9 h-9 rounded-xl bg-brand-sky text-brand-navy flex items-center justify-center flex-shrink-0">
                       <Languages size={18} />
@@ -906,7 +941,7 @@ export default function StudyWorkspace({ entry }) {
           {isMsg && activeTab === "notes" && pd?.notes && (
             <div className="absolute inset-0 overflow-y-auto custom-scrollbar px-4 sm:px-7 py-6">
               <div className="max-w-3xl mx-auto">
-                <div className="rounded-3xl border border-brand-navy/10 bg-card p-5 sm:p-6">
+                <div className="rounded-3xl border border-brand-navy/10 bg-white p-5 sm:p-6">
                   <div className="flex items-center gap-3 mb-4">
                     <span className="w-9 h-9 rounded-xl bg-brand-sky text-brand-navy flex items-center justify-center flex-shrink-0">
                       <FileText size={17} />
@@ -920,14 +955,14 @@ export default function StudyWorkspace({ entry }) {
                       </span>
                     </span>
                   </div>
-                  <div className="text-[14.5px] leading-[1.75] text-brand-ink/90">
+                  <div className="text-sm leading-[1.75] text-brand-ink/90">
                     <ReactMarkdown
                       components={{
                         h1: ({ node, ...props }) => (
-                          <h3 className="text-brand-ink text-[15.5px] font-bold mt-5 mb-2 first:mt-0" {...props} />
+                          <h3 className="text-brand-ink text-base font-bold mt-5 mb-2 first:mt-0" {...props} />
                         ),
                         h2: ({ node, ...props }) => (
-                          <h3 className="text-brand-ink text-[15.5px] font-bold mt-5 mb-2 first:mt-0" {...props} />
+                          <h3 className="text-brand-ink text-base font-bold mt-5 mb-2 first:mt-0" {...props} />
                         ),
                         h3: ({ node, ...props }) => (
                           <h4 className="text-brand-ink text-sm font-bold mt-4 mb-1.5 first:mt-0" {...props} />
@@ -960,12 +995,69 @@ export default function StudyWorkspace({ entry }) {
         </div>
       </section>
 
-      {/* ═══════════ Zone 3 · at a glance ═══════════ */}
-      <aside className="hidden xl:flex flex-col min-h-0 bg-brand-light border-l border-brand-navy/10 overflow-y-auto custom-scrollbar">
-        <div className="p-4 space-y-3.5">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-gray px-1">
+      {/* ═══════════ Zone 3 · at a glance ═══════════
+          Static right column at xl; a slide-up bottom sheet below that
+          (the only place declarations / key verses / the video live on mobile). */}
+      {sheetOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-brand-ink/40 xl:hidden"
+          onClick={() => setSheetOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      <aside
+        className={`fixed inset-x-0 bottom-0 top-16 z-50 flex flex-col min-h-0 rounded-t-3xl border-t border-brand-navy/10 bg-brand-light shadow-2xl overflow-y-auto custom-scrollbar transition-transform duration-300 ${
+          sheetOpen ? "translate-y-0" : "translate-y-full"
+        } xl:static xl:inset-auto xl:top-auto xl:z-auto xl:translate-y-0 xl:rounded-none xl:border-t-0 xl:border-l xl:shadow-none xl:transition-none`}
+      >
+        {/* Sheet header — mobile only */}
+        <div className="xl:hidden sticky top-0 z-10 flex items-center justify-between gap-3 bg-brand-light/95 backdrop-blur px-4 py-3 border-b border-brand-navy/10">
+          <p className="text-sm font-bold text-brand-ink">
             {isMsg ? "Message at a glance" : "Series at a glance"}
           </p>
+          <button
+            onClick={() => setSheetOpen(false)}
+            aria-label="Close"
+            className="w-11 h-11 -mr-2 flex items-center justify-center rounded-full text-brand-gray hover:text-brand-navy hover:bg-brand-sky transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <div className="p-4 space-y-3.5 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+          <p className="hidden xl:block text-xs font-bold uppercase tracking-[0.16em] text-brand-gray px-1">
+            {isMsg ? "Message at a glance" : "Series at a glance"}
+          </p>
+
+          {/* Watch the message — mobile only (Zone 1 rail is hidden below lg) */}
+          {isMsg && activePart?.youtube_url && (
+            <a
+              href={activePart.youtube_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="xl:hidden flex items-center gap-3 rounded-2xl border border-brand-navy/10 bg-white p-3 hover:border-brand-navy/30 transition-colors group"
+            >
+              <span className="relative w-[84px] aspect-video rounded-lg overflow-hidden bg-brand-deep flex-shrink-0">
+                {activePart.youtube_video_id && (
+                  <img
+                    src={`https://img.youtube.com/vi/${activePart.youtube_video_id}/mqdefault.jpg`}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                )}
+                <span className="absolute inset-0 flex items-center justify-center">
+                  <span className="w-8 h-8 rounded-full bg-white/92 text-brand-navy flex items-center justify-center shadow">
+                    <Play size={13} fill="currentColor" className="translate-x-0.5" />
+                  </span>
+                </span>
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-bold text-brand-ink leading-snug group-hover:text-brand-navy transition-colors">
+                  Watch the message
+                </span>
+                <span className="block text-xs text-brand-gray mt-0.5">Opens on YouTube</span>
+              </span>
+            </a>
+          )}
 
           {/* Stats */}
           <div className="flex gap-2.5">
@@ -986,10 +1078,10 @@ export default function StudyWorkspace({ entry }) {
             ).map(([n, label]) => (
               <div
                 key={label}
-                className="flex-1 rounded-xl border border-brand-navy/10 bg-card py-2.5 text-center"
+                className="flex-1 rounded-xl border border-brand-navy/10 bg-white py-2.5 text-center"
               >
                 <p className="text-lg font-bold text-brand-ink tabular-nums leading-tight">{n}</p>
-                <p className="text-[9.5px] font-bold uppercase tracking-wider text-brand-gray">
+                <p className="text-xs font-bold uppercase tracking-wider text-brand-gray">
                   {label}
                 </p>
               </div>
@@ -999,24 +1091,24 @@ export default function StudyWorkspace({ entry }) {
           {/* Verses */}
           {isMsg ? (
             msgTopRefs.length > 0 && (
-              <div className="rounded-2xl border border-brand-navy/10 bg-card p-4">
-                <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand-gray mb-1 flex items-center gap-1.5">
+              <div className="rounded-2xl border border-brand-navy/10 bg-white p-4">
+                <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-brand-gray mb-1 flex items-center gap-1.5">
                   <BookOpen size={11} className="text-brand-navy" />
                   Verses in this message
                 </h3>
-                <p className="text-[10.5px] text-brand-gray mb-3">
+                <p className="text-xs text-brand-gray mb-3">
                   Tap to open the Scripture tab and read them in full.
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {msgTopRefs.map((v) => (
                     <button
                       key={v.reference}
-                      onClick={() => setActiveTab("scripture")}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-brand-navy/10 bg-brand-sky px-3 py-1.5 text-[11.5px] font-bold text-brand-navy hover:border-brand-navy/40 transition-colors"
+                      onClick={() => openTab("scripture")}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-brand-navy/10 bg-brand-sky px-3 py-1.5 text-xs font-bold text-brand-navy hover:border-brand-navy/40 transition-colors"
                     >
                       {v.reference}
                       {v.count > 1 && (
-                        <span className="text-[10px] text-brand-navy/50 font-semibold">
+                        <span className="text-xs text-brand-navy/50 font-semibold">
                           ×{v.count}
                         </span>
                       )}
@@ -1024,8 +1116,8 @@ export default function StudyWorkspace({ entry }) {
                   ))}
                 </div>
                 <button
-                  onClick={() => setActiveTab("scripture")}
-                  className="mt-3 inline-flex items-center gap-1 text-[11.5px] font-bold text-brand-navy hover:underline"
+                  onClick={() => openTab("scripture")}
+                  className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-brand-navy hover:underline"
                 >
                   Open the Scripture tab <ArrowUpRight size={11} />
                 </button>
@@ -1033,17 +1125,17 @@ export default function StudyWorkspace({ entry }) {
             )
           ) : (
             scriptureStats?.top?.length > 0 && (
-              <div className="rounded-2xl border border-brand-navy/10 bg-card p-4">
-                <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand-gray mb-1">
+              <div className="rounded-2xl border border-brand-navy/10 bg-white p-4">
+                <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-brand-gray mb-1">
                   Key verses in this series
                 </h3>
-                <p className="text-[10.5px] text-brand-gray mb-3">
+                <p className="text-xs text-brand-gray mb-3">
                   The verses Rev. Peter returned to most — tap to read.
                 </p>
                 <KeyVerses verses={scriptureStats.top} />
                 <Link
                   href="/word"
-                  className="mt-3 inline-flex items-center gap-1 text-[11.5px] font-bold text-brand-navy hover:underline"
+                  className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-brand-navy hover:underline"
                 >
                   See all in The Word <ArrowUpRight size={11} />
                 </Link>
@@ -1052,21 +1144,21 @@ export default function StudyWorkspace({ entry }) {
           )}
 
           {/* Declarations */}
-          <div className="rounded-2xl border border-brand-navy/10 bg-card p-4">
-            <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand-gray mb-3 flex items-center gap-1.5">
+          <div className="rounded-2xl border border-brand-navy/10 bg-white p-4">
+            <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-brand-gray mb-3 flex items-center gap-1.5">
               <Quote size={11} className="text-brand-navy" />
               {isMsg ? "Declarations from this message" : "Key declarations"}
             </h3>
             {isMsg ? (
               pd?.loading ? (
-                <p className="text-[11.5px] text-brand-gray">Loading…</p>
+                <p className="text-xs text-brand-gray">Loading…</p>
               ) : msgDecls.length > 0 ? (
                 <div className="space-y-4">
                   {shownMsgDecls.map((d) => {
                     const parsed = parseYoutubeUrl(d.youtube_url_with_timestamp);
                     return (
                       <div key={d.id}>
-                        <p className="text-[12.5px] italic text-brand-ink leading-relaxed">
+                        <p className="text-xs italic text-brand-ink leading-relaxed">
                           &ldquo;{d.declaration_text}&rdquo;
                         </p>
                         {parsed && (
@@ -1078,7 +1170,7 @@ export default function StudyWorkspace({ entry }) {
                                 sermon_title: activePart?.title,
                               })
                             }
-                            className="mt-1 inline-flex items-center gap-1.5 text-[10.5px] font-bold text-brand-navy hover:underline"
+                            className="mt-1 inline-flex items-center gap-1.5 text-xs font-bold text-brand-navy hover:underline"
                           >
                             <Play size={8} fill="currentColor" /> Watch moment
                           </button>
@@ -1089,14 +1181,14 @@ export default function StudyWorkspace({ entry }) {
                   {msgDecls.length > DECL_PREVIEW && (
                     <button
                       onClick={() => setShowAllDecls((v) => !v)}
-                      className="text-[11px] font-bold text-brand-navy hover:underline"
+                      className="text-xs font-bold text-brand-navy hover:underline"
                     >
                       {showAllDecls ? "Show fewer" : `Show all ${msgDecls.length}`}
                     </button>
                   )}
                 </div>
               ) : (
-                <p className="text-[11.5px] text-brand-gray leading-relaxed">
+                <p className="text-xs text-brand-gray leading-relaxed">
                   Declarations from this message are being prepared.
                 </p>
               )
@@ -1106,7 +1198,7 @@ export default function StudyWorkspace({ entry }) {
                   const parsed = parseYoutubeUrl(decl.youtube_url_with_timestamp);
                   return (
                     <div key={decl.id}>
-                      <p className="text-[12.5px] italic text-brand-ink leading-relaxed">
+                      <p className="text-xs italic text-brand-ink leading-relaxed">
                         &ldquo;{decl.declaration_text}&rdquo;
                       </p>
                       {parsed && (
@@ -1118,7 +1210,7 @@ export default function StudyWorkspace({ entry }) {
                               sermon_title: decl.sermon_title,
                             })
                           }
-                          className="mt-1 inline-flex items-center gap-1.5 text-[10.5px] font-bold text-brand-navy hover:underline"
+                          className="mt-1 inline-flex items-center gap-1.5 text-xs font-bold text-brand-navy hover:underline"
                         >
                           <Play size={8} fill="currentColor" /> Watch moment
                         </button>
@@ -1127,13 +1219,13 @@ export default function StudyWorkspace({ entry }) {
                   );
                 })}
                 {seriesDecls.length > 3 && (
-                  <p className="text-[11px] text-brand-gray">
+                  <p className="text-xs text-brand-gray">
                     + {seriesDecls.length - 3} more across the series
                   </p>
                 )}
               </div>
             ) : (
-              <p className="text-[11.5px] text-brand-gray leading-relaxed">
+              <p className="text-xs text-brand-gray leading-relaxed">
                 Declarations from this series are being prepared.
               </p>
             )}
@@ -1143,9 +1235,9 @@ export default function StudyWorkspace({ entry }) {
           {isMsg && nextPart && (
             <button
               onClick={() => goMessage(nextPart.id)}
-              className="w-full text-left rounded-2xl border border-brand-navy/10 bg-card p-4 hover:border-brand-navy/30 transition-colors group"
+              className="w-full text-left rounded-2xl border border-brand-navy/10 bg-white p-4 hover:border-brand-navy/30 transition-colors group"
             >
-              <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand-gray mb-3">
+              <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-brand-gray mb-3">
                 Up next in this series
               </h3>
               <span className="flex items-center gap-3">
@@ -1165,11 +1257,11 @@ export default function StudyWorkspace({ entry }) {
                   </span>
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-[12.5px] font-bold text-brand-ink leading-snug group-hover:text-brand-navy transition-colors">
+                  <span className="block text-xs font-bold text-brand-ink leading-snug group-hover:text-brand-navy transition-colors">
                     Part {nextPart.part_number} · {cleanTitle(nextPart.title)}
                   </span>
                   {nextPart.sermon_date && (
-                    <span className="block text-[11px] text-brand-gray mt-0.5">
+                    <span className="block text-xs text-brand-gray mt-0.5">
                       {new Date(nextPart.sermon_date).toLocaleDateString("en-US", {
                         month: "long",
                         day: "numeric",
@@ -1186,13 +1278,13 @@ export default function StudyWorkspace({ entry }) {
           {isMsg && hasSeries && (
             <button
               onClick={goSeries}
-              className="w-full flex items-center justify-between gap-3 rounded-2xl border border-brand-navy/10 bg-gradient-to-br from-brand-sky/70 to-card px-4 py-3.5 hover:border-brand-navy/40 transition-colors group text-left"
+              className="w-full flex items-center justify-between gap-3 rounded-2xl border border-brand-navy/10 bg-gradient-to-br from-brand-sky/70 to-white px-4 py-3.5 hover:border-brand-navy/40 transition-colors group text-left"
             >
               <span>
-                <span className="block text-[13px] font-bold text-brand-navy">
+                <span className="block text-sm font-bold text-brand-navy">
                   Study the whole series
                 </span>
-                <span className="block text-[11.5px] text-brand-gray">
+                <span className="block text-xs text-brand-gray">
                   Ask across all {parts.length} parts
                 </span>
               </span>

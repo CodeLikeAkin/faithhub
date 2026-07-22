@@ -131,23 +131,24 @@ export default function WordPage() {
             className={`group relative flex flex-col justify-between rounded-2xl p-2.5 sm:p-3 h-[74px] sm:h-[84px] text-left transition-all ${
               active
                 ? "hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-navy/20 cursor-pointer"
-                : "bg-card border border-brand-navy/8 cursor-default"
+                : "bg-white border border-brand-navy/8 cursor-default"
             } ${
               selected?.name === name
                 ? "ring-2 ring-brand-navy ring-offset-2"
                 : ""
             }`}
             title={active ? `${refs} references` : "Not opened yet"}
+            aria-label={active ? `${name}: ${refs} references` : `${name}: not opened yet`}
           >
             <span
-              className={`text-[11px] sm:text-xs font-bold leading-tight ${
+              className={`text-xs font-bold leading-tight ${
                 active ? "" : "text-brand-gray/50"
               }`}
             >
               {BOOK_ABBR[name] || name}
             </span>
             <span
-              className={`text-[15px] sm:text-lg font-bold ${
+              className={`text-base sm:text-lg font-bold ${
                 active ? "" : "text-brand-gray/30"
               }`}
             >
@@ -160,12 +161,12 @@ export default function WordPage() {
   );
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-white">
       {/* Heading */}
       <section className="mx-auto max-w-[1200px] px-4 sm:px-6 pt-28 sm:pt-36 pb-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <p className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.22em] text-brand-navy">
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-navy">
               The Word
             </p>
             <h1 className="mt-3 text-3xl sm:text-5xl font-bold text-brand-ink tracking-tight">
@@ -223,7 +224,7 @@ export default function WordPage() {
             {renderGrid(BOOK_ORDER.slice(OT_COUNT))}
 
             {/* Legend */}
-            <div className="mt-6 flex items-center gap-3 text-[11px] text-brand-gray">
+            <div className="mt-6 flex items-center gap-3 text-xs text-brand-gray">
               <span className="font-medium">Fewer</span>
               <div className="flex gap-1">
                 {[0.1, 0.3, 0.5, 0.7, 0.95].map((a) => (
@@ -317,7 +318,7 @@ function BookDetail({ bookId, name, stats, onClose }) {
       <div className="mx-auto max-w-[1200px] px-4 sm:px-6 py-10 sm:py-14">
         <div className="flex items-start justify-between gap-4 mb-6">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-brand-navy">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-navy">
               Book of
             </p>
             <h2 className="mt-1 text-3xl sm:text-4xl font-bold text-brand-ink">
@@ -335,7 +336,7 @@ function BookDetail({ bookId, name, stats, onClose }) {
           <button
             onClick={onClose}
             aria-label="Close"
-            className="w-10 h-10 rounded-full bg-card border border-brand-navy/10 flex items-center justify-center text-brand-gray hover:text-brand-navy flex-shrink-0"
+            className="w-11 h-11 rounded-full bg-white border border-brand-navy/10 flex items-center justify-center text-brand-gray hover:text-brand-navy flex-shrink-0"
           >
             <X size={18} />
           </button>
@@ -358,10 +359,10 @@ function BookDetail({ bookId, name, stats, onClose }) {
                   {chapters.map(([ch, n]) => (
                     <span
                       key={ch}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-card border border-brand-navy/10 rounded-full text-xs font-bold text-brand-navy"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-brand-navy/10 rounded-full text-xs font-bold text-brand-navy"
                     >
                       {name} {ch}
-                      <span className="text-[10px] text-brand-gray font-medium">
+                      <span className="text-xs text-brand-gray font-medium">
                         ×{n}
                       </span>
                     </span>
@@ -397,7 +398,7 @@ function BookDetail({ bookId, name, stats, onClose }) {
                   <Link
                     key={sermon.id}
                     href={`/sermon/${sermon.id}`}
-                    className="group flex gap-3 bg-card rounded-2xl border border-brand-navy/10 p-4 hover:border-brand-navy/25 hover:shadow-lg hover:shadow-brand-navy/10 transition-all"
+                    className="group flex gap-3 bg-white rounded-2xl border border-brand-navy/10 p-4 hover:border-brand-navy/25 hover:shadow-lg hover:shadow-brand-navy/10 transition-all"
                   >
                     {sermon.youtube_video_id && (
                       <div className="relative w-24 flex-shrink-0 rounded-xl overflow-hidden aspect-video">
@@ -407,7 +408,7 @@ function BookDetail({ bookId, name, stats, onClose }) {
                           loading="lazy"
                           className="w-full h-full object-cover"
                         />
-                        <div className="absolute inset-0 bg-brand-deep/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute inset-0 bg-brand-deep/20 flex items-center justify-center opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                           <Play size={16} className="text-white" fill="currentColor" />
                         </div>
                       </div>
@@ -417,7 +418,7 @@ function BookDetail({ bookId, name, stats, onClose }) {
                         {sermon.title}
                       </h3>
                       {date && (
-                        <span className="mt-1 flex items-center gap-1.5 text-[11px] text-brand-gray">
+                        <span className="mt-1 flex items-center gap-1.5 text-xs text-brand-gray">
                           <Calendar size={11} />
                           {date}
                         </span>
@@ -426,13 +427,13 @@ function BookDetail({ bookId, name, stats, onClose }) {
                         {uniqueRefs.slice(0, 4).map((r) => (
                           <span
                             key={r.id}
-                            className="px-2 py-0.5 bg-brand-sky rounded-md text-[10px] font-bold text-brand-navy"
+                            className="px-2 py-0.5 bg-brand-sky rounded-md text-xs font-bold text-brand-navy"
                           >
                             {r.reference}
                           </span>
                         ))}
                         {uniqueRefs.length > 4 && (
-                          <span className="px-2 py-0.5 text-[10px] font-bold text-brand-gray">
+                          <span className="px-2 py-0.5 text-xs font-bold text-brand-gray">
                             +{uniqueRefs.length - 4} more
                           </span>
                         )}
@@ -447,7 +448,7 @@ function BookDetail({ bookId, name, stats, onClose }) {
               <div className="mt-6 text-center">
                 <button
                   onClick={() => setShowAll(true)}
-                  className="inline-flex items-center gap-2 bg-card border border-brand-navy/15 text-brand-navy font-bold text-sm rounded-full px-6 py-3 hover:bg-brand-sky transition-colors"
+                  className="inline-flex items-center gap-2 bg-white border border-brand-navy/15 text-brand-navy font-bold text-sm rounded-full px-6 py-3 hover:bg-brand-sky transition-colors"
                 >
                   Show all {bySermon.length} messages
                 </button>

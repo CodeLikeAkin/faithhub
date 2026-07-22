@@ -80,7 +80,7 @@ export async function POST(request) {
   if (!rl.allowed) return rateLimitResponse(rl);
 
   try {
-    const { message, shownIds = [], topic = null } = await request.json();
+    const { message, shownIds = [], topics = [] } = await request.json();
 
     if (!message || typeof message !== "string") {
       return NextResponse.json(
@@ -99,11 +99,13 @@ export async function POST(request) {
     // ── Topic-grid browsing (Faith/Finances/etc.) is a filter over the fixed
     // topic_tags taxonomy, not freeform retrieval — go straight to the tag
     // column instead of the embed+hybrid path. See CLAUDE.md rule 2.
-    if (topic) {
+    // Multiple active chips (e.g. Finances + Fear) stay a single 10-at-a-time
+    // page mixed across all of them (tag overlap), not 10 per chip.
+    if (topics.length > 0) {
       // Fetch one extra beyond the 10-per-page slice so step 6 below can tell
       // whether more remain in the (already random, already-excluded) tagged pool.
       const { data, error } = await supabase.rpc("match_declarations_by_topic", {
-        topic,
+        topics,
         match_count: 11,
         exclude_ids: shownIds.length > 0 ? shownIds : [],
       });
@@ -163,7 +165,7 @@ export async function POST(request) {
       console.warn(`[declarations] Using fallback (${reason}). User will receive random declarations instead of semantically relevant ones.`);
       // Only the freeform path implies "these match what you said" — the topic
       // grid's fallback above is already tag-filtered, so it stays relevant.
-      if (!topic) noRelevantMatch = true;
+      if (topics.length === 0) noRelevantMatch = true;
       let query = supabase
         .from("declarations")
         .select(`
@@ -176,12 +178,14 @@ export async function POST(request) {
 
       // Keep the fallback topic-aware: if the topic RPC failed, don't degrade
       // to table-wide random results — stay filtered to what was actually asked for.
-      if (topic) {
-        query = query.contains("topic_tags", [topic]);
+      // overlaps() mirrors the RPC's tag && topics — any active chip qualifies.
+      if (topics.length > 0) {
+        query = query.overlaps("topic_tags", topics);
       }
 
       if (shownIds.length > 0) {
-        query = query.not("id", "in", `(${shownIds.map(id => `'${id}'`).join(',')})`);
+        // uuid column — no quotes around each id, unlike a text/in filter
+        query = query.not("id", "in", `(${shownIds.join(',')})`);
       }
 
       const { data: fallback, error: fallbackError } = await query.limit(30);

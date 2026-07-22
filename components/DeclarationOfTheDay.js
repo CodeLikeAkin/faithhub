@@ -60,7 +60,7 @@ export default function DeclarationOfTheDay() {
   return (
     <section className="mx-auto max-w-[1400px] px-4 sm:px-6 pt-14 sm:pt-20">
       <div className="rounded-[2rem] bg-brand-sky border border-brand-navy/10 px-6 sm:px-12 py-10 sm:py-14 text-center">
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-brand-navy">
+        <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-navy">
           Declaration of the day
         </p>
         <blockquote className="mt-5 mx-auto max-w-3xl text-xl sm:text-3xl font-medium leading-snug text-brand-ink">

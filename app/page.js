@@ -50,7 +50,7 @@ const communityPoints = [
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-white">
       {/* ── Hero ── */}
       <section className="px-3 sm:px-5 pt-3 sm:pt-5">
         <div className="relative mx-auto max-w-[1400px] rounded-[1.75rem] sm:rounded-[2.5rem] overflow-hidden flex flex-col justify-between min-h-[560px] lg:min-h-[78vh]">
@@ -67,7 +67,7 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-t from-brand-deep/60 via-transparent to-brand-deep/20" />
 
           <div className="relative z-10 px-6 sm:px-10 lg:px-14 pt-28 sm:pt-36 max-w-2xl">
-            <p className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.22em] text-white/70">
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/70">
               Heritage of Faith Church
             </p>
             <h1 className="mt-4 text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.05] tracking-tight">
@@ -98,8 +98,8 @@ export default function Home() {
 
           {/* Bottom pill bar */}
           <div className="relative z-10 px-4 sm:px-6 pb-4 sm:pb-6 mt-16">
-            <div className="flex items-center justify-between gap-4 bg-white/90 dark:bg-card/90 backdrop-blur-md rounded-full px-5 sm:px-7 py-3.5">
-              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.18em] text-brand-gray truncate">
+            <div className="flex items-center justify-between gap-4 bg-white/90 backdrop-blur-md rounded-full px-5 sm:px-7 py-3.5">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-gray truncate">
                 Grounded in Rev. Peter&apos;s teaching · 2022–2026
               </p>
               <Link
@@ -120,10 +120,10 @@ export default function Home() {
           <Link
             key={card.index}
             href={card.href}
-            className="group flex items-start justify-between gap-4 bg-card border border-brand-navy/10 rounded-3xl p-5 sm:p-6 hover:shadow-xl hover:shadow-brand-navy/10 hover:-translate-y-0.5 transition-all"
+            className="group flex items-start justify-between gap-4 bg-white border border-brand-navy/10 rounded-3xl p-5 sm:p-6 hover:shadow-xl hover:shadow-brand-navy/10 hover:-translate-y-0.5 transition-all"
           >
             <div>
-              <p className="text-[10px] font-bold tracking-[0.18em] text-brand-gray uppercase">
+              <p className="text-xs font-bold tracking-[0.18em] text-brand-gray uppercase">
                 / {card.index} /
               </p>
               <h3 className="mt-1.5 text-lg font-bold text-brand-ink leading-snug group-hover:text-brand-navy transition-colors">
@@ -157,7 +157,7 @@ export default function Home() {
             />
           </div>
           <div>
-            <p className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.22em] text-brand-navy">
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-navy">
               Built for the Heritage family
             </p>
             <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-brand-ink leading-tight">

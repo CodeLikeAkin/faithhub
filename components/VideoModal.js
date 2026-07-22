@@ -30,6 +30,17 @@ export default function VideoModal({ seg, onClose }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose, minimized]);
 
+  // Lock body scroll while the full-size overlay is open (not when minimized —
+  // the reader is meant to keep scrolling with the mini-player running).
+  useEffect(() => {
+    if (!seg || minimized) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [seg, minimized]);
+
   if (!seg) return null;
 
   const src = `https://www.youtube.com/embed/${seg.video_id}?start=${Math.max(
@@ -43,6 +54,11 @@ export default function VideoModal({ seg, onClose }) {
         minimized
           ? "fixed bottom-4 right-4 z-50 w-64 sm:w-72"
           : "fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+      }
+      style={
+        minimized
+          ? { bottom: "calc(1rem + env(safe-area-inset-bottom))" }
+          : undefined
       }
       onClick={minimized ? undefined : onClose}
     >
@@ -64,7 +80,7 @@ export default function VideoModal({ seg, onClose }) {
           <p
             className={
               minimized
-                ? "text-white text-[11px] font-medium truncate pr-2"
+                ? "text-white text-xs font-medium truncate pr-2"
                 : "text-white text-sm font-medium truncate pr-3"
             }
           >
@@ -92,9 +108,9 @@ export default function VideoModal({ seg, onClose }) {
                 onClick={() => setMinimized(true)}
                 aria-label="Minimize — keep watching while you study"
                 title="Minimize — keep watching while you study"
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center"
+                className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center"
               >
-                <Minimize2 size={15} />
+                <Minimize2 size={16} />
               </button>
             )}
             <button
@@ -104,7 +120,7 @@ export default function VideoModal({ seg, onClose }) {
               className={
                 minimized
                   ? "w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center"
-                  : "w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center"
+                  : "w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center"
               }
             >
               <X size={minimized ? 12 : 16} />

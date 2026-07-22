@@ -5,7 +5,6 @@ import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { voicePromptSection } from '@/lib/voice';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
-import { streamGroqAnswer, isGeminiQuotaError } from '@/lib/groq';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -218,7 +217,7 @@ Parts: ${sortedSermons.map((s, i) => `Part ${i + 1} — ${s.title}`).join(', ')}
       if (Array.isArray(candidatePool) && candidatePool.length > 0) {
         // Single-sermon study: drop the per-sermon diversity cap (there is only
         // one sermon, so capping at 4 would needlessly reshuffle the best hits).
-        relevantSegments = rerankSegments(candidatePool, 15, singleSermon ? 15 : 4);
+        relevantSegments = rerankSegments(candidatePool, 20, singleSermon ? 20 : 5);
       }
     }
 
@@ -285,8 +284,16 @@ RESPONSE FORMAT — READ CAREFULLY
   • "List" or "what are the ways" questions → only then use a short list
 - NEVER default to bullet points for everything
 - NEVER use rigid "heading + 3 bullets" structure on every answer
+- EXCEPTION — if Rev. Peter himself enumerates points in the segments (e.g. "number
+  one... number two...", "the first thing is... secondly...", a sequence of named
+  steps or ways), preserve that structure: render it as a numbered list mirroring his
+  points, in his order, each item citing the segment(s) it came from. This is his
+  structure, not artificial padding — don't flatten it into a summary paragraph.
 - Write like a thoughtful study companion who has read these transcripts deeply
-- Keep answers focused — don't pad to fill space
+- Develop each point you make — a sentence naming it plus 1-2 more that explain or
+  quote what he actually said about it. Don't compress a point down to a single
+  clause just to move on to the next one.
+- Don't pad with content that isn't in the segments — but don't under-write what is
 
 ═══════════════════════════════════════
 VOICE & TONE
@@ -327,41 +334,15 @@ QUESTION: ${message}`;
 
     console.log(`[chat] ${relevantSegments.length} segments sent to Gemini`);
 
-    // 10. Call Gemini with streaming. A 429 is purely a Gemini-side quota
-    // issue, so we retry the same prompt on Groq instead of failing the
-    // request — same fallback as /api/ask.
+    // 10. Call Gemini with streaming
     const model = genAI.getGenerativeModel({
       // "-latest" alias — gemini-2.5-flash was retired (404) in mid-2026.
       model: 'gemini-flash-latest',
       systemInstruction: systemPrompt,
     });
 
-    let result;
-    let useGroqFallback = false;
-    try {
-      const chat = model.startChat({ history: conversationHistory });
-      result = await chat.sendMessageStream(userMessageWithContext);
-    } catch (genErr) {
-      console.error('[chat] Gemini sendMessageStream failed:', genErr.message);
-      if (isGeminiQuotaError(genErr)) {
-        console.warn('[chat] Gemini quota exhausted — falling back to Groq');
-        useGroqFallback = true;
-      } else {
-        return plainStreamResponse(
-          "The study service is busier than usual right now — please try that question again in a moment."
-        );
-      }
-    }
-
-    // Groq-format history (role: 'user'|'assistant', content: string), built
-    // from the same chatHistory used above for Gemini's history shape.
-    const groqHistory = (chatHistory || [])
-      .map((m) => ({
-        role: m.role === 'ai' || m.role === 'assistant' ? 'assistant' : 'user',
-        content: m.text || m.content || '',
-      }))
-      .filter((m) => m.content.trim() !== '')
-      .slice(-6);
+    const chat = model.startChat({ history: conversationHistory });
+    const result = await chat.sendMessageStream(userMessageWithContext);
 
     // 11. Stream back — prepend segment map as first line for frontend
     const encoder = new TextEncoder();
@@ -371,19 +352,9 @@ QUESTION: ${message}`;
       async start(controller) {
         try {
           controller.enqueue(encoder.encode(segmentMapHeader));
-          if (useGroqFallback) {
-            for await (const content of streamGroqAnswer({
-              systemPrompt,
-              userMessage: userMessageWithContext,
-              history: groqHistory,
-            })) {
-              controller.enqueue(encoder.encode(content));
-            }
-          } else {
-            for await (const chunk of result.stream) {
-              const content = chunk.text();
-              if (content) controller.enqueue(encoder.encode(content));
-            }
+          for await (const chunk of result.stream) {
+            const content = chunk.text();
+            if (content) controller.enqueue(encoder.encode(content));
           }
         } catch (err) {
           controller.error(err);

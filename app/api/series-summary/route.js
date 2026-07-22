@@ -15,7 +15,7 @@ export async function POST(req) {
   if (!rl.allowed) return rateLimitResponse(rl);
 
   try {
-    const { seriesId, title, sermonTitles } = await req.json();
+    const { seriesId, title, sermonTitles, sermonIds } = await req.json();
 
     // Cached summary → zero tokens. Generation below runs once per series,
     // then the result is stored on the series row.
@@ -35,6 +35,47 @@ export async function POST(req) {
       }
     }
 
+    // Pull a small spread of sermon_segments per sermon (not the full
+    // transcript — see CLAUDE.md rule 1) so the summary is grounded in what
+    // was actually taught, not guessed from titles alone. A few excerpts
+    // spaced across each message's timeline stand in for its shape without
+    // costing anywhere near the tokens of the full text.
+    let excerptText = '';
+    if (Array.isArray(sermonIds) && sermonIds.length > 0) {
+      const perSermonCount = sermonIds.length > 8 ? 2 : sermonIds.length > 4 ? 3 : 4;
+      const { data: allSegments, error: segErr } = await supabaseAdmin
+        .from('sermon_segments')
+        .select('sermon_id, text, start_seconds')
+        .in('sermon_id', sermonIds)
+        .order('start_seconds', { ascending: true });
+
+      if (!segErr && allSegments?.length) {
+        const bySermon = new Map();
+        for (const seg of allSegments) {
+          if (!bySermon.has(seg.sermon_id)) bySermon.set(seg.sermon_id, []);
+          bySermon.get(seg.sermon_id).push(seg);
+        }
+
+        const blocks = [];
+        sermonIds.forEach((sid, i) => {
+          const segs = bySermon.get(sid);
+          if (!segs?.length) return;
+          const picks = [];
+          for (let p = 0; p < perSermonCount; p++) {
+            const idx = Math.min(
+              segs.length - 1,
+              Math.floor(((p + 1) / (perSermonCount + 1)) * segs.length)
+            );
+            picks.push(segs[idx]);
+          }
+          blocks.push(
+            `FROM "${sermonTitles[i]}":\n${picks.map((s) => `"${s.text}"`).join('\n')}`
+          );
+        });
+        excerptText = blocks.join('\n\n');
+      }
+    }
+
     // Sermon titles carry the preacher's name inline, e.g.
     // "... | Pastor Funlola Alabi | 21st June 2026" — extract it instead of
     // assuming every series was preached by Rev. Peter Ayo Alabi.
@@ -48,21 +89,30 @@ export async function POST(req) {
       ? `This series was preached by ${[...preacherNames].join(' and ')}. Focus on the core themes of their teachings.`
       : 'Focus on the core themes of the teachings.';
 
+    const hasExcerpts = excerptText.length > 0;
+
     const completion = await groq.chat.completions.create({
       messages: [
         {
           role: 'system',
-          content: `You are writing for Heritage of Faith Church, from the warm perspective of someone INSIDE the congregation — never a detached outside observer. Generate a 3-5 sentence summary of a sermon series from its title and the titles of the sermons within it.
+          content: `You are writing for Heritage of Faith Church, from the warm perspective of someone INSIDE the congregation — never a detached outside observer. Generate a 5-7 sentence summary of a sermon series${
+            hasExcerpts
+              ? " grounded in the actual teaching excerpts provided below — name the specific, concrete themes and points he actually makes across the parts, the way someone who really listened would describe it. Don't write in vague generalities like 'helped us understand transformation' — say what the transformation actually is, what specific practices or ideas he taught, in his own terms where possible."
+              : ' from its title and the titles of the sermons within it (no excerpts were available, so stay general rather than inventing specifics).'
+          }
 
 VOICE — this is the most important rule:
 - Write in the first person plural: "us", "we", "our". The preacher teaches US and guides US through the series. NEVER write "the congregation", "believers", "the audience", or "listeners" as if the reader were outside looking in.
-- Warm, faith-filled, and spiritually encouraging — yet concise and grounded, never flowery or overstated.
+- Warm, faith-filled, and spiritually encouraging — yet concrete and specific, never vague or flowery.
+- Only use what's actually in the excerpts below — never invent teaching content that isn't there.
 
 ${preacherContext} Only credit the preacher(s) named above — do not invent or assume any other preacher.`
         },
         {
           role: 'user',
-          content: `Series Title: ${title}\nSermon Titles:\n- ${sermonTitles.join('\n- ')}`
+          content: hasExcerpts
+            ? `Series Title: ${title}\n\nTEACHING EXCERPTS ACROSS THE SERIES:\n${excerptText}`
+            : `Series Title: ${title}\nSermon Titles:\n- ${sermonTitles.join('\n- ')}`
         }
       ],
       model: 'llama-3.1-8b-instant',

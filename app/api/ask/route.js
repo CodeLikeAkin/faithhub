@@ -11,7 +11,6 @@ import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { voicePromptSection } from '@/lib/voice';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
-import { streamGroqAnswer, isGeminiQuotaError } from '@/lib/groq';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -248,11 +247,17 @@ WEAK GROUNDING — THIS QUESTION
 RESPONSE SHAPE
 ═══════════════════════════════════════
 - Open with a direct, one-sentence answer to the question.
-- Then a few tight paragraphs of flowing prose that develop it, drawing threads from the different messages.
+- Then paragraphs of flowing prose that develop it, drawing threads from the different messages.
+- EXCEPTION — if one or more of the segments has Rev. Peter enumerating points himself
+  (e.g. "number one... number two...", "the first thing is... secondly..."), preserve
+  that structure as a numbered list in his order, each item citing its segment(s),
+  rather than flattening it into prose.
 - Prefer Rev. Peter's own phrasing — quote his exact words when they're memorable.
+- Develop each point you make — name it, then explain or quote what he actually said
+  about it, rather than compressing it to a single clause before moving on.
 - Refer to him as "Rev. Peter". Warm, faith-filled, never academic or robotic.
 - Never say "the transcript says" or "according to the segment" — teach it as living truth.
-- Keep it focused; don't pad.
+- Don't pad with content that isn't in the segments — but don't under-write what is.
 
 ═══════════════════════════════════════
 FOLLOW-UP SUGGESTIONS — STRICT
@@ -276,24 +281,17 @@ QUESTION: ${message}`;
     });
 
     // Gemini can reject here (429 quota, 503 overload) before any streaming
-    // starts — that's exactly what we saw during testing. A 429 is purely a
-    // Gemini-side capacity issue, so we retry the same prompt on Groq instead
-    // of failing the request. Anything else (bad request, network) would fail
-    // the same way on Groq, so we still answer honestly for those.
+    // starts — that's exactly what we saw during testing. Without this catch,
+    // the raw provider error (with quota/billing details) leaks to the user
+    // as a 500 body. Answer honestly instead, same tone as the no-segments case.
     let result;
-    let useGroqFallback = false;
     try {
       result = await model.generateContentStream(userMessageWithContext);
     } catch (genErr) {
       console.error('[ask] Gemini generateContentStream failed:', genErr.message);
-      if (isGeminiQuotaError(genErr)) {
-        console.warn('[ask] Gemini quota exhausted — falling back to Groq');
-        useGroqFallback = true;
-      } else {
-        return plainStreamResponse(
-          "The study service is busier than usual right now — please try that question again in a moment."
-        );
-      }
+      return plainStreamResponse(
+        "The study service is busier than usual right now — please try that question again in a moment."
+      );
     }
 
     const encoder = new TextEncoder();
@@ -303,18 +301,9 @@ QUESTION: ${message}`;
       async start(controller) {
         try {
           controller.enqueue(encoder.encode(segmentMapHeader));
-          if (useGroqFallback) {
-            for await (const content of streamGroqAnswer({
-              systemPrompt,
-              userMessage: userMessageWithContext,
-            })) {
-              controller.enqueue(encoder.encode(content));
-            }
-          } else {
-            for await (const chunk of result.stream) {
-              const content = chunk.text();
-              if (content) controller.enqueue(encoder.encode(content));
-            }
+          for await (const chunk of result.stream) {
+            const content = chunk.text();
+            if (content) controller.enqueue(encoder.encode(content));
           }
         } catch (err) {
           controller.error(err);
