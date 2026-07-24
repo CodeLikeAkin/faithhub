@@ -9,12 +9,9 @@ import {
   Play,
   Loader2,
   Quote,
-  BookMarked,
   BookOpen,
   ArrowUpRight,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   RotateCcw,
   Plus,
   Copy,
@@ -23,6 +20,7 @@ import {
 import { cleanTitle } from "@/lib/titles";
 import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import VideoModal from "@/components/VideoModal";
+import { fetchPassage, parseReference, TRANSLATIONS } from "@/lib/bible";
 
 /**
  * Ask the Word — global, cross-corpus search, laid out as a study workspace.
@@ -31,8 +29,9 @@ import VideoModal from "@/components/VideoModal";
  * studies below), a reading column where questions flow chronologically with
  * the composer docked at the bottom, and — on wide screens — a sticky
  * "moments" rail beside the answer. Earlier questions condense to one-line
- * rows; the open answer gets the full anatomy: quick answer → teaching →
- * key scriptures → follow-ups. Studies persist in localStorage, so a session
+ * rows; the open answer renders as one flowing passage with inline [N]
+ * citations (each opens the source clip directly), followed by key
+ * scriptures and follow-ups. Studies persist in localStorage, so a session
  * becomes a named document the believer can come back to.
  */
 
@@ -106,7 +105,7 @@ const extractScriptures = (text) => {
   return out;
 };
 
-function renderScripture(text, keyBase) {
+function renderScripture(text, keyBase, onVerseClick) {
   const out = [];
   let last = 0;
   let m;
@@ -114,12 +113,14 @@ function renderScripture(text, keyBase) {
   while ((m = re.exec(text))) {
     if (m.index > last) out.push(text.slice(last, m.index));
     out.push(
-      <span
+      <button
         key={`${keyBase}-s${m.index}`}
-        className="font-semibold text-brand-navy bg-brand-sky rounded-md px-1 py-px whitespace-nowrap"
+        type="button"
+        onClick={() => onVerseClick?.(m[0])}
+        className="font-semibold text-brand-navy bg-brand-sky rounded-md px-1 py-px whitespace-nowrap hover:bg-brand-navy hover:text-white transition-colors cursor-pointer"
       >
         {m[0]}
-      </span>
+      </button>
     );
     last = m.index + m[0].length;
   }
@@ -127,17 +128,19 @@ function renderScripture(text, keyBase) {
   return out;
 }
 
-function renderRich(text, keyBase) {
+function renderRich(text, keyBase, onVerseClick) {
   return text.split(/(\*\*[^*]+\*\*)/g).map((chunk, i) => {
     if (/^\*\*[^*]+\*\*$/.test(chunk)) {
       return (
         <strong key={`${keyBase}-b${i}`} className="font-bold text-brand-ink">
-          {renderScripture(chunk.slice(2, -2), `${keyBase}-b${i}`)}
+          {renderScripture(chunk.slice(2, -2), `${keyBase}-b${i}`, onVerseClick)}
         </strong>
       );
     }
     return (
-      <span key={`${keyBase}-t${i}`}>{renderScripture(chunk, `${keyBase}-t${i}`)}</span>
+      <span key={`${keyBase}-t${i}`}>
+        {renderScripture(chunk, `${keyBase}-t${i}`, onVerseClick)}
+      </span>
     );
   });
 }
@@ -145,19 +148,22 @@ function renderRich(text, keyBase) {
 // ── One answer paragraph: **bold**, scripture chips, [N] citation pills ──────
 const CITE_RE = /(\[\d+\](?:\s*\[\d+\])*|\[\d+(?:,\s*\d+)+\])/;
 
-function CitationPill({ n, onJump }) {
+function CitationPill({ n, seg, onWatch }) {
+  if (!seg?.video_id) return <sup className="text-gray-400 text-xs">[{n}]</sup>;
+
   return (
     <button
-      onClick={() => onJump(n)}
-      className="inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-brand-navy/10 border border-brand-navy/20 text-xs font-bold text-brand-navy align-super -translate-y-0.5 mx-0.5 hover:bg-brand-navy hover:text-white transition-colors"
-      title="Jump to this source"
+      type="button"
+      onClick={() => onWatch(seg)}
+      title={`"${seg.text}" — ${seg.sermon_title}`}
+      className="relative inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-brand-navy/10 border border-brand-navy/20 text-xs font-bold text-brand-navy align-super -translate-y-0.5 mx-0.5 hover:bg-brand-navy hover:text-white transition-colors before:content-[''] before:absolute before:-inset-3"
     >
       {n}
     </button>
   );
 }
 
-function RichParagraph({ text, onJump, className, pKey }) {
+function RichParagraph({ text, segmentMap, onWatch, onVerseClick, className, pKey }) {
   const parts = text.split(new RegExp(CITE_RE.source, "g"));
   return (
     <p className={className}>
@@ -165,14 +171,69 @@ function RichParagraph({ text, onJump, className, pKey }) {
         if (part && CITE_RE.test(part)) {
           const nums = [...part.matchAll(/\d+/g)].map((m) => m[0]);
           return nums.map((n, j) => (
-            <CitationPill key={`${pKey}-${i}-${j}`} n={n} onJump={onJump} />
+            <CitationPill
+              key={`${pKey}-${i}-${j}`}
+              n={n}
+              seg={segmentMap?.[n]}
+              onWatch={onWatch}
+            />
           ));
         }
         return (
-          <span key={`${pKey}-${i}`}>{renderRich(part, `${pKey}-${i}`)}</span>
+          <span key={`${pKey}-${i}`}>
+            {renderRich(part, `${pKey}-${i}`, onVerseClick)}
+          </span>
         );
       })}
     </p>
+  );
+}
+
+// ── Verse reveal — same lazy KJV/NLT fetch pattern as VerseExplorer ─────────
+function VerseReveal({ reference, translation, data, onSwitchTranslation }) {
+  return (
+    <div className="mt-3 rounded-r-2xl rounded-l-md border border-brand-navy/10 border-l-[3px] border-l-brand-navy bg-gradient-to-br from-brand-sky/60 to-white px-4 sm:px-5 py-4">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-bold text-brand-navy">{reference}</p>
+        <span className="flex rounded-full border border-brand-navy/15 p-0.5 flex-shrink-0">
+          {TRANSLATIONS.map((tr) => (
+            <button
+              key={tr}
+              type="button"
+              onClick={() => onSwitchTranslation(tr)}
+              className={`relative rounded-full px-2.5 py-1 text-xs font-bold transition-colors before:content-[''] before:absolute before:-inset-3 ${
+                translation === tr
+                  ? "bg-brand-navy text-white"
+                  : "text-brand-gray hover:text-brand-navy"
+              }`}
+            >
+              {tr}
+            </button>
+          ))}
+        </span>
+      </div>
+      {data?.loading && (
+        <span className="mt-2 flex items-center gap-2 text-sm text-brand-gray">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          Loading verse…
+        </span>
+      )}
+      {data?.error && (
+        <p className="mt-2 text-sm text-brand-gray italic">
+          Couldn&apos;t load this verse right now.
+        </p>
+      )}
+      {data?.verses && (
+        <p className="mt-2 text-base leading-relaxed text-brand-ink">
+          {data.verses.map((v) => (
+            <span key={v.number}>
+              <sup className="text-brand-navy/50 font-bold mr-1">{v.number}</sup>
+              {v.text}{" "}
+            </span>
+          ))}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -253,56 +314,6 @@ function SourceCard({ n, seg, blockId, highlighted, onWatch, idPrefix = "src", c
   );
 }
 
-// ── Inline horizontal rail — mobile / narrow screens (side rail takes over on xl)
-function InlineSourceRail({ blockId, sources, highlight, onWatch }) {
-  const railRef = useRef(null);
-  const nudge = (dir) =>
-    railRef.current?.scrollBy({ left: dir * 540, behavior: "smooth" });
-
-  return (
-    <div className="mt-6 xl:hidden">
-      <div className="flex items-center justify-between mb-3">
-        <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-brand-gray">
-          <Quote size={13} className="text-brand-navy" />
-          Heard in these moments · {sources.length}
-        </p>
-        <div className="hidden sm:flex items-center gap-1.5">
-          <button
-            onClick={() => nudge(-1)}
-            aria-label="Scroll sources left"
-            className="w-8 h-8 rounded-full border border-brand-navy/15 bg-white text-brand-navy flex items-center justify-center hover:bg-brand-sky transition-colors"
-          >
-            <ChevronLeft size={15} />
-          </button>
-          <button
-            onClick={() => nudge(1)}
-            aria-label="Scroll sources right"
-            className="w-8 h-8 rounded-full border border-brand-navy/15 bg-white text-brand-navy flex items-center justify-center hover:bg-brand-sky transition-colors"
-          >
-            <ChevronRight size={15} />
-          </button>
-        </div>
-      </div>
-      <div
-        ref={railRef}
-        className="flex gap-3 overflow-x-auto snap-x pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {sources.map(([n, seg]) => (
-          <SourceCard
-            key={n}
-            n={n}
-            seg={seg}
-            blockId={blockId}
-            highlighted={highlight === `${blockId}-${n}`}
-            onWatch={onWatch}
-            className="w-[236px] sm:w-[256px] flex-shrink-0 snap-start"
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function AskPage() {
   const [input, setInput] = useState("");
   const [studies, setStudies] = useState([]); // newest study first; blocks oldest-first
@@ -310,11 +321,13 @@ export default function AskPage() {
   const [openId, setOpenId] = useState(null); // expanded question in the thread
   const [railExpanded, setRailExpanded] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [highlight, setHighlight] = useState(null); // `${blockId}-${n}`
   const [restored, setRestored] = useState(false);
   const [toast, setToast] = useState(null);
   const [watching, setWatching] = useState(null); // segment currently open in the video modal
   const [studiesOpen, setStudiesOpen] = useState(false); // mobile "Studies" bottom sheet
+  const [openVerse, setOpenVerse] = useState(null); // { blockId, ref } | null
+  const [verseTranslation, setVerseTranslation] = useState({}); // ref -> "KJV" | "NLT"
+  const [verseData, setVerseData] = useState({}); // `${ref}|${translation}` -> {loading}|{verses,translation}|{error}
   const inputRef = useRef(null);
   const toastTimer = useRef(null);
   const keyboardInset = useKeyboardInset();
@@ -343,6 +356,14 @@ export default function AskPage() {
     clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 2200);
   };
+
+  // Auto-grow the composer as a follow-up question wraps (capped by max-h).
+  useEffect(() => {
+    const ta = inputRef.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = Math.min(ta.scrollHeight, 120) + "px";
+  }, [input]);
 
   // Restore saved studies once on mount (client-only); migrate the v1 format.
   useEffect(() => {
@@ -453,6 +474,35 @@ export default function AskPage() {
     scrollToBlock(id);
   };
 
+  // ── Verse reveal — lazy-fetch KJV/NLT text for a clicked scripture ─────────
+  const loadVerse = async (ref, translation) => {
+    const key = `${ref}|${translation}`;
+    setVerseData((v) => ({ ...v, [key]: { loading: true } }));
+    const parsed = parseReference(ref);
+    const passage = parsed ? await fetchPassage(parsed, translation) : null;
+    setVerseData((v) => ({
+      ...v,
+      [key]: passage
+        ? { verses: passage.verses, translation: passage.translation }
+        : { error: true },
+    }));
+  };
+
+  const toggleVerse = (blockId, ref) => {
+    if (openVerse?.blockId === blockId && openVerse?.ref === ref) {
+      setOpenVerse(null);
+      return;
+    }
+    setOpenVerse({ blockId, ref });
+    const t = verseTranslation[ref] || "KJV";
+    if (!verseData[`${ref}|${t}`]) loadVerse(ref, t);
+  };
+
+  const switchVerseTranslation = (ref, translation) => {
+    setVerseTranslation((vt) => ({ ...vt, [ref]: translation }));
+    if (!verseData[`${ref}|${translation}`]) loadVerse(ref, translation);
+  };
+
   // Center an element inside every scrollable ancestor. scrollIntoView is
   // unreliable across nested overflow containers, so scroll them directly —
   // smooth when the browser animates it, snapping if it doesn't (some
@@ -468,44 +518,6 @@ export default function AskPage() {
         if (delta.left) node.scrollLeft = start.left + delta.left;
       }
     }, 350);
-  };
-
-  const centerInScrollParents = (el) => {
-    let node = el.parentElement;
-    while (node) {
-      const style = getComputedStyle(node);
-      const canY =
-        /(auto|scroll)/.test(style.overflowY) && node.scrollHeight > node.clientHeight;
-      const canX =
-        /(auto|scroll)/.test(style.overflowX) && node.scrollWidth > node.clientWidth;
-      if (canY || canX) {
-        const nr = node.getBoundingClientRect();
-        const er = el.getBoundingClientRect();
-        const delta = {};
-        if (canY) delta.top = er.top - nr.top - (nr.height - er.height) / 2;
-        if (canX) delta.left = er.left - nr.left - (nr.width - er.width) / 2;
-        smoothScrollBy(node, delta);
-      }
-      node = node.parentElement;
-    }
-  };
-
-  const jumpToSource = (blockId, n) => {
-    const useSideRail =
-      typeof window !== "undefined" &&
-      window.matchMedia("(min-width: 1280px)").matches;
-    if (useSideRail && Number(n) > RAIL_PREVIEW) setRailExpanded(true);
-    const id = `${useSideRail ? "srcr" : "src"}-${blockId}-${n}`;
-    // The expanded rail may still be rendering when we go looking for the
-    // card, so retry until it exists (dev renders can take a moment).
-    const tryScroll = (attempt) => {
-      const el = document.getElementById(id);
-      if (el) centerInScrollParents(el);
-      else if (attempt < 14) setTimeout(() => tryScroll(attempt + 1), 150);
-    };
-    tryScroll(0);
-    setHighlight(`${blockId}-${n}`);
-    setTimeout(() => setHighlight(null), 2600);
   };
 
   const newStudy = () => {
@@ -914,8 +926,6 @@ export default function AskPage() {
                 }
 
                 const paras = (b.answer || "").split(/\n{2,}/).filter((p) => p.trim());
-                const lead = paras[0];
-                const rest = paras.slice(1);
                 const hasSources = sources.length > 0;
                 const scriptures =
                   b.status === "done" && hasSources ? extractScriptures(b.answer) : [];
@@ -923,12 +933,11 @@ export default function AskPage() {
                 return (
                   <article key={b.id} id={`block-${b.id}`} className="scroll-mt-3 mb-8 pt-3">
                     {/* Question */}
-                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-navy/60 mb-2">
-                      Question {num}
-                    </p>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-brand-ink tracking-tight leading-tight">
-                      {b.question}
-                    </h2>
+                    <div className="flex justify-end">
+                      <p className="text-sm sm:text-base font-medium text-white bg-brand-navy rounded-[20px] rounded-br-[4px] px-4 sm:px-5 py-2.5 max-w-[85%] leading-snug">
+                        {b.question}
+                      </p>
+                    </div>
 
                     {/* Searching state */}
                     {b.status === "searching" && (
@@ -948,43 +957,41 @@ export default function AskPage() {
                       </div>
                     )}
 
-                    {/* Quick answer — the opening sentence, called out */}
-                    {lead && hasSources && b.status !== "error" && (
-                      <div className="mt-6 rounded-r-2xl rounded-l-md border border-brand-navy/10 border-l-[3px] border-l-brand-navy bg-gradient-to-br from-brand-sky/60 to-white px-5 py-4">
-                        <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-brand-navy mb-1.5">
-                          Quick answer
-                          {b.status === "answering" && rest.length === 0 && (
-                            <Loader2 size={12} className="animate-spin text-brand-navy/40" />
-                          )}
-                        </p>
-                        <RichParagraph
-                          text={lead}
-                          onJump={(n) => jumpToSource(b.id, n)}
-                          pKey={`${b.id}-lead`}
-                          className="text-base font-semibold text-brand-ink leading-[1.6]"
-                        />
+                    {/* Answer */}
+                    {paras.length > 0 && hasSources && b.status !== "error" && (
+                      <div className="mt-6 space-y-4 text-base leading-[1.78] text-brand-ink/90">
+                        {paras.map((para, pi) => (
+                          <RichParagraph
+                            key={pi}
+                            text={para}
+                            segmentMap={b.segmentMap}
+                            onWatch={setWatching}
+                            onVerseClick={(ref) => toggleVerse(b.id, ref)}
+                            pKey={`${b.id}-${pi}`}
+                          />
+                        ))}
                       </div>
                     )}
 
-                    {/* The teaching */}
-                    {rest.length > 0 && hasSources && (
-                      <div className="mt-6">
-                        <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-brand-navy mb-3.5">
-                          <span className="w-7 h-7 rounded-lg bg-brand-navy text-white flex items-center justify-center">
-                            <BookMarked size={14} />
-                          </span>
-                          What Rev. Peter teaches
-                          {b.status === "answering" && (
-                            <Loader2 size={13} className="animate-spin text-brand-navy/40 ml-auto" />
-                          )}
+                    {/* Cited moments — mobile/tablet (the xl side rail is hidden
+                        below xl, so the videos have to live inline here or the
+                        "moments to watch" promise vanishes on a phone) */}
+                    {hasSources && b.status !== "error" && (
+                      <div className="xl:hidden mt-7">
+                        <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-brand-gray mb-3">
+                          <Quote size={12} className="text-brand-navy" />
+                          Heard in these moments · {sources.length}
                         </p>
-                        <div className="space-y-4 text-base leading-[1.78] text-brand-ink/90">
-                          {rest.map((para, pi) => (
-                            <RichParagraph
-                              key={pi}
-                              text={para}
-                              onJump={(n) => jumpToSource(b.id, n)}
-                              pKey={`${b.id}-${pi}`}
+                        <div className="-mx-4 sm:-mx-6 px-4 sm:px-6 flex gap-3 overflow-x-auto snap-x snap-mandatory pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                          {sources.map(([n, seg]) => (
+                            <SourceCard
+                              key={n}
+                              n={n}
+                              seg={seg}
+                              blockId={b.id}
+                              onWatch={setWatching}
+                              idPrefix="srcm"
+                              className="w-60 flex-shrink-0 snap-start"
                             />
                           ))}
                         </div>
@@ -1016,27 +1023,42 @@ export default function AskPage() {
                           Key scriptures in this answer
                         </p>
                         <div className="flex flex-wrap gap-2">
-                          {scriptures.map((v) => (
-                            <span
-                              key={v}
-                              className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-navy bg-brand-sky border border-brand-navy/10 rounded-full px-3.5 py-1.5"
-                            >
-                              <BookOpen size={12} />
-                              {v}
-                            </span>
-                          ))}
+                          {scriptures.map((v) => {
+                            const active =
+                              openVerse?.blockId === b.id && openVerse?.ref === v;
+                            return (
+                              <button
+                                key={v}
+                                type="button"
+                                onClick={() => toggleVerse(b.id, v)}
+                                aria-expanded={active}
+                                className={`inline-flex items-center gap-1.5 text-xs font-bold rounded-full border px-3.5 py-1.5 transition-colors ${
+                                  active
+                                    ? "bg-brand-navy text-white border-brand-navy"
+                                    : "text-brand-navy bg-brand-sky border-brand-navy/10 hover:border-brand-navy/40"
+                                }`}
+                              >
+                                <BookOpen size={12} />
+                                {v}
+                              </button>
+                            );
+                          })}
                         </div>
+                        {openVerse?.blockId === b.id && (
+                          <VerseReveal
+                            reference={openVerse.ref}
+                            translation={verseTranslation[openVerse.ref] || "KJV"}
+                            data={
+                              verseData[
+                                `${openVerse.ref}|${verseTranslation[openVerse.ref] || "KJV"}`
+                              ]
+                            }
+                            onSwitchTranslation={(tr) =>
+                              switchVerseTranslation(openVerse.ref, tr)
+                            }
+                          />
+                        )}
                       </div>
-                    )}
-
-                    {/* Inline moments rail (narrow screens) */}
-                    {hasSources && (
-                      <InlineSourceRail
-                        blockId={b.id}
-                        sources={sources}
-                        highlight={highlight}
-                        onWatch={setWatching}
-                      />
                     )}
 
                     {/* Follow-up suggestions */}
@@ -1082,18 +1104,25 @@ export default function AskPage() {
             }}
             className="max-w-2xl mx-auto"
           >
-            <div className="flex items-center gap-2 bg-brand-light rounded-2xl border border-brand-navy/15 focus-within:border-brand-navy/40 shadow-sm p-1.5 pl-4 transition-colors">
-              <Sparkles size={17} className="text-brand-navy/50 flex-shrink-0" />
-              <input
+            <div className="flex items-end gap-2 bg-brand-light rounded-2xl border border-brand-navy/15 focus-within:border-brand-navy/40 shadow-sm p-1.5 pl-4 transition-colors">
+              <Sparkles size={17} className="text-brand-navy/50 flex-shrink-0 mb-2.5" />
+              <textarea
                 ref={inputRef}
+                rows={1}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    ask();
+                  }
+                }}
                 placeholder={
                   hasBlocks
                     ? "Ask a follow-up — it stays in this study…"
                     : "Ask anything across every message…"
                 }
-                className="flex-1 bg-transparent py-2 text-base text-brand-ink placeholder:text-brand-gray/60 focus:outline-none min-w-0"
+                className="flex-1 bg-transparent py-2 text-base text-brand-ink placeholder:text-brand-gray/60 focus:outline-none resize-none min-w-0 max-h-[120px] leading-relaxed"
               />
               <button
                 type="submit"
@@ -1147,7 +1176,6 @@ export default function AskPage() {
                     n={n}
                     seg={seg}
                     blockId={openBlock.id}
-                    highlighted={highlight === `${openBlock.id}-${n}`}
                     onWatch={setWatching}
                     idPrefix="srcr"
                     className="w-full"

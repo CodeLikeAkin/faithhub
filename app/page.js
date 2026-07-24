@@ -53,7 +53,7 @@ export default function Home() {
     <main className="min-h-screen bg-white">
       {/* ── Hero ── */}
       <section className="px-3 sm:px-5 pt-3 sm:pt-5">
-        <div className="relative mx-auto max-w-[1400px] rounded-[1.75rem] sm:rounded-[2.5rem] overflow-hidden flex flex-col justify-between min-h-[560px] lg:min-h-[78vh]">
+        <div className="relative mx-auto max-w-[1400px] rounded-[1.75rem] sm:rounded-[2.5rem] overflow-hidden flex flex-col justify-between min-h-[480px] sm:min-h-[560px] lg:min-h-[78vh]">
           <Image
             src="/church-hero.jpg"
             alt="Rev. Peter Ayo Alabi ministering at a Heritage of Faith service"
@@ -66,7 +66,7 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-r from-brand-deep/90 via-brand-deep/45 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-t from-brand-deep/60 via-transparent to-brand-deep/20" />
 
-          <div className="relative z-10 px-6 sm:px-10 lg:px-14 pt-28 sm:pt-36 max-w-2xl">
+          <div className="relative z-10 px-6 sm:px-10 lg:px-14 pt-24 sm:pt-36 max-w-2xl">
             <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/70">
               Heritage of Faith Church
             </p>
@@ -97,14 +97,14 @@ export default function Home() {
           </div>
 
           {/* Bottom pill bar */}
-          <div className="relative z-10 px-4 sm:px-6 pb-4 sm:pb-6 mt-16">
+          <div className="relative z-10 px-4 sm:px-6 pb-4 sm:pb-6 mt-10 sm:mt-16">
             <div className="flex items-center justify-between gap-4 bg-white/90 backdrop-blur-md rounded-full px-5 sm:px-7 py-3.5">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-gray truncate">
                 Grounded in Rev. Peter&apos;s teaching · 2022–2026
               </p>
               <Link
                 href="/series"
-                className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-brand-navy whitespace-nowrap hover:text-brand-deep"
+                className="flex items-center gap-1.5 py-1 -my-1 text-xs sm:text-sm font-bold text-brand-navy whitespace-nowrap hover:text-brand-deep"
               >
                 Explore the library
                 <ArrowRight className="w-4 h-4" />
@@ -198,18 +198,18 @@ export default function Home() {
               &copy; {new Date().getFullYear()} Heritage of Faith Church
             </p>
           </div>
-          <div className="flex items-center gap-6 text-sm font-medium text-brand-gray">
-            <Link href="/declarations" className="hover:text-brand-navy transition-colors">
+          <div className="flex items-center gap-5 sm:gap-6 text-sm font-medium text-brand-gray">
+            <Link href="/declarations" className="py-1.5 hover:text-brand-navy transition-colors">
               Declarations
             </Link>
-            <Link href="/series" className="hover:text-brand-navy transition-colors">
+            <Link href="/series" className="py-1.5 hover:text-brand-navy transition-colors">
               Series Study
             </Link>
             <a
               href="https://hofng.org"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 hover:text-brand-navy transition-colors"
+              className="inline-flex items-center gap-1 py-1.5 hover:text-brand-navy transition-colors"
             >
               hofng.org
               <ArrowUpRight className="w-3.5 h-3.5" />

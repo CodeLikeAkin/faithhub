@@ -107,10 +107,27 @@ export default function WordPage() {
     const bookId = bookIdFor(name);
     if (!bookId || !counts?.[bookId]) return;
     setSelected({ bookId, name });
-    // Let the detail render, then scroll it into view.
-    requestAnimationFrame(() =>
-      detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-    );
+    // Let the detail render, then scroll it into view. Schedule with setTimeout
+    // rather than a single rAF: rAF is throttled (or never fires) in some
+    // embedded/background contexts, which would make the tap a silent no-op.
+    // Retry until the (large) detail has laid out, then snap if the browser
+    // ignored the smooth scroll.
+    let tries = 0;
+    const bring = () => {
+      const el = detailRef.current;
+      if (!el) {
+        if (tries++ < 8) setTimeout(bring, 50);
+        return;
+      }
+      const before = window.scrollY;
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      setTimeout(() => {
+        if (Math.abs(window.scrollY - before) < 4 && detailRef.current) {
+          detailRef.current.scrollIntoView({ block: "start" });
+        }
+      }, 400);
+    };
+    setTimeout(bring, 50);
   };
 
   const renderGrid = (books) => (

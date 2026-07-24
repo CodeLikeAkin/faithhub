@@ -52,13 +52,11 @@ export default function VideoModal({ seg, onClose }) {
     <div
       className={
         minimized
-          ? "fixed bottom-4 right-4 z-50 w-64 sm:w-72"
+          ? // Float clear of the docked chat composer on phones (it sits at the
+            // bottom of an h-dvh column and would otherwise bury the mini-player);
+            // drop back to the corner once there's room on larger screens.
+            "fixed right-4 z-50 w-56 sm:w-72 bottom-[calc(9.75rem+env(safe-area-inset-bottom))] sm:bottom-[calc(1rem+env(safe-area-inset-bottom))]"
           : "fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
-      }
-      style={
-        minimized
-          ? { bottom: "calc(1rem + env(safe-area-inset-bottom))" }
-          : undefined
       }
       onClick={minimized ? undefined : onClose}
     >
@@ -89,7 +87,7 @@ export default function VideoModal({ seg, onClose }) {
           <div
             className={
               minimized
-                ? "flex items-center gap-1 flex-shrink-0"
+                ? "flex items-center gap-2 flex-shrink-0"
                 : "flex items-center gap-2 flex-shrink-0"
             }
           >
@@ -98,9 +96,9 @@ export default function VideoModal({ seg, onClose }) {
                 type="button"
                 onClick={() => setMinimized(false)}
                 aria-label="Expand"
-                className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center"
+                className="relative w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center before:content-[''] before:absolute before:-inset-2"
               >
-                <Maximize2 size={12} />
+                <Maximize2 size={13} />
               </button>
             ) : (
               <button
@@ -119,11 +117,11 @@ export default function VideoModal({ seg, onClose }) {
               aria-label="Close"
               className={
                 minimized
-                  ? "w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center"
+                  ? "relative w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center before:content-[''] before:absolute before:-inset-2"
                   : "w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center"
               }
             >
-              <X size={minimized ? 12 : 16} />
+              <X size={minimized ? 13 : 16} />
             </button>
           </div>
         </div>

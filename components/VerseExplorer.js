@@ -142,7 +142,7 @@ export default function VerseExplorer({ sermonId, scriptures: preloaded }) {
               <button
                 key={tr}
                 onClick={() => switchTranslation(s, tr)}
-                className={`relative rounded-full px-2.5 py-0.5 text-xs font-bold transition-colors before:content-[''] before:absolute before:-inset-2.5 ${
+                className={`relative rounded-full px-2.5 py-1 text-xs font-bold transition-colors before:content-[''] before:absolute before:-inset-3 ${
                   t === tr
                     ? "bg-brand-navy text-white"
                     : "text-brand-gray hover:text-brand-navy"
@@ -224,7 +224,7 @@ export default function VerseExplorer({ sermonId, scriptures: preloaded }) {
               <button
                 key={key}
                 onClick={() => setView(key)}
-                className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${
+                className={`relative rounded-full px-3 py-1.5 text-xs font-bold transition-colors before:content-[''] before:absolute before:-inset-y-2 before:inset-x-0 ${
                   view === key
                     ? "bg-brand-navy text-white"
                     : "text-brand-gray hover:text-brand-navy"

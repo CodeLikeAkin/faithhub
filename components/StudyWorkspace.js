@@ -103,7 +103,7 @@ const KeyVerses = ({ verses }) => {
             key={v.reference}
             onClick={() => toggle(v)}
             aria-expanded={openRef === v.reference}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-bold transition-colors ${
               openRef === v.reference
                 ? "bg-brand-navy text-white border-brand-navy"
                 : "bg-brand-sky text-brand-navy border-brand-navy/10 hover:border-brand-navy/40"
@@ -131,7 +131,7 @@ const KeyVerses = ({ verses }) => {
                 <button
                   key={tr}
                   onClick={() => switchTranslation(open, tr)}
-                  className={`rounded-full px-2 py-0.5 text-xs font-bold transition-colors ${
+                  className={`relative rounded-full px-2.5 py-1 text-xs font-bold transition-colors before:content-[''] before:absolute before:-inset-2.5 ${
                     t === tr
                       ? "bg-brand-navy text-white"
                       : "text-brand-gray hover:text-brand-navy"
@@ -742,7 +742,7 @@ export default function StudyWorkspace({ entry }) {
                   role="tab"
                   aria-selected={mode === "series"}
                   onClick={goSeries}
-                  className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors ${
+                  className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition-colors ${
                     mode === "series"
                       ? "bg-white text-brand-navy shadow-sm shadow-brand-navy/10"
                       : "text-brand-gray hover:text-brand-ink"
@@ -754,7 +754,7 @@ export default function StudyWorkspace({ entry }) {
                   role="tab"
                   aria-selected={mode === "message"}
                   onClick={() => goMessage()}
-                  className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors ${
+                  className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition-colors ${
                     mode === "message"
                       ? "bg-white text-brand-navy shadow-sm shadow-brand-navy/10"
                       : "text-brand-gray hover:text-brand-ink"
@@ -848,7 +848,7 @@ export default function StudyWorkspace({ entry }) {
             <div className="lg:hidden mt-3 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <button
                 onClick={goSeries}
-                className={`flex-shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${
+                className={`flex-shrink-0 rounded-full border px-3.5 py-2 text-xs font-bold transition-colors ${
                   mode === "series"
                     ? "bg-brand-navy text-white border-brand-navy"
                     : "bg-white text-brand-navy border-brand-navy/15 hover:bg-brand-sky"
@@ -862,7 +862,7 @@ export default function StudyWorkspace({ entry }) {
                   <button
                     key={sermon.id}
                     onClick={() => goMessage(sermon.id)}
-                    className={`flex-shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${
+                    className={`flex-shrink-0 rounded-full border px-3.5 py-2 text-xs font-bold transition-colors ${
                       current
                         ? "bg-brand-navy text-white border-brand-navy"
                         : "bg-white text-brand-navy border-brand-navy/15 hover:bg-brand-sky"
@@ -1104,7 +1104,7 @@ export default function StudyWorkspace({ entry }) {
                     <button
                       key={v.reference}
                       onClick={() => openTab("scripture")}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-brand-navy/10 bg-brand-sky px-3 py-1.5 text-xs font-bold text-brand-navy hover:border-brand-navy/40 transition-colors"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-brand-navy/10 bg-brand-sky px-3 py-2 text-xs font-bold text-brand-navy hover:border-brand-navy/40 transition-colors"
                     >
                       {v.reference}
                       {v.count > 1 && (
@@ -1117,7 +1117,7 @@ export default function StudyWorkspace({ entry }) {
                 </div>
                 <button
                   onClick={() => openTab("scripture")}
-                  className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-brand-navy hover:underline"
+                  className="mt-2 inline-flex items-center gap-1 py-1.5 text-xs font-bold text-brand-navy hover:underline"
                 >
                   Open the Scripture tab <ArrowUpRight size={11} />
                 </button>
@@ -1135,7 +1135,7 @@ export default function StudyWorkspace({ entry }) {
                 <KeyVerses verses={scriptureStats.top} />
                 <Link
                   href="/word"
-                  className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-brand-navy hover:underline"
+                  className="mt-2 inline-flex items-center gap-1 py-1.5 text-xs font-bold text-brand-navy hover:underline"
                 >
                   See all in The Word <ArrowUpRight size={11} />
                 </Link>
@@ -1170,7 +1170,7 @@ export default function StudyWorkspace({ entry }) {
                                 sermon_title: activePart?.title,
                               })
                             }
-                            className="mt-1 inline-flex items-center gap-1.5 text-xs font-bold text-brand-navy hover:underline"
+                            className="mt-1 inline-flex items-center gap-1.5 py-1 text-xs font-bold text-brand-navy hover:underline"
                           >
                             <Play size={8} fill="currentColor" /> Watch moment
                           </button>
@@ -1181,7 +1181,7 @@ export default function StudyWorkspace({ entry }) {
                   {msgDecls.length > DECL_PREVIEW && (
                     <button
                       onClick={() => setShowAllDecls((v) => !v)}
-                      className="text-xs font-bold text-brand-navy hover:underline"
+                      className="inline-flex py-1.5 text-xs font-bold text-brand-navy hover:underline"
                     >
                       {showAllDecls ? "Show fewer" : `Show all ${msgDecls.length}`}
                     </button>

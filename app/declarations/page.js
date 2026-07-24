@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  ArrowRight,
   Sparkles,
   Send,
   Play,
@@ -18,6 +19,7 @@ import {
   X,
   Check,
   Volume2,
+  RotateCcw,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { cleanTitle } from "@/lib/titles";
@@ -87,12 +89,12 @@ function DeclarationRow({ declaration, index, onCopy, onWatch, selectMode, picke
           {declaration.declaration_text}
         </blockquote>
       </div>
-      <div className="flex items-center gap-1 flex-shrink-0">
+      <div className="flex items-center gap-2 flex-shrink-0">
         <button
           onClick={() => onCopy(declaration.declaration_text)}
           title="Copy this declaration"
           aria-label="Copy this declaration"
-          className="w-9 h-9 rounded-full text-brand-gray flex items-center justify-center hover:bg-brand-sky hover:text-brand-navy transition-colors"
+          className="relative w-9 h-9 rounded-full text-brand-gray flex items-center justify-center hover:bg-brand-sky hover:text-brand-navy transition-colors before:content-[''] before:absolute before:-inset-1"
         >
           <Copy size={12} />
         </button>
@@ -102,7 +104,7 @@ function DeclarationRow({ declaration, index, onCopy, onWatch, selectMode, picke
             onClick={() => onWatch({ ...parsed, sermon_title: declaration.sermon_title })}
             title="Watch this moment"
             aria-label="Watch this moment"
-            className="w-9 h-9 rounded-full flex items-center justify-center text-brand-ink bg-white border border-brand-navy/15 hover:bg-brand-sky hover:border-brand-navy/40 transition-colors"
+            className="relative w-9 h-9 rounded-full flex items-center justify-center text-brand-ink bg-white border border-brand-navy/15 hover:bg-brand-sky hover:border-brand-navy/40 transition-colors before:content-[''] before:absolute before:-inset-1"
           >
             <Play size={12} style={{ color: GOLD }} fill="currentColor" className="ml-0.5" />
           </button>
@@ -142,14 +144,45 @@ function SelectToggle({ on, onClick, className = "" }) {
 }
 
 /**
+ * Turns tag-clicking from "pick one" into "add another" — off by default, so a
+ * plain tap always replaces the active theme rather than piling chips up. Kept
+ * visually distinct from SelectToggle (which drives declaration-picking) since
+ * the two controls are unrelated.
+ */
+function MultiTagToggle({ on, onClick, className = "" }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={on}
+      title={on ? "Adding themes — tap to go back to one at a time" : "Select more than one theme at once"}
+      aria-label={on ? "Adding themes — tap to go back to one at a time" : "Select more than one theme at once"}
+      className={`flex-shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 h-7 text-[11px] font-bold uppercase tracking-wide transition-colors ${
+        on
+          ? "bg-brand-navy text-white"
+          : "text-brand-gray border border-brand-navy/20 hover:text-brand-ink hover:bg-white"
+      } ${className}`}
+    >
+      <Plus size={10} strokeWidth={3} />
+      Multi
+    </button>
+  );
+}
+
+/**
  * Speak mode — a full-screen focus view for proclaiming declarations one at a
  * time, distraction-free. Arrow keys / on-screen arrows move between them; the
  * source and a "Watch the moment" affordance stay within reach.
  */
+const SPEAK_SPEEDS = [0.75, 1, 1.25, 1.5, 2];
+
 function SpeakMode({ items, onClose, onCopy, onWatch, canLoadMore, loadingMore, onLoadMore }) {
   const [i, setI] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [speedIdx, setSpeedIdx] = useState(1); // 1 → 1x, the default pace
+  const speed = SPEAK_SPEEDS[speedIdx];
   const move = (n) => setI((p) => (p + n + items.length) % items.length);
+  const cycleSpeed = () => setSpeedIdx((p) => (p + 1) % SPEAK_SPEEDS.length);
 
   // Lock body scroll while the full-screen view is open (same pattern as
   // VideoModal / StudyWorkspace) so the page behind doesn't scroll on touch.
@@ -175,14 +208,15 @@ function SpeakMode({ items, onClose, onCopy, onWatch, canLoadMore, loadingMore, 
   }, [items.length]);
 
   // Auto-advance slideshow — press play and the declarations slide by on a
-  // reading-aloud pace (longer lines get more time). The timer restarts on any
-  // manual navigation so a skip doesn't get cut short.
+  // reading-aloud pace (longer lines get more time), scaled by the chosen
+  // speed. The timer restarts on any manual navigation or speed change so a
+  // skip (or a speed tap) doesn't get cut short or leave a stale timer running.
   useEffect(() => {
     if (!playing) return;
-    const secs = Math.min(16, Math.max(7, items[i].declaration_text.length / 14));
+    const secs = Math.min(16, Math.max(7, items[i].declaration_text.length / 14)) / speed;
     const t = setTimeout(() => move(1), secs * 1000);
     return () => clearTimeout(t);
-  }, [playing, i, items]);
+  }, [playing, i, items, speed]);
 
   const d = items[i];
   const parsed = parseYoutubeUrl(d.youtube_url_with_timestamp);
@@ -219,9 +253,17 @@ function SpeakMode({ items, onClose, onCopy, onWatch, canLoadMore, loadingMore, 
           {i + 1} / {items.length}
         </span>
         <button
+          onClick={cycleSpeed}
+          title="Playback speed — tap to change"
+          aria-label={`Playback speed ${speed}x, tap to change`}
+          className="ml-auto h-11 px-3.5 rounded-xl border border-white/20 bg-white/5 text-white text-xs font-bold tabular-nums flex items-center justify-center hover:bg-white/15 transition-colors"
+        >
+          {speed}x
+        </button>
+        <button
           onClick={onClose}
           aria-label="Close speak mode"
-          className="ml-auto w-11 h-11 rounded-xl border border-white/20 bg-white/5 text-white flex items-center justify-center hover:bg-white/15 transition-colors"
+          className="w-11 h-11 rounded-xl border border-white/20 bg-white/5 text-white flex items-center justify-center hover:bg-white/15 transition-colors"
         >
           <X size={18} />
         </button>
@@ -363,6 +405,7 @@ export default function DeclarationsPage() {
   const [speakMsgId, setSpeakMsgId] = useState(null); // AI message whose declarations are open in speak mode (live — grows with +10)
   const [speakFromCart, setSpeakFromCart] = useState(false); // speak mode opened from the picked-declarations cart instead
   const [selectMode, setSelectMode] = useState(false); // checkbox picking, on/off across the whole thread
+  const [multiTagMode, setMultiTagMode] = useState(false); // off = tapping a theme replaces it; on = taps add/remove
   const [picked, setPicked] = useState(new Map()); // id -> declaration, the cross-topic cart
   const [cartOpen, setCartOpen] = useState(false); // preview panel listing what's in the cart
   const textareaRef = useRef(null);
@@ -487,13 +530,26 @@ export default function DeclarationsPage() {
 
   const handleTopicClick = (topicName) => {
     const t = topicName.toLowerCase();
-    const next = new Set(activeTopics);
-    if (next.has(t)) next.delete(t);
-    else next.add(t);
-    if (next.size === 0) next.add(t); // always leave at least one chip active
+    if (multiTagMode) {
+      // Multi mode just builds up the selection — tapping a tag toggles its
+      // highlight but does NOT search yet. The user confirms with the arrow
+      // once they've picked every theme they want mixed together.
+      const next = new Set(activeTopics);
+      if (next.has(t)) next.delete(t);
+      else next.add(t);
+      if (next.size === 0) next.add(t); // always leave at least one chip active
+      setActiveTopics(next);
+      return;
+    }
+    // Plain tap replaces the selection outright and searches immediately.
+    const next = new Set([t]);
     setActiveTopics(next);
     runTopicSearch(Array.from(next));
   };
+
+  const applyMultiTagSelection = () => runTopicSearch(Array.from(activeTopics));
+
+  const toggleMultiTagMode = () => setMultiTagMode((v) => !v);
 
   const goHome = () => {
     setMessages([]);
@@ -505,6 +561,7 @@ export default function DeclarationsPage() {
     setTopicCardId(null);
     setTopicUserMsgId(null);
     setSelectMode(false);
+    setMultiTagMode(false);
     setPicked(new Map());
     setCartOpen(false);
   };
@@ -589,6 +646,7 @@ export default function DeclarationsPage() {
           {
             id: Date.now() + 1,
             role: "ai",
+            isError: true,
             title: "Something went wrong",
             text: "I'm sorry, something went wrong. Please try again in a moment.",
             declarations: [],
@@ -659,6 +717,7 @@ export default function DeclarationsPage() {
         {
           id: Date.now() + 1,
           role: "ai",
+          isError: true,
           title: "Something went wrong",
           text: "I'm sorry, something went wrong. Please try again in a moment.",
           declarations: [],
@@ -667,6 +726,23 @@ export default function DeclarationsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Recover from a failed search without making the user retype: drop the
+  // error card (and the request bubble that produced it) and re-run the same
+  // topic filter or freeform ask.
+  const retryLast = () => {
+    if (loading) return;
+    setMessages((prev) => {
+      const next = [...prev];
+      if (next.length && next[next.length - 1].isError) next.pop();
+      if (next.length && next[next.length - 1].role === "user") next.pop();
+      return next;
+    });
+    setTopicUserMsgId(null);
+    setTopicCardId(null);
+    if (lastTopics.length) runTopicSearch(lastTopics);
+    else if (lastQuery) startSearch(lastQuery);
   };
 
   const handleSend = () => startSearch(input);
@@ -763,25 +839,17 @@ export default function DeclarationsPage() {
     </div>
   );
 
-  const themeChip = (name, vertical) => {
+  const themeChip = (name) => {
     const active = activeTopics.has(name.toLowerCase());
     return (
       <button
         key={name}
         onClick={() => handleTopicClick(name)}
-        className={
-          vertical
-            ? `flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-left transition-all ${
-                active
-                  ? "text-white"
-                  : "text-brand-gray hover:text-brand-ink hover:bg-white"
-              }`
-            : `flex-shrink-0 inline-flex items-center gap-2 rounded-full px-[17px] min-h-11 text-sm font-semibold transition-all ${
-                active
-                  ? "text-white -translate-y-px"
-                  : "text-brand-gray border border-transparent hover:text-brand-ink hover:bg-brand-sky/70 hover:border-brand-navy/10"
-              }`
-        }
+        className={`flex-shrink-0 inline-flex items-center gap-2 rounded-full px-[17px] min-h-11 text-sm font-semibold transition-all ${
+          active
+            ? "text-white -translate-y-px"
+            : "text-brand-gray border border-transparent hover:text-brand-ink hover:bg-brand-sky/70 hover:border-brand-navy/10"
+        }`}
         style={
           active
             ? {
@@ -791,71 +859,39 @@ export default function DeclarationsPage() {
             : undefined
         }
       >
-        <span
-          className={`w-[5px] h-[5px] rounded-full flex-shrink-0 transition-transform ${
-            active ? "scale-100" : "scale-0"
-          }`}
-          style={{ background: GOLD_ON_NAVY }}
-        />
         {name}
       </button>
     );
   };
 
   const header = (
-    <header
-      className="flex items-center gap-3.5 px-4 sm:px-6 py-3 backdrop-blur-md"
-      style={{
-        background: "linear-gradient(180deg, rgba(234,242,251,0.55), rgba(255,255,255,0.9))",
-        borderBottom: "1px solid rgba(184,134,47,0.22)",
-      }}
-    >
-      <button
-        type="button"
-        onClick={() => (hasSearched ? goHome() : router.push("/"))}
-        aria-label={hasSearched ? "Back to declarations home" : "Back to home"}
-        className="w-10 h-10 rounded-full border border-brand-navy/15 bg-white text-brand-navy flex items-center justify-center shadow-sm hover:-translate-x-0.5 transition-transform flex-shrink-0"
-        style={{ transitionDuration: "150ms" }}
-      >
-        <ArrowLeft size={16} />
-      </button>
-      <div className="flex items-center gap-3 min-w-0">
-        <span
-          className="w-[34px] h-[34px] rounded-[10px] flex-shrink-0 font-serif text-lg leading-none flex items-center justify-center"
-          style={{
-            background: "linear-gradient(150deg, #173A68, #102A4E)",
-            color: GOLD_ON_NAVY,
-            boxShadow: "inset 0 0 0 1px rgba(201,162,39,0.35)",
-          }}
+    <header className="border-b border-brand-navy/10 bg-gradient-to-br from-brand-sky/50 to-white px-4 sm:px-7 py-2.5">
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          type="button"
+          onClick={() => (hasSearched ? goHome() : router.push("/"))}
+          aria-label={hasSearched ? "Back to declarations home" : "Back to home"}
+          className="-ml-1.5 w-8 h-8 flex items-center justify-center rounded-full text-brand-gray hover:text-brand-navy hover:bg-brand-sky transition-colors flex-shrink-0"
         >
-          &rdquo;
-        </span>
-        <div className="min-w-0">
-          <h1 className="text-base font-bold text-brand-ink leading-tight tracking-tight">
-            Faith Declarations
-          </h1>
-          <p className="flex items-center gap-1.5 text-xs text-brand-gray">
-            <span className="w-3.5 h-px opacity-70" style={{ background: GOLD }} />
-            Speak God&rsquo;s Word over your life
-          </p>
-        </div>
+          <ArrowLeft size={16} />
+        </button>
+        <h1 className="text-base font-bold tracking-tight text-brand-ink">
+          Faith Declarations
+        </h1>
+        <span className="text-brand-gray/50">·</span>
+        <p className="text-xs text-brand-gray truncate">
+          Speak God&rsquo;s Word over your life.
+        </p>
+        {streak >= 2 && (
+          <span
+            title="Days you've come to declare the Word"
+            className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 bg-brand-navy/10 border border-brand-navy/15 text-brand-navy rounded-full text-xs font-bold uppercase tracking-wider flex-shrink-0"
+          >
+            <Flame size={11} />
+            {streak}-day streak
+          </span>
+        )}
       </div>
-      {streak >= 2 && (
-        <span
-          title="Days you've come to declare the Word"
-          className="ml-auto inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold flex-shrink-0"
-          style={{
-            color: GOLD,
-            background: "linear-gradient(150deg, rgba(184,134,47,0.16), rgba(184,134,47,0.05))",
-            borderColor: "rgba(184,134,47,0.40)",
-            boxShadow: "0 2px 12px -6px rgba(184,134,47,0.55)",
-          }}
-        >
-          <Flame size={12} />
-          <span className="font-serif text-base tabular-nums">{streak}</span>
-          -day streak
-        </span>
-      )}
     </header>
   );
 
@@ -866,14 +902,27 @@ export default function DeclarationsPage() {
           (rendered inline in the scroll column below) on narrow screens. */}
       {hasSearched && (
         <aside className="hidden sm:flex sm:w-[196px] md:w-[220px] flex-shrink-0 flex-col h-full border-r border-brand-navy/10 bg-brand-sky/40 overflow-y-auto custom-scrollbar px-3 py-5">
-          <div className="flex items-center justify-between px-1 mb-3">
+          <div className="px-1 mb-3">
             <span className="text-xs font-bold uppercase tracking-[0.22em] text-brand-gray">
               Themes
             </span>
-            <SelectToggle on={selectMode} onClick={toggleSelectMode} />
           </div>
-          <div className="flex flex-col gap-0.5">
-            {TOPICS.map(({ name }) => themeChip(name, true))}
+          <div className="flex items-center justify-between px-1 mb-2.5">
+            <MultiTagToggle on={multiTagMode} onClick={toggleMultiTagMode} />
+            {multiTagMode && (
+              <button
+                type="button"
+                onClick={applyMultiTagSelection}
+                title="Show declarations for the selected themes"
+                aria-label="Show declarations for the selected themes"
+                className="w-7 h-7 rounded-full bg-brand-navy text-white flex items-center justify-center hover:bg-brand-deep transition-colors flex-shrink-0"
+              >
+                <ArrowRight size={13} />
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {TOPICS.map(({ name }) => themeChip(name))}
           </div>
         </aside>
       )}
@@ -891,18 +940,25 @@ export default function DeclarationsPage() {
           {/* Theme chips — mobile only; desktop uses the left sidebar */}
           {hasSearched && (
             <div className="sm:hidden border-b border-brand-navy/10 bg-white/90 backdrop-blur-md">
-              <div className="flex items-center gap-2 px-4 py-2.5">
-                <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  <span className="text-xs font-bold uppercase tracking-[0.22em] text-brand-gray mr-2 whitespace-nowrap">
+              <div className="flex items-start gap-2 px-4 py-2.5">
+                <div className="flex-1 min-w-0 flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs font-bold uppercase tracking-[0.22em] text-brand-gray mr-1 whitespace-nowrap">
                     Themes
                   </span>
-                  {TOPICS.map(({ name }) => themeChip(name, false))}
+                  <MultiTagToggle on={multiTagMode} onClick={toggleMultiTagMode} className="mr-1" />
+                  {TOPICS.map(({ name }) => themeChip(name))}
                 </div>
-                <SelectToggle
-                  on={selectMode}
-                  onClick={toggleSelectMode}
-                  className="pl-2.5 border-l border-brand-navy/10"
-                />
+                {multiTagMode && (
+                  <button
+                    type="button"
+                    onClick={applyMultiTagSelection}
+                    title="Show declarations for the selected themes"
+                    aria-label="Show declarations for the selected themes"
+                    className="ml-2 w-11 h-11 rounded-full bg-brand-navy text-white flex items-center justify-center flex-shrink-0"
+                  >
+                    <ArrowRight size={16} />
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -1066,6 +1122,17 @@ export default function DeclarationsPage() {
                       >
                         {msg.text}
                       </p>
+                    )}
+                    {msg.isError && isLastAi && (
+                      <button
+                        type="button"
+                        onClick={retryLast}
+                        disabled={loading}
+                        className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-brand-navy/20 px-4 py-2 text-xs font-bold text-brand-navy hover:bg-brand-sky transition-colors disabled:opacity-60"
+                      >
+                        <RotateCcw size={13} />
+                        Try again
+                      </button>
                     )}
                   </div>
 

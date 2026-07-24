@@ -196,11 +196,39 @@ export async function POST(req) {
       return plainStreamResponse(honest);
     }
 
+    // 3b. Real scripture references for the sermons behind these segments, so
+    // Gemini can cite verses it actually knows exist instead of guessing.
+    // sermon_scriptures has no per-segment timestamp (see migration comment),
+    // so this is sermon-wide — `theme` is included as a disambiguating hint
+    // when a sermon opened several verses and only one fits a given segment.
+    const sermonIds = [...new Set(relevantSegments.map((s) => s.sermon_id))];
+    const scripturesBySermon = new Map();
+    if (sermonIds.length) {
+      const { data: scriptureRows, error: scriptureErr } = await supabaseAdmin
+        .from('sermon_scriptures')
+        .select('sermon_id, reference, theme')
+        .in('sermon_id', sermonIds);
+      if (scriptureErr) {
+        console.error('[ask] sermon_scriptures fetch error:', scriptureErr.message);
+      } else if (scriptureRows) {
+        for (const row of scriptureRows) {
+          if (!scripturesBySermon.has(row.sermon_id)) scripturesBySermon.set(row.sermon_id, []);
+          scripturesBySermon
+            .get(row.sermon_id)
+            .push(row.theme ? `${row.reference} (${row.theme})` : row.reference);
+        }
+      }
+    }
+
     // 4. Build the numbered segment list + the map the frontend renders as sources.
     const segmentList = relevantSegments
-      .map((seg, i) =>
-        `[${i + 1}] SERMON:${seg.sermon_title}\n"${seg.text}"`
-      )
+      .map((seg, i) => {
+        const refs = scripturesBySermon.get(seg.sermon_id);
+        const refLine = refs?.length
+          ? `\nScriptures opened in this message: ${refs.join(', ')}`
+          : '';
+        return `[${i + 1}] SERMON:${seg.sermon_title}${refLine}\n"${seg.text}"`;
+      })
       .join('\n\n');
 
     const snippet = (t) =>
@@ -235,6 +263,14 @@ CITATION RULES — MANDATORY
 - Every factual claim MUST end with [N] matching a segment number.
 - When a point is echoed across multiple messages, cite each relevant one, e.g. "...faith comes by hearing [2][7]."
 - Only cite segments you actually used. Citations are inline only — no CITATIONS section, no URLs.
+
+═══════════════════════════════════════
+SCRIPTURE CITATION — WHEN AVAILABLE
+═══════════════════════════════════════
+- Each segment may list "Scriptures opened in this message" — the real verses Rev. Peter cited in that sermon, sometimes with a short theme label.
+- When a point you're making is clearly what one of those listed verses is about, name the reference inline right where the point is made, e.g. "...righteousness is God's gift by faith (Romans 3:21–26) [3]."
+- Only ever cite a reference that appears in that segment's own scripture list. Never infer, guess, or add a verse that isn't listed for that sermon — if a point has no listed verse that clearly fits, just use the [N] citation as usual, no verse.
+- Don't force a verse onto every sentence — cite the way a preacher naturally references scripture while teaching, not a footnote on every line.
 ${weakGrounding ? `
 ═══════════════════════════════════════
 WEAK GROUNDING — THIS QUESTION

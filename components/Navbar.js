@@ -97,12 +97,21 @@ export default function Navbar() {
             onClick={() => setIsOpen(!isOpen)}
             aria-label="Toggle menu"
             aria-expanded={isOpen}
-            className="md:hidden w-9 h-9 flex items-center justify-center rounded-full text-brand-navy hover:bg-brand-sky transition-colors"
+            className="md:hidden w-11 h-11 -mr-1 flex items-center justify-center rounded-full text-brand-navy hover:bg-brand-sky transition-colors"
           >
             {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </nav>
+
+      {/* Tap-away scrim — closes the panel without hunting for the toggle */}
+      {isOpen && (
+        <div
+          className="md:hidden fixed inset-0 -z-10"
+          onClick={() => setIsOpen(false)}
+          aria-hidden="true"
+        />
+      )}
 
       {/* Mobile panel */}
       {isOpen && (

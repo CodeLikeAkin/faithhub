@@ -174,6 +174,14 @@ export default function StudyChat({
   const userMessageRefs = useRef({});
   const keyboardInset = useKeyboardInset();
 
+  // Auto-grow the composer as a question wraps (capped by max-h).
+  useEffect(() => {
+    const ta = inputRef.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = Math.min(ta.scrollHeight, 120) + "px";
+  }, [chatInput]);
+
   const handleSendMessage = async (textToSubmit) => {
     const actualText =
       typeof textToSubmit === "string" ? textToSubmit : chatInput;
@@ -442,16 +450,22 @@ export default function StudyChat({
               e.preventDefault();
               handleSendMessage();
             }}
-            className="flex items-center gap-2 bg-brand-light rounded-2xl border border-brand-navy/15 focus-within:border-brand-navy/40 shadow-sm p-1.5 pl-4 transition-colors"
+            className="flex items-end gap-2 bg-brand-light rounded-2xl border border-brand-navy/15 focus-within:border-brand-navy/40 shadow-sm p-1.5 pl-4 transition-colors"
           >
-            <Sparkles size={17} className="text-brand-navy/50 flex-shrink-0" />
-            <input
+            <Sparkles size={17} className="text-brand-navy/50 flex-shrink-0 mb-2.5" />
+            <textarea
               ref={inputRef}
-              type="text"
+              rows={1}
               placeholder={placeholder}
-              className="flex-1 bg-transparent py-2 text-base text-brand-ink placeholder:text-brand-gray/60 focus:outline-none min-w-0"
+              className="flex-1 bg-transparent py-2 text-base text-brand-ink placeholder:text-brand-gray/60 focus:outline-none resize-none min-w-0 max-h-[120px] leading-relaxed"
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
             />
             <button
               type="submit"
