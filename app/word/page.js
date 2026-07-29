@@ -2,9 +2,18 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { BookMarked, Loader2, Play, Calendar, X, Layers } from "lucide-react";
+import {
+  BookMarked,
+  Loader2,
+  Play,
+  Calendar,
+  X,
+  Layers,
+  ChevronDown,
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { BOOK_ORDER, OT_COUNT, BOOK_ABBR, bookIdFor } from "@/lib/bible";
+import VideoModal from "@/components/VideoModal";
 
 /**
  * The Word — a reverse scripture index over every message.
@@ -28,10 +37,21 @@ function tileStyle(intensity) {
   };
 }
 
+// mm:ss (or h:mm:ss past an hour) label for a Watch button, e.g. 496 -> "8:16".
+function formatTime(totalSeconds) {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  const mm = h > 0 ? String(m).padStart(2, "0") : String(m);
+  return h > 0 ? `${h}:${mm}:${String(sec).padStart(2, "0")}` : `${mm}:${String(sec).padStart(2, "0")}`;
+}
+
 export default function WordPage() {
   const [counts, setCounts] = useState(null); // { [bookId]: { refs, sermons } }
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null); // { bookId, name }
+  const [watching, setWatching] = useState(null); // seg for VideoModal
   const detailRef = useRef(null);
 
   // ── Load per-book aggregates ──────────────────────────────────────────────
@@ -266,9 +286,12 @@ export default function WordPage() {
             name={selected.name}
             stats={counts?.[selected.bookId]}
             onClose={() => setSelected(null)}
+            onWatch={setWatching}
           />
         </div>
       )}
+
+      <VideoModal seg={watching} onClose={() => setWatching(null)} />
     </main>
   );
 }
@@ -285,28 +308,60 @@ function Stat({ value, label }) {
 // ── Per-book detail: sermons that opened this book + chapter breakdown ───────
 const INITIAL_SERMONS = 48; // cap the first render — popular books cite 200+ messages
 
-function BookDetail({ bookId, name, stats, onClose }) {
+function BookDetail({ bookId, name, stats, onClose, onWatch }) {
   const [rows, setRows] = useState(null);
   const [showAll, setShowAll] = useState(false);
+  const [selectedChapter, setSelectedChapter] = useState(null);
+  const chapterRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
     setRows(null);
     setShowAll(false);
+    setSelectedChapter(null);
     (async () => {
-      const { data } = await supabase
-        .from("sermon_scriptures")
-        .select(
-          "id, reference, chapter, order_index, sermon:sermons ( id, title, sermon_date, youtube_video_id, service_type )"
-        )
-        .eq("book_id", bookId)
-        .order("chapter", { ascending: true });
-      if (!cancelled) setRows(data || []);
+      // Paged: an unpaginated select caps at PostgREST's default 1000-row
+      // limit, which silently truncated books with 1000+ references (Psalms
+      // 1426, Acts 1540, John 1234, Romans 1293) — chapters past the cutoff
+      // just vanished from the chapter/verse breakdown.
+      const all = [];
+      const pageSize = 1000;
+      let from = 0;
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data, error } = await supabase
+          .from("sermon_scriptures")
+          .select(
+            "id, book, book_id, reference, chapter, verse_start, verse_end, theme, order_index, timestamp_seconds, sermon:sermons ( id, title, sermon_date, youtube_video_id, service_type )"
+          )
+          .eq("book_id", bookId)
+          .order("chapter", { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error || !data?.length) break;
+        all.push(...data);
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+      if (!cancelled) setRows(all);
     })();
     return () => {
       cancelled = true;
     };
   }, [bookId]);
+
+  const openChapter = (ch) => {
+    setSelectedChapter(ch);
+    let tries = 0;
+    const bring = () => {
+      const el = chapterRef.current;
+      if (!el) {
+        if (tries++ < 8) setTimeout(bring, 50);
+        return;
+      }
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    setTimeout(bring, 50);
+  };
 
   // Group references by sermon.
   const bySermon = useMemo(() => {
@@ -370,21 +425,42 @@ function BookDetail({ bookId, name, stats, onClose }) {
             {chapters.length > 0 && (
               <div className="mb-8">
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-gray mb-3">
-                  Chapters opened
+                  Chapters opened · tap one to study it verse by verse
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {chapters.map(([ch, n]) => (
-                    <span
+                    <button
                       key={ch}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-brand-navy/10 rounded-full text-xs font-bold text-brand-navy"
+                      onClick={() => openChapter(ch)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${
+                        selectedChapter === ch
+                          ? "bg-brand-navy text-white border border-brand-navy"
+                          : "bg-white border border-brand-navy/10 text-brand-navy hover:border-brand-navy/40"
+                      }`}
                     >
                       {name} {ch}
-                      <span className="text-xs text-brand-gray font-medium">
+                      <span
+                        className={`text-xs font-medium ${
+                          selectedChapter === ch ? "text-white/70" : "text-brand-gray"
+                        }`}
+                      >
                         ×{n}
                       </span>
-                    </span>
+                    </button>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {selectedChapter != null && (
+              <div ref={chapterRef}>
+                <ChapterDetail
+                  bookName={name}
+                  chapter={selectedChapter}
+                  rows={rows}
+                  onClose={() => setSelectedChapter(null)}
+                  onWatch={onWatch}
+                />
               </div>
             )}
 
@@ -475,5 +551,198 @@ function BookDetail({ bookId, name, stats, onClose }) {
         )}
       </div>
     </section>
+  );
+}
+
+// ── Chapter detail: every verse Dad has opened in this chapter, and every
+// message that opened it. Watch jumps straight to timestamp_seconds — the
+// moment that reference is actually spoken — where the backfill found one;
+// falls back to the start of the sermon for the small remainder it couldn't
+// locate.
+function ChapterDetail({ bookName, chapter, rows, onClose, onWatch }) {
+  const [expandedRef, setExpandedRef] = useState(null);
+
+  // Numbered verses (verse_start present) and whole-chapter mentions (no
+  // specific verse) are kept separate — mixing them made a whole-chapter row
+  // sort ahead of verse 1, reading like a confusing duplicate of the chapter
+  // itself. Whole-chapter mentions get their own group below the verse list.
+  const { verses, wholeChapter } = useMemo(() => {
+    const map = new Map();
+    for (const r of rows) {
+      if (r.chapter !== chapter) continue;
+      if (!map.has(r.reference)) {
+        map.set(r.reference, {
+          reference: r.reference,
+          book: r.book,
+          bookId: r.book_id,
+          chapter: r.chapter,
+          verseStart: r.verse_start,
+          verseEnd: r.verse_end,
+          theme: r.theme,
+          sermons: [],
+        });
+      }
+      if (r.sermon) {
+        map.get(r.reference).sermons.push({
+          ...r.sermon,
+          timestamp_seconds: r.timestamp_seconds,
+        });
+      }
+    }
+    const all = [...map.values()];
+    return {
+      verses: all
+        .filter((v) => v.verseStart != null)
+        .sort((a, b) => a.verseStart - b.verseStart),
+      wholeChapter: all.filter((v) => v.verseStart == null),
+    };
+  }, [rows, chapter]);
+
+  const toggle = (reference) => {
+    setExpandedRef((prev) => (prev === reference ? null : reference));
+  };
+
+  return (
+    <div className="mt-6 rounded-3xl border border-brand-navy/10 bg-white p-5 sm:p-6">
+      <div className="flex items-start justify-between gap-4 mb-5">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-navy">
+            Chapter study
+          </p>
+          <h3 className="mt-1 text-xl sm:text-2xl font-bold text-brand-ink">
+            {bookName} {chapter}
+          </h3>
+          <p className="mt-1 text-sm text-brand-gray">
+            {verses.length} {verses.length === 1 ? "verse" : "verses"} opened
+            across this chapter, starting from verse 1 — tap one to see the
+            messages that unpack it and watch the moment.
+          </p>
+        </div>
+        <button
+          onClick={onClose}
+          aria-label="Close chapter study"
+          className="w-11 h-11 rounded-full bg-brand-sky border border-brand-navy/10 flex items-center justify-center text-brand-gray hover:text-brand-navy flex-shrink-0"
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      <div className="space-y-2.5">
+        {verses.map((v) => (
+          <VerseGroup
+            key={v.reference}
+            v={v}
+            open={expandedRef === v.reference}
+            onToggle={() => toggle(v.reference)}
+            onWatch={onWatch}
+          />
+        ))}
+      </div>
+
+      {wholeChapter.length > 0 && (
+        <div className="mt-6 pt-5 border-t border-brand-navy/10">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-gray mb-3">
+            Opened as a whole chapter — no single verse singled out
+          </p>
+          <div className="space-y-2.5">
+            {wholeChapter.map((v) => (
+              <VerseGroup
+                key={v.reference}
+                v={v}
+                open={expandedRef === v.reference}
+                onToggle={() => toggle(v.reference)}
+                onWatch={onWatch}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// One reference (a specific verse, or a whole-chapter mention) and every
+// message that opened it. No scripture text here — just the reference,
+// Dad's short note on it, and a Watch button per message with its timestamp.
+function VerseGroup({ v, open, onToggle, onWatch }) {
+  return (
+    <div className="rounded-2xl border border-brand-navy/10 overflow-hidden">
+      <button
+        onClick={onToggle}
+        className={`w-full flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors ${
+          open ? "bg-brand-navy text-white" : "bg-brand-sky/40 hover:bg-brand-sky"
+        }`}
+      >
+        <span className="flex items-center gap-2 min-w-0">
+          <span className="text-sm font-bold">{v.reference}</span>
+          <span className={`text-xs font-medium ${open ? "text-white/70" : "text-brand-gray"}`}>
+            {v.sermons.length} {v.sermons.length === 1 ? "message" : "messages"}
+          </span>
+        </span>
+        <ChevronDown
+          size={16}
+          className={`flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <div className="px-4 py-4 bg-white">
+          {v.theme && (
+            <p className="text-xs text-brand-gray">
+              In this message:{" "}
+              <span className="font-semibold text-brand-ink/80">{v.theme}</span>
+            </p>
+          )}
+
+          <div className={`space-y-2 ${v.theme ? "mt-4" : ""}`}>
+            {v.sermons.map((s) => {
+              const date = s.sermon_date
+                ? new Date(s.sermon_date).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })
+                : null;
+              return (
+                <div
+                  key={s.id}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-brand-navy/10 px-3 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-brand-ink leading-snug line-clamp-1">
+                      {s.title}
+                    </p>
+                    <span className="mt-0.5 flex items-center gap-2 text-xs text-brand-gray">
+                      <span className="font-bold text-brand-navy">{v.reference}</span>
+                      {date && (
+                        <span className="flex items-center gap-1.5">
+                          <Calendar size={11} />
+                          {date}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  {s.youtube_video_id && (
+                    <button
+                      onClick={() =>
+                        onWatch({
+                          video_id: s.youtube_video_id,
+                          start_seconds: s.timestamp_seconds || 0,
+                          sermon_title: s.title,
+                        })
+                      }
+                      className="flex-shrink-0 inline-flex items-center gap-1.5 bg-brand-navy text-white text-xs font-bold rounded-full px-3.5 py-2 hover:bg-brand-deep transition-colors"
+                    >
+                      <Play size={12} fill="currentColor" />
+                      {s.timestamp_seconds != null ? formatTime(s.timestamp_seconds) : "Watch"}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

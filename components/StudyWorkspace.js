@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -191,7 +191,30 @@ export default function StudyWorkspace({ entry }) {
   const [showAllDecls, setShowAllDecls] = useState(false);
   const [watching, setWatching] = useState(null); // segment currently open in the video modal
   const [sheetOpen, setSheetOpen] = useState(false); // mobile "At a glance" bottom sheet
+  const [collapsed, setCollapsed] = useState(false); // mobile: header shrinks once you scroll into a panel
+  const collapsedRef = useRef(false); // avoids re-render churn between the hysteresis thresholds
   const loadedParts = useRef(new Set()); // sermonIds whose data is loaded / in-flight
+
+  // Collapse the mobile header the moment the reader scrolls into content, and
+  // bring it back near the top. Hysteresis (48 / 8) stops it flickering when a
+  // scroll settles right on the threshold. Desktop keeps the full header always.
+  const onPanelScroll = useCallback((e) => {
+    const y = e.currentTarget.scrollTop;
+    if (y > 48 && !collapsedRef.current) {
+      collapsedRef.current = true;
+      setCollapsed(true);
+    } else if (y < 8 && collapsedRef.current) {
+      collapsedRef.current = false;
+      setCollapsed(false);
+    }
+  }, []);
+
+  // A fresh scope/part/tab starts scrolled at the top — reset so the header is
+  // never stuck collapsed on content that no longer scrolls.
+  useEffect(() => {
+    collapsedRef.current = false;
+    setCollapsed(false);
+  }, [mode, activePartId, activeTab]);
 
   const hasSeries = !!series;
 
@@ -729,10 +752,15 @@ export default function StudyWorkspace({ entry }) {
       {/* ═══════════ Zone 2 · workspace ═══════════ */}
       <section className="flex flex-col min-h-0 min-w-0 flex-1">
         {/* Header */}
-        <div className="flex-shrink-0 border-b border-brand-navy/10 bg-gradient-to-br from-brand-sky/50 to-white px-4 sm:px-7 pt-3.5">
-          {/* Scope toggle */}
+        <div className="flex-shrink-0 border-b border-brand-navy/10 bg-gradient-to-br from-brand-sky/50 to-white px-4 sm:px-7 pt-2.5 sm:pt-3.5">
+          {/* Scope toggle — collapses away on mobile once you scroll into content,
+              reclaiming a whole row; always present from lg up. */}
           {hasSeries && (
-            <div className="flex items-center gap-3 flex-wrap">
+            <div
+              className={`flex items-center gap-3 flex-wrap overflow-hidden transition-all duration-200 lg:max-h-none lg:opacity-100 ${
+                collapsed ? "max-h-0 opacity-0" : "max-h-16 opacity-100"
+              }`}
+            >
               <div
                 role="tablist"
                 aria-label="Study scope"
@@ -742,7 +770,7 @@ export default function StudyWorkspace({ entry }) {
                   role="tab"
                   aria-selected={mode === "series"}
                   onClick={goSeries}
-                  className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition-colors ${
+                  className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 sm:py-2 text-sm font-bold transition-colors ${
                     mode === "series"
                       ? "bg-white text-brand-navy shadow-sm shadow-brand-navy/10"
                       : "text-brand-gray hover:text-brand-ink"
@@ -754,7 +782,7 @@ export default function StudyWorkspace({ entry }) {
                   role="tab"
                   aria-selected={mode === "message"}
                   onClick={() => goMessage()}
-                  className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition-colors ${
+                  className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 sm:py-2 text-sm font-bold transition-colors ${
                     mode === "message"
                       ? "bg-white text-brand-navy shadow-sm shadow-brand-navy/10"
                       : "text-brand-gray hover:text-brand-ink"
@@ -766,7 +794,7 @@ export default function StudyWorkspace({ entry }) {
             </div>
           )}
 
-          <div className="flex items-center gap-2.5 flex-wrap mt-3">
+          <div className="flex items-center gap-2.5 flex-wrap mt-2 sm:mt-3">
             <Link
               href={hasSeries ? "/series" : "/"}
               aria-label={hasSeries ? "Back to series" : "Back home"}
@@ -774,7 +802,11 @@ export default function StudyWorkspace({ entry }) {
             >
               <ArrowLeft size={20} />
             </Link>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-brand-ink">
+            <h1
+              className={`font-bold tracking-tight text-brand-ink transition-all duration-200 ${
+                collapsed ? "text-lg" : "text-xl"
+              } sm:text-2xl`}
+            >
               {headerTitle}
             </h1>
             {isMsg && activePart?.part_number && (
@@ -792,6 +824,10 @@ export default function StudyWorkspace({ entry }) {
             </button>
           </div>
 
+          {/* Subtitle is boilerplate on mobile (the composer already states the
+              scope, and the real summary sits in the panel / "At a glance"), so
+              it only earns its row from sm up. The loading state stays on all
+              sizes as live feedback. */}
           <div className="mt-1.5 text-sm text-brand-gray leading-relaxed max-w-2xl">
             {!isMsg && summaryLoading ? (
               <span className="flex items-center gap-2">
@@ -799,7 +835,7 @@ export default function StudyWorkspace({ entry }) {
                 Reading the series…
               </span>
             ) : (
-              <p className="line-clamp-2">{headerSub}</p>
+              <p className="hidden sm:line-clamp-2">{headerSub}</p>
             )}
           </div>
 
@@ -808,7 +844,7 @@ export default function StudyWorkspace({ entry }) {
             <div
               role="tablist"
               aria-label="Message content"
-              className="flex gap-1 mt-3.5 -mb-px overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="flex gap-1 mt-2.5 sm:mt-3.5 -mb-px overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [mask-image:linear-gradient(to_right,black_calc(100%-28px),transparent)] sm:[mask-image:none]"
             >
               {tabs.map((t) => {
                 const active = activeTab === t.key;
@@ -845,7 +881,7 @@ export default function StudyWorkspace({ entry }) {
 
           {/* Mobile part chips (no left rail on small screens) */}
           {hasSeries && (
-            <div className="lg:hidden mt-3 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="lg:hidden mt-2 sm:mt-3 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [mask-image:linear-gradient(to_right,black_calc(100%-28px),transparent)]">
               <button
                 onClick={goSeries}
                 className={`flex-shrink-0 rounded-full border px-3.5 py-2 text-xs font-bold transition-colors ${
@@ -885,6 +921,7 @@ export default function StudyWorkspace({ entry }) {
                 key={isMsg ? `msg-${activePartId}` : "series"}
                 seriesId={series?.id || null}
                 sermonId={isMsg ? activePartId : null}
+                onThreadScroll={onPanelScroll}
                 summary={isMsg ? "" : summary}
                 openers={isMsg ? [] : summarySuggestions}
                 placeholder={isMsg ? "Ask about this message…" : "Ask about this series…"}
@@ -903,7 +940,7 @@ export default function StudyWorkspace({ entry }) {
           )}
 
           {isMsg && activeTab === "scripture" && (
-            <div className="absolute inset-0 overflow-y-auto custom-scrollbar px-4 sm:px-7 py-6">
+            <div onScroll={onPanelScroll} className="absolute inset-0 overflow-y-auto custom-scrollbar px-4 sm:px-7 py-6">
               <div className="max-w-3xl mx-auto">
                 {pd?.loading ? (
                   <div className="rounded-3xl border border-brand-navy/10 bg-white p-6 flex items-center gap-3 text-brand-gray">
@@ -918,7 +955,7 @@ export default function StudyWorkspace({ entry }) {
           )}
 
           {isMsg && activeTab === "words" && (
-            <div className="absolute inset-0 overflow-y-auto custom-scrollbar px-4 sm:px-7 py-6">
+            <div onScroll={onPanelScroll} className="absolute inset-0 overflow-y-auto custom-scrollbar px-4 sm:px-7 py-6">
               <div className="max-w-3xl mx-auto">
                 <div className="rounded-3xl border border-brand-navy/10 bg-white p-4 sm:p-5">
                   <div className="flex items-center gap-3 mb-3 px-1">
@@ -939,7 +976,7 @@ export default function StudyWorkspace({ entry }) {
           )}
 
           {isMsg && activeTab === "notes" && pd?.notes && (
-            <div className="absolute inset-0 overflow-y-auto custom-scrollbar px-4 sm:px-7 py-6">
+            <div onScroll={onPanelScroll} className="absolute inset-0 overflow-y-auto custom-scrollbar px-4 sm:px-7 py-6">
               <div className="max-w-3xl mx-auto">
                 <div className="rounded-3xl border border-brand-navy/10 bg-white p-5 sm:p-6">
                   <div className="flex items-center gap-3 mb-4">

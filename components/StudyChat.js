@@ -111,7 +111,10 @@ const RichAIResponse = ({ text, segmentMap, onWatch }) => {
             <li {...props}>{renderChildren(children)}</li>
           ),
           p: ({ node, children, ...props }) => (
-            <p className="mb-3 last:mb-0" {...props}>
+            <p
+              className="mb-3.5 last:mb-0 first:text-brand-ink first:font-medium"
+              {...props}
+            >
               {renderChildren(children)}
             </p>
           ),
@@ -163,6 +166,7 @@ export default function StudyChat({
   emptyNote = "Ask anything — the exact moments behind each answer come with it.",
   placeholder = "Ask a question…",
   hint = "Every claim is cited to the exact moment it was preached.",
+  onThreadScroll,
 }) {
   const [chatInput, setChatInput] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
@@ -322,6 +326,7 @@ export default function StudyChat({
       {/* Thread */}
       <div
         ref={threadRef}
+        onScroll={onThreadScroll}
         className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-4 sm:px-7 py-5"
       >
         <div className="max-w-2xl mx-auto">
