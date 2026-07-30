@@ -15,6 +15,8 @@ import {
   Languages,
   FileText,
   Sparkles,
+  ChevronDown,
+  Check,
   X,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -26,6 +28,7 @@ import VerseExplorer from "@/components/VerseExplorer";
 import WordStudy from "@/components/WordStudy";
 import VideoModal from "@/components/VideoModal";
 import ReactMarkdown from "react-markdown";
+import NavHamburger from "@/components/NavHamburger";
 
 /**
  * StudyWorkspace — one shell, two lenses. The series studio and the single
@@ -144,7 +147,7 @@ const KeyVerses = ({ verses }) => {
           </div>
           {vt?.loading && (
             <span className="mt-1.5 flex items-center gap-2 text-xs text-brand-gray">
-              <Loader2 className="w-3 h-3 animate-spin" />
+              <Loader2 className="w-3 h-3 motion-safe:animate-spin" />
               Loading verse…
             </span>
           )}
@@ -191,6 +194,7 @@ export default function StudyWorkspace({ entry }) {
   const [showAllDecls, setShowAllDecls] = useState(false);
   const [watching, setWatching] = useState(null); // segment currently open in the video modal
   const [sheetOpen, setSheetOpen] = useState(false); // mobile "At a glance" bottom sheet
+  const [partPickerOpen, setPartPickerOpen] = useState(false); // mobile scope/part picker
   const [collapsed, setCollapsed] = useState(false); // mobile: header shrinks once you scroll into a panel
   const collapsedRef = useRef(false); // avoids re-render churn between the hysteresis thresholds
   const loadedParts = useRef(new Set()); // sermonIds whose data is loaded / in-flight
@@ -209,27 +213,33 @@ export default function StudyWorkspace({ entry }) {
     }
   }, []);
 
-  // A fresh scope/part/tab starts scrolled at the top — reset so the header is
-  // never stuck collapsed on content that no longer scrolls.
+  // A fresh scope/part resets the header to full height. Switching TABS does
+  // not: the reader is still on the same message and has already shown they
+  // want the room, so re-expanding there just gave the tallest possible header
+  // back to the content that needs it most.
   useEffect(() => {
     collapsedRef.current = false;
     setCollapsed(false);
-  }, [mode, activePartId, activeTab]);
+  }, [mode, activePartId]);
 
   const hasSeries = !!series;
 
-  // Lock body scroll + close on Escape while the mobile sheet is open.
+  // Lock body scroll + close on Escape while either mobile sheet is open.
   useEffect(() => {
-    if (!sheetOpen) return;
+    if (!sheetOpen && !partPickerOpen) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const onKey = (e) => e.key === "Escape" && setSheetOpen(false);
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      setSheetOpen(false);
+      setPartPickerOpen(false);
+    };
     window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
     };
-  }, [sheetOpen]);
+  }, [sheetOpen, partPickerOpen]);
 
   // ── boot: resolve the entry point into a full bundle ──────────────
   useEffect(() => {
@@ -468,6 +478,7 @@ export default function StudyWorkspace({ entry }) {
     setActiveTab("study");
     setShowAllDecls(false);
     setSheetOpen(false);
+    setPartPickerOpen(false);
     syncUrl(`/series/${series.id}`);
   };
 
@@ -479,6 +490,7 @@ export default function StudyWorkspace({ entry }) {
     setActiveTab("study");
     setShowAllDecls(false);
     setSheetOpen(false);
+    setPartPickerOpen(false);
     if (!partData[id]) loadPartData(id);
     syncUrl(`/sermon/${id}`);
   };
@@ -497,7 +509,7 @@ export default function StudyWorkspace({ entry }) {
   const tabs = useMemo(() => {
     if (!isMsg) return [];
     return [
-      { key: "study", label: "Study", Icon: MessageSquare },
+      { key: "study", label: null, Icon: MessageSquare },
       pd && (pd.loading || pd.scriptures?.length) && {
         key: "scripture",
         label: "Scripture",
@@ -535,7 +547,7 @@ export default function StudyWorkspace({ entry }) {
   if (loading) {
     return (
       <div className="h-dvh bg-brand-light flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-brand-navy animate-spin" />
+        <Loader2 className="w-10 h-10 text-brand-navy motion-safe:animate-spin" />
       </div>
     );
   }
@@ -753,14 +765,12 @@ export default function StudyWorkspace({ entry }) {
       <section className="flex flex-col min-h-0 min-w-0 flex-1">
         {/* Header */}
         <div className="flex-shrink-0 border-b border-brand-navy/10 bg-gradient-to-br from-brand-sky/50 to-white px-4 sm:px-7 pt-2.5 sm:pt-3.5">
-          {/* Scope toggle — collapses away on mobile once you scroll into content,
-              reclaiming a whole row; always present from lg up. */}
+          {/* Scope toggle — lg and up only. Below that it was a second copy of
+              the part picker in the title row ("All parts" === "Whole series",
+              "Part N" === "This message"), so it cost a full row to say what
+              the picker already says. */}
           {hasSeries && (
-            <div
-              className={`flex items-center gap-3 flex-wrap overflow-hidden transition-all duration-200 lg:max-h-none lg:opacity-100 ${
-                collapsed ? "max-h-0 opacity-0" : "max-h-16 opacity-100"
-              }`}
-            >
+            <div className="hidden lg:flex items-center gap-3 flex-wrap">
               <div
                 role="tablist"
                 aria-label="Study scope"
@@ -794,33 +804,57 @@ export default function StudyWorkspace({ entry }) {
             </div>
           )}
 
-          <div className="flex items-center gap-2.5 flex-wrap mt-2 sm:mt-3">
-            <Link
-              href={hasSeries ? "/series" : "/"}
-              aria-label={hasSeries ? "Back to series" : "Back home"}
-              className="lg:hidden -ml-2 w-11 h-11 flex items-center justify-center rounded-full text-brand-gray hover:text-brand-navy hover:bg-brand-sky transition-colors flex-shrink-0"
-            >
-              <ArrowLeft size={20} />
-            </Link>
+          {/* Title row — deliberately NOT flex-wrap. With wrapping, a narrow
+              screen pushed the "At a glance" button (ml-auto) onto a line of
+              its own, buying a whole empty row. Everything here now shrinks or
+              truncates instead. */}
+          <div
+            className={`flex items-center gap-2 sm:gap-2.5 min-w-0 transition-all duration-200 sm:mt-3 ${
+              collapsed ? "mt-0.5" : "mt-2"
+            }`}
+          >
+            <NavHamburger className="lg:hidden -ml-1" />
+
             <h1
-              className={`font-bold tracking-tight text-brand-ink transition-all duration-200 ${
-                collapsed ? "text-lg" : "text-xl"
+              className={`font-bold tracking-tight text-brand-ink truncate min-w-0 transition-all duration-200 ${
+                collapsed ? "text-base" : "text-xl"
               } sm:text-2xl`}
             >
               {headerTitle}
             </h1>
+
+            {/* Desktop keeps the static badge — the rail already handles part
+                navigation over there. */}
             {isMsg && activePart?.part_number && (
-              <span className="px-2.5 py-1 bg-brand-navy/10 border border-brand-navy/15 text-brand-navy rounded-full text-xs font-bold uppercase tracking-wider">
+              <span className="hidden lg:inline-flex flex-shrink-0 px-2.5 py-1 bg-brand-navy/10 border border-brand-navy/15 text-brand-navy rounded-full text-xs font-bold uppercase tracking-wider">
                 Part {activePart.part_number}
                 {series?.series_sermons ? ` of ${parts.length}` : ""}
               </span>
             )}
+
+            {hasSeries && (
+              <button
+                onClick={() => setPartPickerOpen(true)}
+                aria-haspopup="dialog"
+                aria-expanded={partPickerOpen}
+                className="lg:hidden ml-auto inline-flex items-center gap-1 rounded-full border border-brand-navy/15 bg-white pl-3 pr-2 h-10 text-xs font-bold text-brand-navy hover:bg-brand-sky transition-colors flex-shrink-0"
+              >
+                {isMsg && activePart?.part_number
+                  ? `${activePart.part_number}/${parts.length}`
+                  : "All"}
+                <ChevronDown size={14} className="text-brand-navy/60" />
+              </button>
+            )}
+
             <button
               onClick={() => setSheetOpen(true)}
-              className="xl:hidden ml-auto inline-flex items-center gap-1.5 rounded-full border border-brand-navy/15 bg-white px-3 h-11 text-xs font-bold text-brand-navy hover:bg-brand-sky transition-colors flex-shrink-0"
+              aria-label="At a glance"
+              className={`xl:hidden inline-flex items-center gap-1.5 rounded-full border border-brand-navy/15 bg-white px-3 h-10 text-xs font-bold text-brand-navy hover:bg-brand-sky transition-colors flex-shrink-0 ${
+                hasSeries ? "" : "ml-auto"
+              }`}
             >
               <Sparkles size={14} />
-              At a glance
+              <span className="hidden sm:inline">At a glance</span>
             </button>
           </div>
 
@@ -828,14 +862,16 @@ export default function StudyWorkspace({ entry }) {
               scope, and the real summary sits in the panel / "At a glance"), so
               it only earns its row from sm up. The loading state stays on all
               sizes as live feedback. */}
-          <div className="mt-1.5 text-sm text-brand-gray leading-relaxed max-w-2xl">
+          {/* The margin lives on the children, not the wrapper — on mobile the
+              <p> is hidden and a wrapper margin was 6px of pure nothing. */}
+          <div className="text-sm text-brand-gray leading-relaxed max-w-2xl">
             {!isMsg && summaryLoading ? (
-              <span className="flex items-center gap-2">
-                <Loader2 size={12} className="animate-spin text-brand-navy" />
+              <span className="mt-1.5 flex items-center gap-2">
+                <Loader2 size={12} className="motion-safe:animate-spin text-brand-navy" />
                 Reading the series…
               </span>
             ) : (
-              <p className="hidden sm:line-clamp-2">{headerSub}</p>
+              <p className="hidden sm:line-clamp-2 sm:mt-1.5">{headerSub}</p>
             )}
           </div>
 
@@ -860,7 +896,7 @@ export default function StudyWorkspace({ entry }) {
                         : "text-brand-gray border-transparent hover:text-brand-ink"
                     }`}
                   >
-                    <t.Icon size={15} />
+                    {t.Icon && <t.Icon size={15} />}
                     {t.label}
                     {t.count != null && (
                       <span
@@ -876,39 +912,7 @@ export default function StudyWorkspace({ entry }) {
               })}
             </div>
           ) : (
-            <div className="h-3.5" />
-          )}
-
-          {/* Mobile part chips (no left rail on small screens) */}
-          {hasSeries && (
-            <div className="lg:hidden mt-2 sm:mt-3 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [mask-image:linear-gradient(to_right,black_calc(100%-28px),transparent)]">
-              <button
-                onClick={goSeries}
-                className={`flex-shrink-0 rounded-full border px-3.5 py-2 text-xs font-bold transition-colors ${
-                  mode === "series"
-                    ? "bg-brand-navy text-white border-brand-navy"
-                    : "bg-white text-brand-navy border-brand-navy/15 hover:bg-brand-sky"
-                }`}
-              >
-                All parts
-              </button>
-              {parts.map((sermon) => {
-                const current = isMsg && sermon.id === activePartId;
-                return (
-                  <button
-                    key={sermon.id}
-                    onClick={() => goMessage(sermon.id)}
-                    className={`flex-shrink-0 rounded-full border px-3.5 py-2 text-xs font-bold transition-colors ${
-                      current
-                        ? "bg-brand-navy text-white border-brand-navy"
-                        : "bg-white text-brand-navy border-brand-navy/15 hover:bg-brand-sky"
-                    }`}
-                  >
-                    Part {sermon.part_number}
-                  </button>
-                );
-              })}
-            </div>
+            <div className="h-2.5 sm:h-3.5" />
           )}
         </div>
 
@@ -944,7 +948,7 @@ export default function StudyWorkspace({ entry }) {
               <div className="max-w-3xl mx-auto">
                 {pd?.loading ? (
                   <div className="rounded-3xl border border-brand-navy/10 bg-white p-6 flex items-center gap-3 text-brand-gray">
-                    <Loader2 size={16} className="animate-spin text-brand-navy" />
+                    <Loader2 size={16} className="motion-safe:animate-spin text-brand-navy" />
                     <span className="text-sm">Loading scriptures…</span>
                   </div>
                 ) : (
@@ -1031,6 +1035,114 @@ export default function StudyWorkspace({ entry }) {
           )}
         </div>
       </section>
+
+      {/* ═══════════ Mobile part picker ═══════════
+          One tap replaces the old scope toggle + horizontal chip row. Height
+          is constant no matter how many parts the series has. */}
+      {hasSeries && (
+        <>
+          {partPickerOpen && (
+            <div
+              className="fixed inset-0 z-40 bg-brand-ink/40 lg:hidden"
+              onClick={() => setPartPickerOpen(false)}
+              aria-hidden="true"
+            />
+          )}
+          <div
+            role="dialog"
+            aria-label="Choose what to study"
+            aria-modal="true"
+            className={`lg:hidden fixed inset-x-0 bottom-0 z-50 flex flex-col max-h-[70dvh] rounded-t-3xl border-t border-brand-navy/10 bg-brand-light shadow-2xl transition-transform duration-300 ${
+              partPickerOpen ? "translate-y-0" : "translate-y-full pointer-events-none"
+            }`}
+          >
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-brand-navy/10 flex-shrink-0">
+              <p className="text-sm font-bold text-brand-ink">What are you studying?</p>
+              <button
+                onClick={() => setPartPickerOpen(false)}
+                aria-label="Close"
+                className="w-10 h-10 -mr-2 flex items-center justify-center rounded-full text-brand-gray hover:text-brand-navy hover:bg-brand-sky transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <ul className="overflow-y-auto custom-scrollbar p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] flex flex-col gap-1">
+              <li>
+                <button
+                  onClick={goSeries}
+                  className={`w-full flex items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors ${
+                    !isMsg
+                      ? "bg-white border border-brand-navy/10 shadow-sm shadow-brand-navy/10"
+                      : "border border-transparent hover:bg-brand-sky/70"
+                  }`}
+                >
+                  <span
+                    className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                      !isMsg ? "bg-brand-navy text-white" : "bg-brand-sky text-brand-navy"
+                    }`}
+                  >
+                    <Layers size={14} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span
+                      className={`block text-sm font-bold leading-snug ${
+                        !isMsg ? "text-brand-navy" : "text-brand-ink"
+                      }`}
+                    >
+                      Whole series
+                    </span>
+                    <span className="block text-xs text-brand-gray mt-0.5">
+                      Ask across all {parts.length} parts
+                    </span>
+                  </span>
+                  {!isMsg && <Check size={16} className="text-brand-navy flex-shrink-0" />}
+                </button>
+              </li>
+
+              <li className="px-3 pt-3 pb-1 text-xs font-bold uppercase tracking-[0.14em] text-brand-gray">
+                Or a single message
+              </li>
+
+              {parts.map((sermon) => {
+                const current = isMsg && sermon.id === activePartId;
+                return (
+                  <li key={sermon.id}>
+                    <button
+                      onClick={() => goMessage(sermon.id)}
+                      className={`w-full flex items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors ${
+                        current
+                          ? "bg-white border border-brand-navy/10 shadow-sm shadow-brand-navy/10"
+                          : "border border-transparent hover:bg-brand-sky/70"
+                      }`}
+                    >
+                      <span
+                        className={`w-7 h-7 rounded-lg text-xs font-bold flex items-center justify-center flex-shrink-0 ${
+                          current ? "bg-brand-navy text-white" : "bg-brand-sky text-brand-navy"
+                        }`}
+                      >
+                        {sermon.part_number}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span
+                          className={`block text-sm font-bold leading-snug ${
+                            current ? "text-brand-navy" : "text-brand-ink"
+                          }`}
+                        >
+                          Part {sermon.part_number}
+                        </span>
+                        <span className="block text-xs text-brand-gray mt-0.5 line-clamp-1">
+                          {cleanTitle(sermon.title)}
+                        </span>
+                      </span>
+                      {current && <Check size={16} className="text-brand-navy flex-shrink-0" />}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </>
+      )}
 
       {/* ═══════════ Zone 3 · at a glance ═══════════
           Static right column at xl; a slide-up bottom sheet below that

@@ -95,7 +95,7 @@ export default function Navbar() {
           {/* Mobile menu button — lives inside the pill on small screens */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            aria-label="Toggle menu"
+            aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
             aria-expanded={isOpen}
             className="md:hidden w-11 h-11 -mr-1 flex items-center justify-center rounded-full text-brand-navy hover:bg-brand-sky transition-colors"
           >
@@ -104,10 +104,10 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Tap-away scrim — closes the panel without hunting for the toggle */}
+      {/* Tap-away scrim — covers the page behind the open menu */}
       {isOpen && (
         <div
-          className="md:hidden fixed inset-0 -z-10"
+          className="md:hidden fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
           onClick={() => setIsOpen(false)}
           aria-hidden="true"
         />
@@ -115,7 +115,7 @@ export default function Navbar() {
 
       {/* Mobile panel */}
       {isOpen && (
-        <div className="md:hidden mx-auto max-w-6xl mt-2 bg-white rounded-3xl border border-brand-navy/10 shadow-xl p-3">
+        <div className="md:hidden relative z-[41] mx-auto max-w-6xl mt-2 bg-white rounded-3xl border border-brand-navy/10 shadow-xl p-3">
           {navLinks.map((link) => (
             <Link
               key={link.name}
@@ -126,14 +126,6 @@ export default function Navbar() {
               {link.name}
             </Link>
           ))}
-          <Link
-            href="/declarations"
-            onClick={() => setIsOpen(false)}
-            className="mt-1 flex items-center justify-center gap-2 bg-brand-navy text-white font-bold rounded-2xl px-4 py-3.5"
-          >
-            Start a declaration
-            <ArrowRight className="w-4 h-4" />
-          </Link>
         </div>
       )}
     </header>

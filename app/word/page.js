@@ -165,7 +165,7 @@ export default function WordPage() {
             onClick={() => active && openBook(name)}
             disabled={!active}
             style={active ? tileStyle(intensity) : undefined}
-            className={`group relative flex flex-col justify-between rounded-2xl p-2.5 sm:p-3 h-[74px] sm:h-[84px] text-left transition-all ${
+            className={`group relative flex flex-col justify-between rounded-2xl p-2.5 sm:p-3 h-[74px] sm:h-[84px] text-left transition-[transform,box-shadow,background-color] duration-200 ${
               active
                 ? "hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-navy/20 cursor-pointer"
                 : "bg-white border border-brand-navy/8 cursor-default"
@@ -198,9 +198,9 @@ export default function WordPage() {
   );
 
   return (
-    <main className="min-h-screen bg-white">
+    <main id="main-content" className="min-h-screen bg-white">
       {/* Heading */}
-      <section className="mx-auto max-w-[1200px] px-4 sm:px-6 pt-28 sm:pt-36 pb-8">
+      <section className="mx-auto max-w-[1400px] px-4 sm:px-6 pt-28 sm:pt-36 pb-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-navy">
@@ -232,13 +232,14 @@ export default function WordPage() {
       </section>
 
       {/* Heat-map */}
-      <section className="mx-auto max-w-[1200px] px-4 sm:px-6 pb-8">
+      <section className="mx-auto max-w-[1400px] px-4 sm:px-6 pb-8">
         {loading ? (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-2 sm:gap-2.5">
+            <p role="status" className="sr-only">Loading scriptures…</p>
             {[...Array(28)].map((_, i) => (
               <div
                 key={i}
-                className="h-[74px] sm:h-[84px] rounded-2xl bg-brand-sky animate-pulse"
+                className="h-[74px] sm:h-[84px] rounded-2xl bg-brand-sky motion-safe:animate-pulse"
               />
             ))}
           </div>
@@ -387,7 +388,7 @@ function BookDetail({ bookId, name, stats, onClose, onWatch }) {
 
   return (
     <section className="border-t border-brand-navy/10 bg-brand-sky/30">
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 py-10 sm:py-14">
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6 py-10 sm:py-14">
         <div className="flex items-start justify-between gap-4 mb-6">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-navy">
@@ -416,7 +417,7 @@ function BookDetail({ bookId, name, stats, onClose, onWatch }) {
 
         {rows === null ? (
           <div className="flex items-center gap-2 text-brand-gray py-10">
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="w-4 h-4 motion-safe:animate-spin" />
             Loading messages…
           </div>
         ) : (
@@ -491,7 +492,7 @@ function BookDetail({ bookId, name, stats, onClose, onWatch }) {
                   <Link
                     key={sermon.id}
                     href={`/sermon/${sermon.id}`}
-                    className="group flex gap-3 bg-white rounded-2xl border border-brand-navy/10 p-4 hover:border-brand-navy/25 hover:shadow-lg hover:shadow-brand-navy/10 transition-all"
+                    className="group flex gap-3 bg-white rounded-2xl border border-brand-navy/10 p-4 hover:border-brand-navy/25 hover:shadow-lg hover:shadow-brand-navy/10 transition-[box-shadow,border-color] duration-200"
                   >
                     {sermon.youtube_video_id && (
                       <div className="relative w-24 flex-shrink-0 rounded-xl overflow-hidden aspect-video">

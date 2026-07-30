@@ -68,7 +68,7 @@ export default function SeriesBrowsePage() {
   };
 
   return (
-    <main className="min-h-screen bg-white">
+    <main id="main-content" className="min-h-screen bg-white">
       {/* Page heading */}
       <section className="mx-auto max-w-[1400px] px-4 sm:px-6 pt-28 sm:pt-36 pb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
@@ -141,7 +141,7 @@ export default function SeriesBrowsePage() {
             {[...Array(8)].map((_, i) => (
               <div
                 key={i}
-                className="aspect-[16/10] bg-brand-sky rounded-3xl animate-pulse"
+                className="aspect-[16/10] bg-brand-sky rounded-3xl motion-safe:animate-pulse"
               />
             ))}
           </div>
@@ -157,7 +157,7 @@ export default function SeriesBrowsePage() {
                 <Link
                   key={s.id}
                   href={`/series/${s.id}`}
-                  className="group relative flex flex-col bg-white rounded-3xl overflow-hidden border border-brand-navy/10 hover:border-brand-navy/25 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-navy/10"
+                  className="group relative flex flex-col bg-white rounded-3xl overflow-hidden border border-brand-navy/10 hover:border-brand-navy/25 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-navy/10"
                 >
                   {/* Thumbnail */}
                   <div className="aspect-[16/10] relative overflow-hidden">

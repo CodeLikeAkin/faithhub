@@ -15,7 +15,7 @@ export default function SermonPage() {
   if (!id)
     return (
       <div className="h-dvh bg-white flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-brand-navy animate-spin" />
+        <Loader2 className="w-10 h-10 text-brand-navy motion-safe:animate-spin" />
       </div>
     );
   return <StudyWorkspace entry={{ type: "sermon", sermonId: id }} />;

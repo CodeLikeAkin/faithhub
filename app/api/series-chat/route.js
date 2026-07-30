@@ -309,11 +309,12 @@ VOICE & TONE
 FOLLOW-UP SUGGESTIONS — STRICT RULES
 ═══════════════════════════════════════
 - At the very end of your response, output exactly this format:
-  SUGGESTIONS:["Question one?","Question two?","Question three?"]
+  SUGGESTIONS:["Suggestion one","Suggestion two","Suggestion three"]
 - CRITICAL: Every suggestion MUST be directly answerable from the segments you were given
 - Read the segments first — then generate questions only about what's actually there
 - Never suggest questions about topics not present in the provided segments
-- Do not generate generic Christian questions — they must be specific to this ${singleSermon ? 'message' : 'series'}${voicePromptSection()}`;
+- Do not generate generic Christian questions — they must be specific to this ${singleSermon ? 'message' : 'series'}
+- STRICT LENGTH RULE: each suggestion is a short tappable phrase or simple question, 4-8 words, ONE idea only — never a compound sentence, never multiple clauses joined by "and"/"or". These are tap targets, not essay prompts. Think chip labels, not paragraphs.${voicePromptSection()}`;
 
     // 8. Build conversation history
     const conversationHistory = (chatHistory || [])

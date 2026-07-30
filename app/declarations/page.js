@@ -26,6 +26,7 @@ import { cleanTitle } from "@/lib/titles";
 import { parseYoutubeUrl } from "@/lib/youtube";
 import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import VideoModal from "@/components/VideoModal";
+import NavHamburger from "@/components/NavHamburger";
 
 /**
  * Faith Declarations — a chat-first devotional surface in two screens on one
@@ -316,7 +317,7 @@ function SpeakMode({ items, onClose, onCopy, onWatch, canLoadMore, loadingMore, 
             {items.map((_, idx) => (
               <span
                 key={idx}
-                className="h-[7px] rounded-full transition-all"
+                className="h-[7px] rounded-full transition-[width,background-color]"
                 style={{
                   width: idx === i ? 22 : 7,
                   background: idx === i ? GOLD_ON_NAVY : "rgba(255,255,255,0.28)",
@@ -327,7 +328,7 @@ function SpeakMode({ items, onClose, onCopy, onWatch, canLoadMore, loadingMore, 
         ) : (
           <div className="w-[200px] h-[5px] rounded-full bg-white/15 overflow-hidden">
             <div
-              className="h-full rounded-full transition-all duration-500"
+              className="h-full rounded-full transition-[width] duration-500"
               style={{
                 width: `${((i + 1) / items.length) * 100}%`,
                 background: GOLD_ON_NAVY,
@@ -372,7 +373,7 @@ function SpeakMode({ items, onClose, onCopy, onWatch, canLoadMore, loadingMore, 
               className="inline-flex items-center gap-1.5 h-12 rounded-full border border-white/25 bg-white/5 px-4 text-sm font-bold text-white hover:bg-white/15 transition-colors disabled:opacity-60"
             >
               {loadingMore ? (
-                <Loader2 size={14} className="animate-spin" />
+                <Loader2 size={14} className="motion-safe:animate-spin" />
               ) : (
                 <Plus size={14} />
               )}
@@ -410,6 +411,7 @@ export default function DeclarationsPage() {
   const [cartOpen, setCartOpen] = useState(false); // preview panel listing what's in the cart
   const textareaRef = useRef(null);
   const threadRef = useRef(null);
+  const mobileThemesRef = useRef(null); // the one-line scrolling themes row
   const userMessageRefs = useRef({});
   const toastTimer = useRef(null);
   const keyboardInset = useKeyboardInset();
@@ -550,6 +552,14 @@ export default function DeclarationsPage() {
   const applyMultiTagSelection = () => runTopicSearch(Array.from(activeTopics));
 
   const toggleMultiTagMode = () => setMultiTagMode((v) => !v);
+
+  // The themes row scrolls sideways now, so the active theme can sit offscreen
+  // — bring it back into view whenever the selection changes.
+  useEffect(() => {
+    const row = mobileThemesRef.current;
+    const chip = row?.querySelector('[data-active="true"]');
+    chip?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+  }, [activeTopics]);
 
   const goHome = () => {
     setMessages([]);
@@ -828,10 +838,10 @@ export default function DeclarationsPage() {
         onClick={handleSend}
         disabled={!input.trim() || loading}
         aria-label="Send"
-        className="w-[46px] h-[46px] rounded-full bg-brand-navy text-white flex items-center justify-center flex-shrink-0 hover:bg-brand-deep hover:-translate-y-px transition-all disabled:opacity-40 disabled:hover:translate-y-0"
+        className="w-[46px] h-[46px] rounded-full bg-brand-navy text-white flex items-center justify-center flex-shrink-0 hover:bg-brand-deep hover:-translate-y-px active:scale-[0.96] transition-[transform,background-color,opacity] disabled:opacity-40 disabled:hover:translate-y-0"
       >
         {loading ? (
-          <Loader2 size={16} className="animate-spin" />
+          <Loader2 size={16} className="motion-safe:animate-spin" />
         ) : (
           <Send size={15} />
         )}
@@ -845,7 +855,8 @@ export default function DeclarationsPage() {
       <button
         key={name}
         onClick={() => handleTopicClick(name)}
-        className={`flex-shrink-0 inline-flex items-center gap-2 rounded-full px-[17px] min-h-11 text-sm font-semibold transition-all ${
+        data-active={active}
+        className={`flex-shrink-0 inline-flex items-center gap-2 rounded-full px-[17px] min-h-11 text-sm font-semibold transition-[transform,background-color,border-color,color,box-shadow] ${
           active
             ? "text-white -translate-y-px"
             : "text-brand-gray border border-transparent hover:text-brand-ink hover:bg-brand-sky/70 hover:border-brand-navy/10"
@@ -867,14 +878,7 @@ export default function DeclarationsPage() {
   const header = (
     <header className="border-b border-brand-navy/10 bg-gradient-to-br from-brand-sky/50 to-white px-4 sm:px-7 py-2.5">
       <div className="flex items-center gap-2 flex-wrap">
-        <button
-          type="button"
-          onClick={() => (hasSearched ? goHome() : router.push("/"))}
-          aria-label={hasSearched ? "Back to declarations home" : "Back to home"}
-          className="-ml-1.5 w-8 h-8 flex items-center justify-center rounded-full text-brand-gray hover:text-brand-navy hover:bg-brand-sky transition-colors flex-shrink-0"
-        >
-          <ArrowLeft size={16} />
-        </button>
+        <NavHamburger className="-ml-1" />
         <h1 className="text-base font-bold tracking-tight text-brand-ink">
           Faith Declarations
         </h1>
@@ -895,13 +899,15 @@ export default function DeclarationsPage() {
     </header>
   );
 
+  const speakActive = speakFromCart ? picked.size > 0 : speakMsgId !== null;
+
   return (
-    <main className="h-dvh bg-white flex overflow-hidden">
+    <main id="main-content" className="h-dvh bg-white flex overflow-hidden">
       {/* Themes sidebar — left side, thread view only, stays put while the
           header and thread scroll past it. Collapses to a horizontal row
           (rendered inline in the scroll column below) on narrow screens. */}
       {hasSearched && (
-        <aside className="hidden sm:flex sm:w-[196px] md:w-[220px] flex-shrink-0 flex-col h-full border-r border-brand-navy/10 bg-brand-sky/40 overflow-y-auto custom-scrollbar px-3 py-5">
+        <aside inert={speakActive ? "" : undefined} className="hidden sm:flex sm:w-[196px] md:w-[220px] flex-shrink-0 flex-col h-full border-r border-brand-navy/10 bg-brand-sky/40 overflow-y-auto custom-scrollbar px-3 py-5">
           <div className="px-1 mb-3">
             <span className="text-xs font-bold uppercase tracking-[0.22em] text-brand-gray">
               Themes
@@ -928,7 +934,7 @@ export default function DeclarationsPage() {
       )}
 
       {/* Right column: header + thread scroll together, composer stays docked */}
-      <div className="flex-1 min-w-0 flex flex-col h-full">
+      <div className="flex-1 min-w-0 flex flex-col h-full" inert={speakActive ? "" : undefined}>
         {/* Scrollable stage — header scrolls away with the content now */}
         <div
           ref={threadRef}
@@ -937,15 +943,21 @@ export default function DeclarationsPage() {
         >
           {header}
 
-          {/* Theme chips — mobile only; desktop uses the left sidebar */}
+          {/* Theme chips — mobile only; desktop uses the left sidebar.
+              ONE line that scrolls sideways, not a wrap. Wrapping turned eight
+              themes into four stacked rows (~150px) before a single
+              declaration was visible, and the "Themes" label plus the Multi
+              pill sat inside the wrap flow making it worse. The mode controls
+              are now pinned outside the scroller so they never move, and the
+              label is gone (chips on a Declarations page read as themes). */}
           {hasSearched && (
             <div className="sm:hidden border-b border-brand-navy/10 bg-white/90 backdrop-blur-md">
-              <div className="flex items-start gap-2 px-4 py-2.5">
-                <div className="flex-1 min-w-0 flex flex-wrap items-center gap-1.5">
-                  <span className="text-xs font-bold uppercase tracking-[0.22em] text-brand-gray mr-1 whitespace-nowrap">
-                    Themes
-                  </span>
-                  <MultiTagToggle on={multiTagMode} onClick={toggleMultiTagMode} className="mr-1" />
+              <div className="flex items-center gap-1.5 px-3 py-1">
+                <MultiTagToggle on={multiTagMode} onClick={toggleMultiTagMode} />
+                <div
+                  ref={mobileThemesRef}
+                  className="flex-1 min-w-0 flex items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [mask-image:linear-gradient(to_right,black_calc(100%-24px),transparent)]"
+                >
                   {TOPICS.map(({ name }) => themeChip(name))}
                 </div>
                 {multiTagMode && (
@@ -954,7 +966,7 @@ export default function DeclarationsPage() {
                     onClick={applyMultiTagSelection}
                     title="Show declarations for the selected themes"
                     aria-label="Show declarations for the selected themes"
-                    className="ml-2 w-11 h-11 rounded-full bg-brand-navy text-white flex items-center justify-center flex-shrink-0"
+                    className="w-10 h-10 rounded-full bg-brand-navy text-white flex items-center justify-center flex-shrink-0"
                   >
                     <ArrowRight size={16} />
                   </button>
@@ -1018,7 +1030,7 @@ export default function DeclarationsPage() {
                         onClick={() =>
                           setWatching({ ...parsed, sermon_title: featured.sermon_title })
                         }
-                        className="inline-flex items-center gap-2 rounded-full border border-white/35 px-5 py-2.5 text-sm font-semibold text-white hover:border-white/80 hover:-translate-y-px transition-all"
+                        className="inline-flex items-center gap-2 rounded-full border border-white/35 px-5 py-2.5 text-sm font-semibold text-white hover:border-white/80 hover:-translate-y-px transition-[transform,border-color]"
                       >
                         <Play size={11} fill="currentColor" />
                         Watch the moment
@@ -1052,16 +1064,7 @@ export default function DeclarationsPage() {
                   <button
                     key={name}
                     onClick={() => handleTopicClick(name)}
-                    className="inline-flex items-baseline gap-2 rounded-full border border-brand-navy/12 bg-white px-[18px] py-2.5 hover:-translate-y-px transition-all"
-                    style={{ transitionDuration: "160ms" }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = GOLD;
-                      e.currentTarget.style.background = "rgba(184,134,47,0.06)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "";
-                      e.currentTarget.style.background = "";
-                    }}
+                    className="inline-flex items-baseline gap-2 rounded-full border border-brand-navy/12 bg-white px-[18px] py-2.5 hover:-translate-y-px hover:border-[#B8862F] hover:bg-[#B8862F]/[0.06] transition-[transform,border-color,background-color] duration-[160ms]"
                   >
                     <span className="font-serif text-base font-semibold text-brand-ink">
                       {name}
@@ -1154,7 +1157,7 @@ export default function DeclarationsPage() {
                             }}
                             title="Speak mode"
                             aria-label="Speak mode"
-                            className="w-11 h-11 rounded-full bg-brand-navy text-white flex items-center justify-center hover:bg-brand-deep hover:-translate-y-px transition-all shadow-sm shadow-brand-navy/20"
+                            className="w-11 h-11 rounded-full bg-brand-navy text-white flex items-center justify-center hover:bg-brand-deep hover:-translate-y-px active:scale-[0.96] transition-[transform,background-color] shadow-sm shadow-brand-navy/20"
                           >
                             <Volume2 size={16} />
                           </button>
@@ -1187,7 +1190,7 @@ export default function DeclarationsPage() {
                               className="inline-flex items-center gap-2 rounded-full border-[1.5px] border-brand-navy text-brand-navy text-sm font-semibold px-6 py-2.5 hover:bg-brand-navy hover:text-white transition-colors disabled:opacity-60"
                             >
                               {fetchingMore ? (
-                                <Loader2 size={15} className="animate-spin" />
+                                <Loader2 size={15} className="motion-safe:animate-spin" />
                               ) : (
                                 <>More declarations →</>
                               )}
@@ -1213,7 +1216,7 @@ export default function DeclarationsPage() {
                   {[0, 1, 2].map((d) => (
                     <span
                       key={d}
-                      className="w-2 h-2 rounded-full bg-brand-navy/40 animate-pulse"
+                      className="w-2 h-2 rounded-full bg-brand-navy/40 motion-safe:animate-pulse"
                       style={{ animationDelay: `${d * 150}ms` }}
                     />
                   ))}
@@ -1242,7 +1245,7 @@ export default function DeclarationsPage() {
           }}
         >
           <div className="max-w-[760px] mx-auto">
-            {composer("Ask for more, or something else on your heart…")}
+            {composer("Ask for more…")}
           </div>
         </div>
       )}
@@ -1309,7 +1312,7 @@ export default function DeclarationsPage() {
                 setSpeakFromCart(true);
                 setSpeakMsgId(null);
               }}
-              className="ml-auto inline-flex items-center gap-1.5 rounded-full text-sm font-bold px-4 py-2 hover:-translate-y-px transition-all"
+              className="ml-auto inline-flex items-center gap-1.5 rounded-full text-sm font-bold px-4 py-2 hover:-translate-y-px transition-[transform]"
               style={{ background: GOLD_ON_NAVY, color: "#102A4E" }}
             >
               <Play size={11} fill="currentColor" />

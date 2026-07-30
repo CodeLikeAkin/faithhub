@@ -1,6 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState, Fragment, isValidElement, cloneElement } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  Fragment,
+  isValidElement,
+  cloneElement,
+} from "react";
 import { Send, Loader2, Sparkles } from "lucide-react";
 import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import ReactMarkdown from "react-markdown";
@@ -176,7 +185,53 @@ export default function StudyChat({
   const threadRef = useRef(null);
   const inputRef = useRef(null);
   const userMessageRefs = useRef({});
+  const contentRef = useRef(null);
+  const spacerRef = useRef(null);
+  const [pendingSnapId, setPendingSnapId] = useState(null);
   const keyboardInset = useKeyboardInset();
+
+  // Pick 3 random openers each mount so the suggestions feel fresh each visit.
+  const shownOpeners = useMemo(() => {
+    if (!openers.length) return [];
+    const arr = [...openers];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr.slice(0, 3);
+  }, [openers]);
+
+  // Snap the newest question to the top of the thread.
+  //
+  // A scroll container can only travel `scrollHeight - clientHeight`, so on the
+  // FIRST question there is nothing below it yet (just a one-line spinner) and
+  // the scroll silently clamps to 0 — the question never moves. The fix is to
+  // grow a spacer under the thread by exactly the shortfall, so the travel the
+  // snap needs always exists. Runs in a layout effect (not a setTimeout race)
+  // so it measures the DOM React just committed.
+  useLayoutEffect(() => {
+    if (pendingSnapId == null) return;
+    const el = userMessageRefs.current[pendingSnapId];
+    const c = threadRef.current;
+    const spacer = spacerRef.current;
+    setPendingSnapId(null);
+    if (!el || !c || !spacer) return;
+
+    const content = contentRef.current;
+    if (!content) return;
+
+    spacer.style.height = "0px"; // measure the real content first
+
+    // Measure the CONTENT element, not c.scrollHeight — scrollHeight is floored
+    // at clientHeight, so a short thread reports "full" and the shortfall reads
+    // as ~0, which is exactly how the first question failed to move.
+    const qTop = el.offsetTop - content.offsetTop; // question's top within the content
+    const below = content.offsetHeight - qTop; // real content from there down
+    const padBottom = parseFloat(getComputedStyle(c).paddingBottom) || 0;
+    spacer.style.height = `${Math.max(0, c.clientHeight - padBottom - below - 8)}px`;
+
+    c.scrollTo({ top: Math.max(0, el.offsetTop - c.offsetTop - 8), behavior: "smooth" });
+  }, [pendingSnapId]);
 
   // Auto-grow the composer as a question wraps (capped by max-h).
   useEffect(() => {
@@ -215,12 +270,7 @@ export default function StudyChat({
       setThinkingStep((prev) => (prev + 1) % THINKING_MESSAGES.length);
     }, 2000);
 
-    setTimeout(() => {
-      const el = userMessageRefs.current[messageId];
-      const c = threadRef.current;
-      if (el && c)
-        c.scrollTo({ top: el.offsetTop - c.offsetTop - 8, behavior: "smooth" });
-    }, 100);
+    setPendingSnapId(messageId);
 
     try {
       const historyToSend = chatHistory.map((m) => ({ role: m.role, text: m.text }));
@@ -329,7 +379,7 @@ export default function StudyChat({
         onScroll={onThreadScroll}
         className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-4 sm:px-7 py-5"
       >
-        <div className="max-w-2xl mx-auto">
+        <div ref={contentRef} className="max-w-2xl mx-auto">
           {summary && (
             <div className="pt-2 mb-6">
               <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-brand-gray mb-2">
@@ -346,9 +396,9 @@ export default function StudyChat({
                 <Sparkles size={13} className="text-brand-navy" />
                 {openersLabel}
               </p>
-              {openers.length > 0 ? (
+              {shownOpeners.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
-                  {openers.map((question, i) => (
+                  {shownOpeners.map((question, i) => (
                     <button
                       key={i}
                       onClick={() => handleSendMessage(question)}
@@ -398,7 +448,7 @@ export default function StudyChat({
                   key={msg.id || i}
                   className="mt-4 flex items-center gap-3 text-brand-gray"
                 >
-                  <Loader2 size={14} className="animate-spin text-brand-navy" />
+                  <Loader2 size={14} className="motion-safe:animate-spin text-brand-navy" />
                   <span className="text-sm italic font-medium">
                     {THINKING_MESSAGES[thinkingStep]}
                   </span>
@@ -436,6 +486,10 @@ export default function StudyChat({
             );
             });
           })()}
+
+          {/* Grown by the snap effect so the newest question can always reach
+              the top — including the very first one. */}
+          <div ref={spacerRef} aria-hidden="true" />
         </div>
       </div>
 
@@ -479,13 +533,17 @@ export default function StudyChat({
               className="w-10 h-10 rounded-xl bg-brand-navy text-white flex items-center justify-center flex-shrink-0 hover:bg-brand-deep transition-colors disabled:opacity-40"
             >
               {chatLoading ? (
-                <Loader2 size={16} className="animate-spin" />
+                <Loader2 size={16} className="motion-safe:animate-spin" />
               ) : (
                 <Send size={15} />
               )}
             </button>
           </form>
-          <p className="mt-1.5 text-center text-xs text-brand-gray">{hint}</p>
+          {/* Onboarding copy — it has done its job once the thread has started,
+              so it stops charging a row on every screen after that. */}
+          {chatHistory.length === 0 && (
+            <p className="mt-1.5 text-center text-xs text-brand-gray">{hint}</p>
+          )}
         </div>
       </div>
     </div>

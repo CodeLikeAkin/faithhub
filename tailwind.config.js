@@ -19,6 +19,7 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ["var(--font-roboto)", "system-ui", "sans-serif"],
+        serif: ["Georgia", "Cambria", "'Times New Roman'", "serif"],
       },
       /* Type scale — the single source of truth for font sizes.
          Values mirror Tailwind's defaults (incl. line-heights) so existing

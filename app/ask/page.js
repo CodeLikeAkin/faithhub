@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -20,6 +20,7 @@ import {
 import { cleanTitle } from "@/lib/titles";
 import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import VideoModal from "@/components/VideoModal";
+import NavHamburger from "@/components/NavHamburger";
 import { fetchPassage, parseReference, TRANSLATIONS } from "@/lib/bible";
 
 /**
@@ -36,12 +37,15 @@ import { fetchPassage, parseReference, TRANSLATIONS } from "@/lib/bible";
  */
 
 const SUGGESTED = [
-  "What does Rev. Peter teach about walking in faith when nothing has changed yet?",
-  "How does Rev. Peter teach that the eternal life God has given us can never be taken away?",
-  "How should a believer deal with unbelief in prayer?",
-  "What is the believer's righteousness in Christ?",
-  "How do I recognise the leading of the Holy Spirit?",
-  "Why does Rev. Peter emphasise the local church so much?",
+  "Walking in faith before things change",
+  "Our eternal life — can it be lost?",
+  "Dealing with unbelief in prayer",
+  "The believer's righteousness in Christ",
+  "Recognising the Holy Spirit's leading",
+  "Why Rev. Peter values the local church",
+  "How to activate the blessing",
+  "What born again really means",
+  "Faith versus feelings — what wins?",
 ];
 
 const STORE_KEY = "hof-ask-studies-v2";
@@ -214,7 +218,7 @@ function VerseReveal({ reference, translation, data, onSwitchTranslation }) {
       </div>
       {data?.loading && (
         <span className="mt-2 flex items-center gap-2 text-sm text-brand-gray">
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin" />
           Loading verse…
         </span>
       )}
@@ -242,7 +246,7 @@ function SourceCard({ n, seg, blockId, highlighted, onWatch, idPrefix = "src", c
   return (
     <div
       id={`${idPrefix}-${blockId}-${n}`}
-      className={`rounded-2xl border bg-white overflow-hidden transition-all duration-500 ${
+      className={`rounded-2xl border bg-white overflow-hidden transition-[border-color,box-shadow] duration-500 ${
         highlighted
           ? "border-brand-navy ring-2 ring-brand-navy/30 shadow-lg shadow-brand-navy/10"
           : "border-brand-navy/10 hover:border-brand-navy/25 hover:shadow-md hover:shadow-brand-navy/5"
@@ -269,7 +273,7 @@ function SourceCard({ n, seg, blockId, highlighted, onWatch, idPrefix = "src", c
             {fmtTime(seg.start_seconds)}
           </span>
           <span className="absolute inset-0 flex items-center justify-center bg-brand-deep/0 group-hover:bg-brand-deep/30 transition-colors">
-            <span className="w-10 h-10 rounded-full bg-white/95 text-brand-navy flex items-center justify-center opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all">
+            <span className="w-10 h-10 rounded-full bg-white/95 text-brand-navy flex items-center justify-center opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-[transform,opacity]">
               <Play size={16} fill="currentColor" className="translate-x-px" />
             </span>
           </span>
@@ -329,8 +333,19 @@ export default function AskPage() {
   const [verseTranslation, setVerseTranslation] = useState({}); // ref -> "KJV" | "NLT"
   const [verseData, setVerseData] = useState({}); // `${ref}|${translation}` -> {loading}|{verses,translation}|{error}
   const inputRef = useRef(null);
+  const studiesCloseRef = useRef(null);
   const toastTimer = useRef(null);
   const keyboardInset = useKeyboardInset();
+
+  // Pick 3 random suggestions each mount so the empty state feels fresh.
+  const shownSuggested = useMemo(() => {
+    const arr = [...SUGGESTED];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr.slice(0, 3);
+  }, []);
 
   const active = studies.find((s) => s.id === activeId) || null;
   const blocks = active?.blocks ?? [];
@@ -343,6 +358,7 @@ export default function AskPage() {
     if (!studiesOpen) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    studiesCloseRef.current?.focus();
     const onKey = (e) => e.key === "Escape" && setStudiesOpen(false);
     window.addEventListener("keydown", onKey);
     return () => {
@@ -700,7 +716,7 @@ export default function AskPage() {
     .slice(0, 6);
 
   return (
-    <main className="h-dvh bg-white flex flex-col lg:grid lg:grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[250px_minmax(0,1fr)_304px]">
+    <main id="main-content" className="h-dvh bg-white flex flex-col lg:grid lg:grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[250px_minmax(0,1fr)_304px]">
       {/* ── Zone 1 · Study outline ─────────────────────────────────────────── */}
       <aside className="hidden lg:flex flex-col min-h-0 bg-brand-light border-r border-brand-navy/10">
         <div className="px-5 pt-5 pb-4">
@@ -810,18 +826,10 @@ export default function AskPage() {
       </aside>
 
       {/* ── Zone 2 · Reading column ────────────────────────────────────────── */}
-      <section className="flex flex-col min-h-0 min-w-0 flex-1">
+      <section className="flex flex-col min-h-0 min-w-0 flex-1" inert={studiesOpen ? "" : undefined}>
         {/* Top bar */}
         <div className="flex items-center gap-3 px-4 sm:px-6 py-2.5 border-b border-brand-navy/10 flex-shrink-0 bg-white">
-          <Link href="/" className="lg:hidden flex-shrink-0">
-            <Image
-              src="/hofng-logo.png"
-              alt="Heritage of Faith — Home"
-              width={80}
-              height={26}
-              className="h-6 w-auto object-contain"
-            />
-          </Link>
+          <NavHamburger className="lg:hidden" />
           <p className="flex-1 min-w-0 truncate text-xs text-brand-gray">
             {active ? (
               <>
@@ -863,7 +871,7 @@ export default function AskPage() {
         </div>
 
         {/* Thread */}
-        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar relative">
+        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar relative" aria-live="polite" aria-atomic="false">
           {!hasBlocks ? (
             /* Empty study — hero */
             <div className="h-full flex flex-col items-center justify-center px-4 sm:px-6 py-10 relative">
@@ -881,7 +889,7 @@ export default function AskPage() {
                   grounded in his exact words, with the moments to watch.
                 </p>
                 <div className="mt-7 flex flex-wrap justify-center gap-2">
-                  {SUGGESTED.map((s) => (
+                  {shownSuggested.map((s) => (
                     <button
                       key={s}
                       onClick={() => ask(s)}
@@ -946,7 +954,7 @@ export default function AskPage() {
                           {[0, 1, 2].map((d) => (
                             <span
                               key={d}
-                              className="w-2 h-2 rounded-full bg-brand-navy/40 animate-pulse"
+                              className="w-2 h-2 rounded-full bg-brand-navy/40 motion-safe:animate-pulse"
                               style={{ animationDelay: `${d * 150}ms` }}
                             />
                           ))}
@@ -1000,7 +1008,10 @@ export default function AskPage() {
 
                     {/* No sources (honest refusal) or error */}
                     {b.answer && !hasSources && (
-                      <div className="mt-6 rounded-2xl border border-brand-navy/10 bg-brand-light px-5 py-4">
+                      <div
+                        className="mt-6 rounded-2xl border border-brand-navy/10 bg-brand-light px-5 py-4"
+                        {...(b.status === "error" ? { role: "alert" } : {})}
+                      >
                         <p className="text-base leading-[1.7] text-brand-ink/90">
                           {plainText(b.answer)}
                         </p>
@@ -1128,10 +1139,10 @@ export default function AskPage() {
                 type="submit"
                 disabled={busy || !input.trim()}
                 aria-label="Ask"
-                className="w-10 h-10 rounded-xl bg-brand-navy text-white flex items-center justify-center flex-shrink-0 hover:bg-brand-deep transition-colors disabled:opacity-40"
+                className="w-10 h-10 rounded-[10px] bg-brand-navy text-white flex items-center justify-center flex-shrink-0 hover:bg-brand-deep active:scale-[0.96] transition-[transform,background-color] disabled:opacity-40"
               >
                 {busy ? (
-                  <Loader2 size={17} className="animate-spin" />
+                  <Loader2 size={17} className="motion-safe:animate-spin" />
                 ) : (
                   <ArrowUp size={17} />
                 )}
@@ -1220,6 +1231,7 @@ export default function AskPage() {
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 bg-brand-light/95 backdrop-blur px-4 py-3 border-b border-brand-navy/10">
           <p className="text-sm font-bold text-brand-ink">Your studies</p>
           <button
+            ref={studiesCloseRef}
             onClick={() => setStudiesOpen(false)}
             aria-label="Close"
             className="w-11 h-11 -mr-2 flex items-center justify-center rounded-full text-brand-gray hover:text-brand-navy hover:bg-brand-sky transition-colors"

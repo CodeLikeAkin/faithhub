@@ -98,6 +98,16 @@
   background: rgba(23, 58, 104, 0.35);
 }
 
+/* Prevent orphaned single words on the last line of body paragraphs */
+p {
+  text-wrap: pretty;
+}
+
+/* Suppress the browser's native tap-highlight flash on links and buttons */
+a, button {
+  -webkit-tap-highlight-color: transparent;
+}
+
 .hide-series-nav header {
   display: none !important;
 }

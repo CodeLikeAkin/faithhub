@@ -135,15 +135,15 @@ export default function WordStudy({ sermonId, words: wordsProp, embedded = false
   const Reveal = ({ w }) => (
     <div className="mt-2.5 rounded-r-2xl rounded-l-md border border-brand-navy/10 border-l-[3px] border-l-brand-navy bg-gradient-to-br from-brand-sky/60 to-white px-4 sm:px-5 py-4 space-y-2.5">
       {(w.pronunciation || w.phonetic_spelling) && (
-        <p className="text-2xl font-bold text-brand-navy">
+        <p className="text-lg font-bold text-brand-navy">
           {w.pronunciation}
           {w.phonetic_spelling && (
-            <span className="text-base font-normal text-brand-navy/60"> [{w.phonetic_spelling}]</span>
+            <span className="text-sm font-normal text-brand-navy/60"> [{w.phonetic_spelling}]</span>
           )}
         </p>
       )}
       {w.original_script && (
-        <p className="text-sm text-brand-gray">{w.original_script}</p>
+        <p className="text-xs text-brand-gray">{w.original_script}</p>
       )}
       {w.strongs_number && (
         <span className="inline-block text-xs font-bold uppercase tracking-wider text-brand-navy/60 bg-brand-navy/5 rounded-full px-2 py-0.5">
@@ -153,7 +153,7 @@ export default function WordStudy({ sermonId, words: wordsProp, embedded = false
           )}
         </span>
       )}
-      <p className="text-base leading-relaxed text-brand-ink">
+      <p className="text-sm leading-relaxed text-brand-ink">
         {[w.meaning?.trim(), w.kjv_def && `— ${w.kjv_def}.`].filter(Boolean).join(" ")}
       </p>
       {w.derivation && (
@@ -173,7 +173,7 @@ export default function WordStudy({ sermonId, words: wordsProp, embedded = false
             <div className="mt-2 rounded-xl bg-white/70 border border-brand-navy/10 px-3 py-2.5">
               {verseText[w.id]?.loading && (
                 <span className="flex items-center gap-2 text-xs text-brand-gray">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin" />
                   Loading verse…
                 </span>
               )}

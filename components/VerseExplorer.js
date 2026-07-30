@@ -155,7 +155,7 @@ export default function VerseExplorer({ sermonId, scriptures: preloaded }) {
         </div>
         {vt?.loading && (
           <span className="mt-2 flex items-center gap-2 text-sm text-brand-gray">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin" />
             Loading verse…
           </span>
         )}
