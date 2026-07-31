@@ -518,7 +518,7 @@ export default function StudyWorkspace({ entry }) {
       },
       pd && pd.wordStudies?.length > 0 && {
         key: "words",
-        label: "Word study",
+        label: "Words",
         Icon: Languages,
         count: pd.wordStudies.length,
       },
@@ -890,13 +890,13 @@ export default function StudyWorkspace({ entry }) {
                     role="tab"
                     aria-selected={active}
                     onClick={() => setActiveTab(t.key)}
-                    className={`inline-flex items-center gap-2 whitespace-nowrap px-3.5 pt-2.5 pb-3 text-sm font-bold border-b-2 transition-colors ${
+                    className={`inline-flex items-center gap-1.5 whitespace-nowrap px-2.5 pt-2.5 pb-3 text-sm font-bold border-b-2 transition-colors ${
                       active
                         ? "text-brand-navy border-brand-navy"
                         : "text-brand-gray border-transparent hover:text-brand-ink"
                     }`}
                   >
-                    {t.Icon && <t.Icon size={15} />}
+                    {t.Icon && <t.Icon size={14} />}
                     {t.label}
                     {t.count != null && (
                       <span
