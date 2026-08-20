@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -15,9 +15,11 @@ import {
   RotateCcw,
   Plus,
   Copy,
+  Trash2,
   X,
 } from "lucide-react";
 import { cleanTitle } from "@/lib/titles";
+import { clientIdHeader } from "@/lib/client-id";
 import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import VideoModal from "@/components/VideoModal";
 import NavHamburger from "@/components/NavHamburger";
@@ -337,14 +339,19 @@ export default function AskPage() {
   const toastTimer = useRef(null);
   const keyboardInset = useKeyboardInset();
 
-  // Pick 3 random suggestions each mount so the empty state feels fresh.
-  const shownSuggested = useMemo(() => {
+  // Pick 3 suggestions for the empty state. The shuffle has to happen AFTER
+  // mount, not during render: a random pick on the server won't match the
+  // client's first render and trips a hydration mismatch. So render the first
+  // three in order (deterministic — identical on server and client), then
+  // reshuffle once mounted so the empty state still feels fresh each visit.
+  const [shownSuggested, setShownSuggested] = useState(() => SUGGESTED.slice(0, 3));
+  useEffect(() => {
     const arr = [...SUGGESTED];
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
-    return arr.slice(0, 3);
+    setShownSuggested(arr.slice(0, 3));
   }, []);
 
   const active = studies.find((s) => s.id === activeId) || null;
@@ -374,11 +381,14 @@ export default function AskPage() {
   };
 
   // Auto-grow the composer as a follow-up question wraps (capped by max-h).
+  // When empty, stay at the natural one-row height — otherwise a placeholder
+  // that wraps on a narrow phone inflates scrollHeight and the bar opens at two
+  // lines before a single character is typed.
   useEffect(() => {
     const ta = inputRef.current;
     if (!ta) return;
     ta.style.height = "auto";
-    ta.style.height = Math.min(ta.scrollHeight, 120) + "px";
+    if (input) ta.style.height = Math.min(ta.scrollHeight, 120) + "px";
   }, [input]);
 
   // Restore saved studies once on mount (client-only); migrate the v1 format.
@@ -556,6 +566,16 @@ export default function AskPage() {
     if (last) scrollToBlock(last);
   };
 
+  // Remove a saved study from history (persists via the save effect below).
+  const deleteStudy = (id) => {
+    setStudies((prev) => prev.filter((s) => s.id !== id));
+    if (id === activeId) {
+      setActiveId(null);
+      setOpenId(null);
+      setRailExpanded(false);
+    }
+  };
+
   const copyStudy = async () => {
     if (!active) return;
     const lines = [`${active.title} — Ask the Word study`, ""];
@@ -629,7 +649,7 @@ export default function AskPage() {
     try {
       const res = await fetch("/api/ask", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...clientIdHeader() },
         body: JSON.stringify({ message: q }),
       });
       if (!res.ok) {
@@ -797,10 +817,10 @@ export default function AskPage() {
               </p>
               <ul className="flex flex-col gap-0.5">
                 {recentStudies.map((s) => (
-                  <li key={s.id}>
+                  <li key={s.id} className="group relative">
                     <button
                       onClick={() => switchStudy(s.id)}
-                      className="w-full text-left rounded-xl px-2.5 py-2 hover:bg-brand-sky/60 transition-colors"
+                      className="w-full text-left rounded-xl px-2.5 py-2 pr-9 hover:bg-brand-sky/60 transition-colors"
                     >
                       <span className="block text-xs font-semibold text-brand-ink leading-snug line-clamp-1">
                         {s.title}
@@ -809,6 +829,13 @@ export default function AskPage() {
                         {fmtDate(s.createdAt)} · {s.blocks.length}{" "}
                         {s.blocks.length === 1 ? "question" : "questions"}
                       </span>
+                    </button>
+                    <button
+                      onClick={() => deleteStudy(s.id)}
+                      aria-label={`Delete study: ${s.title}`}
+                      className="absolute top-1/2 right-1.5 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-lg text-brand-gray/60 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                    >
+                      <Trash2 size={13} />
                     </button>
                   </li>
                 ))}
@@ -981,11 +1008,12 @@ export default function AskPage() {
                       </div>
                     )}
 
-                    {/* Cited moments — mobile/tablet (the xl side rail is hidden
-                        below xl, so the videos have to live inline here or the
-                        "moments to watch" promise vanishes on a phone) */}
+                    {/* Cited moments — tablet only. On phones this carousel is
+                        dropped entirely (it crowded the small screen); the inline
+                        [N] citation pills above still open each clip. On xl+ the
+                        side rail takes over, so this shows only between sm and xl. */}
                     {hasSources && b.status !== "error" && (
-                      <div className="xl:hidden mt-7">
+                      <div className="hidden sm:block xl:hidden mt-7">
                         <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-brand-gray mb-3">
                           <Quote size={12} className="text-brand-navy" />
                           Heard in these moments · {sources.length}
@@ -1128,11 +1156,7 @@ export default function AskPage() {
                     ask();
                   }
                 }}
-                placeholder={
-                  hasBlocks
-                    ? "Ask a follow-up — it stays in this study…"
-                    : "Ask anything across every message…"
-                }
+                placeholder={hasBlocks ? "Ask a follow-up…" : "Ask anything…"}
                 className="flex-1 bg-transparent py-2 text-base text-brand-ink placeholder:text-brand-gray/60 focus:outline-none resize-none min-w-0 max-h-[120px] leading-relaxed"
               />
               <button
@@ -1148,7 +1172,9 @@ export default function AskPage() {
                 )}
               </button>
             </div>
-            <p className="mt-1.5 text-center text-xs text-brand-gray">
+            {/* Hidden on phones so the composer stays a single line there; the
+                reassurance still shows from sm up where there's room. */}
+            <p className="hidden sm:block mt-1.5 text-center text-xs text-brand-gray">
               Answers come only from Rev. Peter&rsquo;s recorded messages — every
               claim is cited.
             </p>
@@ -1242,10 +1268,10 @@ export default function AskPage() {
         <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           <ul className="flex flex-col gap-1">
             {recentStudies.map((s) => (
-              <li key={s.id}>
+              <li key={s.id} className="relative">
                 <button
                   onClick={() => switchStudy(s.id)}
-                  className={`w-full text-left rounded-2xl px-4 py-3 transition-colors ${
+                  className={`w-full text-left rounded-2xl px-4 py-3 pr-14 transition-colors ${
                     s.id === activeId
                       ? "bg-brand-sky shadow-[inset_2.5px_0_0_#173A68]"
                       : "hover:bg-brand-sky/60"
@@ -1258,6 +1284,13 @@ export default function AskPage() {
                     {fmtDate(s.createdAt)} · {s.blocks.length}{" "}
                     {s.blocks.length === 1 ? "question" : "questions"}
                   </span>
+                </button>
+                <button
+                  onClick={() => deleteStudy(s.id)}
+                  aria-label={`Delete study: ${s.title}`}
+                  className="absolute top-1/2 right-2.5 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full text-brand-gray hover:text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <Trash2 size={17} />
                 </button>
               </li>
             ))}

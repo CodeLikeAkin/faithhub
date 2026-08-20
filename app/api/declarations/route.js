@@ -17,6 +17,10 @@ const supabase = createClient(
   serviceKey
 );
 
+// Max characters accepted for the user's situation text. Bounds it before the
+// embed function, the FTS query, and the Groq pastoral reply run on it.
+const MAX_MESSAGE_LENGTH = 2000;
+
 // ─────────────────────────────────────────────
 // Helper: call Supabase Edge Function to embed text
 // Uses gte-small (384 dims) — free, no OpenAI needed
@@ -76,7 +80,7 @@ async function fetchBibleVerse(ref) {
 }
 
 export async function POST(request) {
-  const rl = rateLimit(request, { max: 8, windowMs: 60_000, prefix: 'declarations' });
+  const rl = await rateLimit(request, { max: 8, windowMs: 60_000, prefix: 'declarations' });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   try {
@@ -85,6 +89,14 @@ export async function POST(request) {
     if (!message || typeof message !== "string") {
       return NextResponse.json(
         { error: "message is required" },
+        { status: 400 }
+      );
+    }
+
+    // Cap input length before any paid embed / Groq work (see MAX_MESSAGE_LENGTH).
+    if (message.length > MAX_MESSAGE_LENGTH) {
+      return NextResponse.json(
+        { error: "Please shorten what you share and try again." },
         { status: 400 }
       );
     }

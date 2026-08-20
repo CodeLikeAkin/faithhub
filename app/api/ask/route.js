@@ -14,6 +14,11 @@ import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+// Max characters accepted for a user question. Generous for a real study
+// question, but slams the door on oversized bodies before any paid LLM /
+// embed / DB work happens. See the guard in POST().
+const MAX_MESSAGE_LENGTH = 2000;
+
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY || ''
@@ -97,7 +102,7 @@ function plainStreamResponse(text) {
 }
 
 export async function POST(req) {
-  const rl = rateLimit(req, { max: 8, windowMs: 60_000, prefix: 'ask' });
+  const rl = await rateLimit(req, { max: 8, windowMs: 60_000, prefix: 'ask' });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   try {
@@ -105,6 +110,17 @@ export async function POST(req) {
 
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return NextResponse.json({ error: true, message: 'Message is required' }, { status: 400 });
+    }
+
+    // Cap input length BEFORE spending anything on it. Without this, an
+    // oversized body flows straight into the embed function, the FTS query,
+    // and the Gemini prompt (paid per token) — a direct cost/abuse vector.
+    // 2000 chars is generous for a real study question (~300+ words).
+    if (message.length > MAX_MESSAGE_LENGTH) {
+      return NextResponse.json(
+        { error: true, message: 'Please shorten your question and try again.' },
+        { status: 400 }
+      );
     }
 
     // 1. Embed the question (keyword-only fallback if the embed service is down)

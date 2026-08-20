@@ -16,6 +16,7 @@ import {
   Flame,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   X,
   Check,
   Volume2,
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { cleanTitle } from "@/lib/titles";
+import { clientIdHeader } from "@/lib/client-id";
 import { parseYoutubeUrl } from "@/lib/youtube";
 import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import VideoModal from "@/components/VideoModal";
@@ -407,6 +409,7 @@ export default function DeclarationsPage() {
   const [speakFromCart, setSpeakFromCart] = useState(false); // speak mode opened from the picked-declarations cart instead
   const [selectMode, setSelectMode] = useState(false); // checkbox picking, on/off across the whole thread
   const [multiTagMode, setMultiTagMode] = useState(false); // off = tapping a theme replaces it; on = taps add/remove
+  const [themesOpen, setThemesOpen] = useState(false); // desktop sidebar: collapsed to a single "Themes" tab by default
   const [picked, setPicked] = useState(new Map()); // id -> declaration, the cross-topic cart
   const [cartOpen, setCartOpen] = useState(false); // preview panel listing what's in the cart
   const textareaRef = useRef(null);
@@ -611,7 +614,7 @@ export default function DeclarationsPage() {
     try {
       const res = await fetch("/api/declarations", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...clientIdHeader() },
         body: JSON.stringify({
           message: `declarations about ${topics.join(" and ")}`,
           shownIds: [],
@@ -698,7 +701,7 @@ export default function DeclarationsPage() {
     try {
       const res = await fetch("/api/declarations", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...clientIdHeader() },
         body: JSON.stringify({
           message: msg.trim(),
           shownIds: [],
@@ -769,7 +772,7 @@ export default function DeclarationsPage() {
     try {
       const res = await fetch("/api/declarations", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...clientIdHeader() },
         body: JSON.stringify({
           message: lastQuery,
           shownIds: allIds,
@@ -849,14 +852,14 @@ export default function DeclarationsPage() {
     </div>
   );
 
-  const themeChip = (name) => {
+  const themeChip = (name, fullWidth = false) => {
     const active = activeTopics.has(name.toLowerCase());
     return (
       <button
         key={name}
         onClick={() => handleTopicClick(name)}
         data-active={active}
-        className={`flex-shrink-0 inline-flex items-center gap-2 rounded-full px-[17px] min-h-11 text-sm font-semibold transition-[transform,background-color,border-color,color,box-shadow] ${
+        className={`${fullWidth ? "w-full justify-start" : "flex-shrink-0"} inline-flex items-center gap-2 rounded-full px-[17px] min-h-11 text-sm font-semibold transition-[transform,background-color,border-color,color,box-shadow] ${
           active
             ? "text-white -translate-y-px"
             : "text-brand-gray border border-transparent hover:text-brand-ink hover:bg-brand-sky/70 hover:border-brand-navy/10"
@@ -907,29 +910,41 @@ export default function DeclarationsPage() {
           header and thread scroll past it. Collapses to a horizontal row
           (rendered inline in the scroll column below) on narrow screens. */}
       {hasSearched && (
-        <aside inert={speakActive ? "" : undefined} className="hidden sm:flex sm:w-[196px] md:w-[220px] flex-shrink-0 flex-col h-full border-r border-brand-navy/10 bg-brand-sky/40 overflow-y-auto custom-scrollbar px-3 py-5">
-          <div className="px-1 mb-3">
-            <span className="text-xs font-bold uppercase tracking-[0.22em] text-brand-gray">
+        <aside inert={speakActive ? "" : undefined} className={`hidden sm:flex flex-shrink-0 flex-col h-full border-r border-brand-navy/10 bg-brand-sky/40 overflow-y-auto custom-scrollbar px-3 py-5 transition-[width] duration-200 ${themesOpen ? "sm:w-[196px] md:w-[220px]" : "sm:w-[124px]"}`}>
+          <button
+            type="button"
+            onClick={() => setThemesOpen((v) => !v)}
+            aria-expanded={themesOpen}
+            className="flex items-center gap-1 px-1 mb-3 text-brand-gray hover:text-brand-ink transition-colors"
+          >
+            <span className="text-xs font-bold uppercase tracking-[0.22em]">
               Themes
             </span>
-          </div>
-          <div className="flex items-center justify-between px-1 mb-2.5">
-            <MultiTagToggle on={multiTagMode} onClick={toggleMultiTagMode} />
-            {multiTagMode && (
-              <button
-                type="button"
-                onClick={applyMultiTagSelection}
-                title="Show declarations for the selected themes"
-                aria-label="Show declarations for the selected themes"
-                className="w-7 h-7 rounded-full bg-brand-navy text-white flex items-center justify-center hover:bg-brand-deep transition-colors flex-shrink-0"
-              >
-                <ArrowRight size={13} />
-              </button>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {TOPICS.map(({ name }) => themeChip(name))}
-          </div>
+            <ChevronDown size={13} className={`transition-transform ${themesOpen ? "rotate-180" : ""}`} />
+          </button>
+          {themesOpen ? (
+            <>
+              <div className="flex items-center justify-between px-1 mb-2.5">
+                <MultiTagToggle on={multiTagMode} onClick={toggleMultiTagMode} />
+                {multiTagMode && (
+                  <button
+                    type="button"
+                    onClick={applyMultiTagSelection}
+                    title="Show declarations for the selected themes"
+                    aria-label="Show declarations for the selected themes"
+                    className="w-7 h-7 rounded-full bg-brand-navy text-white flex items-center justify-center hover:bg-brand-deep transition-colors flex-shrink-0"
+                  >
+                    <ArrowRight size={13} />
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-col gap-1.5">
+                {TOPICS.map(({ name }) => themeChip(name, true))}
+              </div>
+            </>
+          ) : (
+            <MultiTagToggle on={multiTagMode} onClick={toggleMultiTagMode} className="mx-1" />
+          )}
         </aside>
       )}
 

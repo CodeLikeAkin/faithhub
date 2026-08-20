@@ -8,6 +8,12 @@ import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+// Max characters accepted for a user question, and the max per prior turn we
+// keep from client-supplied chatHistory. Both flow into the Gemini prompt
+// (paid per token), so we bound them before spending anything.
+const MAX_MESSAGE_LENGTH = 2000;
+const MAX_HISTORY_TURN_LENGTH = 4000;
+
 // Diversity-aware rerank over the fused (retrieve-more) candidate pool.
 // Rows arrive already ordered by hybrid score. We (a) drop near-duplicate text,
 // and (b) cap how many segments any one sermon may contribute so a single
@@ -100,7 +106,7 @@ function plainStreamResponse(text) {
 }
 
 export async function POST(req) {
-  const rl = rateLimit(req, { max: 8, windowMs: 60_000, prefix: 'series-chat' });
+  const rl = await rateLimit(req, { max: 8, windowMs: 60_000, prefix: 'series-chat' });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   try {
@@ -109,6 +115,14 @@ export async function POST(req) {
     // Validate inputs
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return NextResponse.json({ error: true, message: 'Message is required and cannot be empty' }, { status: 400 });
+    }
+
+    // Cap input length before any paid embed / LLM work (see MAX_MESSAGE_LENGTH).
+    if (message.length > MAX_MESSAGE_LENGTH) {
+      return NextResponse.json(
+        { error: true, message: 'Please shorten your question and try again.' },
+        { status: 400 }
+      );
     }
 
     if ((!seriesId || typeof seriesId !== 'string') && (!sermonId || typeof sermonId !== 'string')) {
@@ -316,11 +330,13 @@ FOLLOW-UP SUGGESTIONS — STRICT RULES
 - Do not generate generic Christian questions — they must be specific to this ${singleSermon ? 'message' : 'series'}
 - STRICT LENGTH RULE: each suggestion is a short tappable phrase or simple question, 4-8 words, ONE idea only — never a compound sentence, never multiple clauses joined by "and"/"or". These are tap targets, not essay prompts. Think chip labels, not paragraphs.${voicePromptSection()}`;
 
-    // 8. Build conversation history
-    const conversationHistory = (chatHistory || [])
+    // 8. Build conversation history. chatHistory is client-supplied, so clamp
+    //    each turn's text (it flows into the Gemini prompt) before keeping the
+    //    last 6 turns.
+    const conversationHistory = (Array.isArray(chatHistory) ? chatHistory : [])
       .map((m) => ({
         role: m.role === 'ai' || m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.text || m.content || '' }],
+        parts: [{ text: (m.text || m.content || '').slice(0, MAX_HISTORY_TURN_LENGTH) }],
       }))
       .filter((m) => m.parts[0].text.trim() !== '')
       .slice(-6);

@@ -12,6 +12,7 @@ import {
 } from "react";
 import { Send, Loader2, Sparkles } from "lucide-react";
 import { useKeyboardInset } from "@/lib/useKeyboardInset";
+import { clientIdHeader } from "@/lib/client-id";
 import ReactMarkdown from "react-markdown";
 import VideoModal from "@/components/VideoModal";
 
@@ -276,7 +277,7 @@ export default function StudyChat({
       const historyToSend = chatHistory.map((m) => ({ role: m.role, text: m.text }));
       const res = await fetch("/api/series-chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...clientIdHeader() },
         body: JSON.stringify({
           seriesId,
           sermonId,

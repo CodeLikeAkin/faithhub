@@ -10,12 +10,27 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_KEY || ''
 );
 
+// This route takes arrays (sermonTitles/sermonIds) and a title rather than a
+// free-text message. Bound them before they hit the .in() query and the Groq
+// prompt — no real series exceeds these, so anything larger is a crafted body.
+const MAX_SERIES_SERMONS = 100;
+const MAX_TITLE_LENGTH = 300;
+
 export async function POST(req) {
-  const rl = rateLimit(req, { max: 8, windowMs: 60_000, prefix: 'series-summary' });
+  const rl = await rateLimit(req, { max: 8, windowMs: 60_000, prefix: 'series-summary' });
   if (!rl.allowed) return rateLimitResponse(rl);
 
   try {
     const { seriesId, title, sermonTitles, sermonIds } = await req.json();
+
+    // Reject crafted oversized bodies before any DB / Groq work.
+    if (
+      (Array.isArray(sermonIds) && sermonIds.length > MAX_SERIES_SERMONS) ||
+      (Array.isArray(sermonTitles) && sermonTitles.length > MAX_SERIES_SERMONS) ||
+      (typeof title === 'string' && title.length > MAX_TITLE_LENGTH)
+    ) {
+      return NextResponse.json({ error: 'Request too large' }, { status: 400 });
+    }
 
     // Cached summary → zero tokens. Generation below runs once per series,
     // then the result is stored on the series row.
@@ -115,7 +130,8 @@ ${preacherContext} Only credit the preacher(s) named above — do not invent or 
             : `Series Title: ${title}\nSermon Titles:\n- ${sermonTitles.join('\n- ')}`
         }
       ],
-      model: 'llama-3.1-8b-instant',
+      model: 'openai/gpt-oss-20b',
+      reasoning_effort: 'low',
       temperature: 0.5,
     });
 
@@ -139,7 +155,8 @@ STRICT LENGTH RULE: each suggestion is a short phrase or single simple question,
 Output only a JSON array of 5 strings, nothing else. Example format:\n["Living out our new identity","What born again really means","Facing doubt after the altar call","How surrender changes us","Walking in our new nature"]\n\nTeaching Response:\n${summary}`
           }
         ],
-        model: 'llama-3.1-8b-instant',
+        model: 'openai/gpt-oss-20b',
+        reasoning_effort: 'low',
         temperature: 0.5,
       });
 

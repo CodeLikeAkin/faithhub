@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { clientIdHeader } from "@/lib/client-id";
 import {
   ArrowLeft,
   ArrowRight,
@@ -382,7 +383,7 @@ export default function StudyWorkspace({ entry }) {
       try {
         const res = await fetch("/api/series-summary", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...clientIdHeader() },
           body: JSON.stringify({
             seriesId: series.id,
             title: series.title,
