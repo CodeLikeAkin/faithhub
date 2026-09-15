@@ -744,9 +744,9 @@ export default function AskPage() {
             <Image
               src="/hofng-logo.png"
               alt="Heritage of Faith — Home"
-              width={100}
-              height={32}
-              className="h-7 w-auto object-contain"
+              width={208}
+              height={146}
+              className="h-8 w-auto"
               priority
             />
           </Link>

@@ -144,6 +144,28 @@ export default function Home() {
       {/* ── Declaration of the day ── */}
       <DeclarationOfTheDay />
 
+      {/* ── The vision ── */}
+      <section className="mx-auto max-w-[1400px] px-4 sm:px-6 py-10 sm:py-14">
+        <div className="relative overflow-hidden rounded-[2rem] bg-brand-deep px-6 py-12 sm:px-12 sm:py-16 lg:px-16 lg:py-20">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/60">
+            The vision of the house
+          </p>
+          <blockquote className="mt-5 max-w-3xl font-display text-3xl font-normal leading-[1.18] tracking-tight text-white text-balance sm:text-4xl lg:text-5xl">
+            The vision of our ministry is raising stronger believers.
+          </blockquote>
+          <p className="mt-6 text-sm font-bold uppercase tracking-[0.14em] text-white/55">
+            Rev. Peter Ayo Alabi
+          </p>
+          <Link
+            href="/vision"
+            className="mt-9 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-brand-navy transition-colors hover:bg-brand-sky sm:text-base"
+          >
+            Read the vision
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </section>
+
       {/* ── Community ── */}
       <section className="mx-auto max-w-[1400px] px-4 sm:px-6 py-16 sm:py-24">
         <div className="grid md:grid-cols-2 gap-8 lg:gap-16 items-center">
@@ -190,9 +212,9 @@ export default function Home() {
             <Image
               src="/hofng-logo.png"
               alt="Heritage of Faith"
-              width={96}
-              height={32}
-              className="h-9 w-auto object-contain"
+              width={208}
+              height={146}
+              className="h-9 w-auto"
             />
             <p className="text-xs text-brand-gray">
               &copy; {new Date().getFullYear()} Heritage of Faith Church
@@ -204,6 +226,9 @@ export default function Home() {
             </Link>
             <Link href="/series" className="py-1.5 hover:text-brand-navy transition-colors">
               Series Study
+            </Link>
+            <Link href="/vision" className="py-1.5 hover:text-brand-navy transition-colors">
+              Vision
             </Link>
             <a
               href="https://hofng.org"

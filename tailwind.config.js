@@ -20,6 +20,8 @@ module.exports = {
       fontFamily: {
         sans: ["var(--font-roboto)", "system-ui", "sans-serif"],
         serif: ["Georgia", "Cambria", "'Times New Roman'", "serif"],
+        /* Newsreader — the vision page's own voice. Not for app chrome. */
+        display: ["var(--font-newsreader)", "Georgia", "Cambria", "serif"],
       },
       /* Type scale — the single source of truth for font sizes.
          Values mirror Tailwind's defaults (incl. line-heights) so existing

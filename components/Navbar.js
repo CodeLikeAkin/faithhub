@@ -12,6 +12,7 @@ const navLinks = [
   { name: "Declarations", href: "/declarations" },
   { name: "Series Study", href: "/series" },
   { name: "The Word", href: "/word" },
+  { name: "Vision", href: "/vision" },
 ];
 
 export default function Navbar() {
@@ -57,9 +58,9 @@ export default function Navbar() {
             <Image
               src="/hofng-logo.png"
               alt="Heritage of Faith"
-              width={120}
-              height={40}
-              className="h-8 w-auto object-contain"
+              width={208}
+              height={146}
+              className="h-8 w-auto"
               priority
             />
           </Link>
@@ -86,7 +87,7 @@ export default function Navbar() {
 
           <Link
             href="/declarations"
-            className="hidden md:inline-flex items-center gap-2 bg-brand-navy text-white text-sm font-bold rounded-full px-5 py-2.5 shadow-lg shadow-brand-navy/20 hover:bg-brand-deep transition-colors"
+            className="hidden md:inline-flex items-center gap-2 bg-brand-navy text-white text-sm font-bold rounded-full px-5 py-1.5 shadow-lg shadow-brand-navy/20 hover:bg-brand-deep transition-colors"
           >
             Start a declaration
             <ArrowRight className="w-4 h-4" />

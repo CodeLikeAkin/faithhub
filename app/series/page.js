@@ -1,22 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { Calendar, List, ChevronDown, Filter } from "lucide-react";
+import { Calendar, List, ChevronDown, Filter, Mic2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { cleanTitle, parseSermonDate } from "@/lib/titles";
+import { detectSpeaker } from "@/lib/speakers";
+
+const FALLBACK_COVER = "/church-hero.jpg";
 
 export default function SeriesBrowsePage() {
   const [series, setSeries] = useState([]);
+  const [guestSermons, setGuestSermons] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filterType, setFilterType] = useState("All");
+  const [view, setView] = useState("Series"); // "Series" | "Guest Speakers"
   const [filterYear, setFilterYear] = useState("All");
 
   // Filter options
   const years = ["All", "2022", "2023", "2024", "2025", "2026"];
-  const serviceTypes = ["All", "Sunday", "Wednesday"];
+  const views = ["Series", "Guest Speakers"];
 
   useEffect(() => {
     fetchSeries();
+    fetchGuestSermons();
   }, []);
 
   const fetchSeries = async () => {
@@ -44,15 +50,45 @@ export default function SeriesBrowsePage() {
     }
   };
 
+  const fetchGuestSermons = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("sermons")
+        .select("id, title, sermon_date, youtube_video_id");
+
+      if (error) throw error;
+
+      const guests = (data || [])
+        .map((s) => ({ ...s, speaker: detectSpeaker(s.title) }))
+        .filter((s) => s.speaker.isGuest)
+        .sort((a, b) => {
+          const da = parseSermonDate(a.title);
+          const db = parseSermonDate(b.title);
+          return (db?.getTime() || 0) - (da?.getTime() || 0);
+        });
+
+      setGuestSermons(guests);
+    } catch (err) {
+      console.error("Error fetching guest sermons:", err);
+    }
+  };
+
   const filteredSeries = series.filter((s) => {
-    const matchesType =
-      filterType === "All" ||
-      s.service_type?.toLowerCase() === filterType.toLowerCase();
-    const matchesYear =
+    return (
       filterYear === "All" ||
-      new Date(s.start_date).getFullYear().toString() === filterYear;
-    return matchesType && matchesYear;
+      new Date(s.start_date).getFullYear().toString() === filterYear
+    );
   });
+
+  const filteredGuestSermons = useMemo(
+    () =>
+      guestSermons.filter((s) => {
+        if (filterYear === "All") return true;
+        const trueDate = parseSermonDate(s.title);
+        return trueDate?.getUTCFullYear().toString() === filterYear;
+      }),
+    [guestSermons, filterYear]
+  );
 
   const formatDateRange = (start, end) => {
     if (!start) return "";
@@ -86,7 +122,9 @@ export default function SeriesBrowsePage() {
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-sky rounded-full border border-brand-navy/10 self-start sm:self-auto">
           <List size={14} className="text-brand-navy" />
           <span className="text-xs font-bold text-brand-navy">
-            {series.length} series available
+            {view === "Series"
+              ? `${series.length} series available`
+              : `${guestSermons.length} guest messages`}
           </span>
         </div>
       </section>
@@ -97,17 +135,18 @@ export default function SeriesBrowsePage() {
           <div className="flex items-center gap-3">
             <Filter size={18} className="text-brand-navy flex-shrink-0" />
             <div className="flex p-1 bg-white rounded-2xl border border-brand-navy/10">
-              {serviceTypes.map((type) => (
+              {views.map((v) => (
                 <button
-                  key={type}
-                  onClick={() => setFilterType(type)}
-                  className={`px-5 sm:px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                    filterType === type
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={`px-5 sm:px-6 py-2.5 rounded-xl text-sm font-bold transition-all inline-flex items-center gap-2 ${
+                    view === v
                       ? "bg-brand-navy text-white shadow-lg shadow-brand-navy/20"
                       : "text-brand-gray hover:text-brand-ink"
                   }`}
                 >
-                  {type}
+                  {v === "Guest Speakers" && <Mic2 size={14} />}
+                  {v}
                 </button>
               ))}
             </div>
@@ -145,6 +184,88 @@ export default function SeriesBrowsePage() {
               />
             ))}
           </div>
+        ) : view === "Guest Speakers" ? (
+          filteredGuestSermons.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredGuestSermons.map((s) => {
+                const thumbSrc = s.youtube_video_id
+                  ? `https://img.youtube.com/vi/${s.youtube_video_id}/hqdefault.jpg`
+                  : FALLBACK_COVER;
+                const trueDate = parseSermonDate(s.title);
+
+                return (
+                  <Link
+                    key={s.id}
+                    href={`/sermon/${s.id}`}
+                    className="group relative flex flex-col bg-white rounded-3xl overflow-hidden border border-brand-navy/10 hover:border-brand-navy/25 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-navy/10"
+                  >
+                    <div className="aspect-[16/10] relative overflow-hidden">
+                      <img
+                        src={thumbSrc}
+                        alt={s.title}
+                        onError={(e) => {
+                          if (e.currentTarget.dataset.fallback) return;
+                          e.currentTarget.dataset.fallback = "1";
+                          e.currentTarget.src = FALLBACK_COVER;
+                        }}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                      <div className="absolute bottom-4 right-4 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-full flex items-center gap-1.5">
+                        <Mic2 size={12} className="text-white" />
+                        <span className="text-xs font-bold uppercase tracking-wider text-white">
+                          Guest Message
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-5 sm:p-6 flex flex-col flex-1">
+                      <h3 className="text-lg font-bold text-brand-ink mb-2 line-clamp-2 group-hover:text-brand-navy transition-colors leading-tight">
+                        {cleanTitle(s.title)}
+                      </h3>
+                      <p className="text-sm font-semibold text-brand-navy mb-2">
+                        {s.speaker.name}
+                      </p>
+                      <div className="mt-auto flex items-center gap-2 text-brand-gray">
+                        <Calendar size={14} className="text-brand-navy" />
+                        <span className="text-xs font-medium">
+                          {trueDate
+                            ? trueDate.toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                                timeZone: "UTC",
+                              })
+                            : "Date unavailable"}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-32 text-center">
+              <div className="w-20 h-20 bg-brand-sky rounded-full flex items-center justify-center mb-6 border border-brand-navy/10">
+                <Mic2 size={32} className="text-brand-navy" />
+              </div>
+              <h2 className="text-2xl font-bold text-brand-ink mb-2">
+                No guest messages found for this filter.
+              </h2>
+              <p className="text-brand-gray max-w-md mx-auto">
+                Try adjusting the year or resetting the filters.
+              </p>
+              <button
+                onClick={() => {
+                  setView("Series");
+                  setFilterYear("All");
+                }}
+                className="mt-8 text-brand-navy font-bold text-sm hover:underline"
+              >
+                Reset all filters
+              </button>
+            </div>
+          )
         ) : filteredSeries.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredSeries.map((s) => {
@@ -152,6 +273,16 @@ export default function SeriesBrowsePage() {
                 s.series_sermons?.find((ss) => ss.part_number === 1)?.sermons
                   ?.youtube_video_id ||
                 s.series_sermons?.[0]?.sermons?.youtube_video_id;
+
+              // A curated cover wins over the part-1 still. It is the only
+              // option for a series whose videos have been pulled from
+              // YouTube — "The Glory Cloud (June 2026)" lost all five, so its
+              // part-1 thumbnail 404s and the card rendered a broken image.
+              const thumbSrc =
+                s.thumbnail_url ||
+                (thumbId
+                  ? `https://img.youtube.com/vi/${thumbId}/hqdefault.jpg`
+                  : FALLBACK_COVER);
 
               return (
                 <Link
@@ -162,12 +293,16 @@ export default function SeriesBrowsePage() {
                   {/* Thumbnail */}
                   <div className="aspect-[16/10] relative overflow-hidden">
                     <img
-                      src={
-                        thumbId
-                          ? `https://img.youtube.com/vi/${thumbId}/hqdefault.jpg`
-                          : "/church-hero.jpg"
-                      }
+                      src={thumbSrc}
                       alt={s.title}
+                      onError={(e) => {
+                        // A video can be taken down after its row was written,
+                        // so a working thumbnail today is no guarantee. Degrade
+                        // to the house image, not a broken-image icon.
+                        if (e.currentTarget.dataset.fallback) return;
+                        e.currentTarget.dataset.fallback = "1";
+                        e.currentTarget.src = FALLBACK_COVER;
+                      }}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
@@ -176,7 +311,10 @@ export default function SeriesBrowsePage() {
                     <div className="absolute bottom-4 right-4 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-full flex items-center gap-1.5">
                       <List size={12} className="text-white" />
                       <span className="text-xs font-bold uppercase tracking-wider text-white">
-                        {s.total_parts || s.series_sermons?.length || 0} Parts
+                        {/* series_sermons is the live link count; total_parts is a
+                            cached high-water mark that never decreases when a
+                            sermon is unlinked, so it can overstate the real count. */}
+                        {s.series_sermons?.length || s.total_parts || 0} Parts
                       </span>
                     </div>
                   </div>
@@ -210,7 +348,6 @@ export default function SeriesBrowsePage() {
             </p>
             <button
               onClick={() => {
-                setFilterType("All");
                 setFilterYear("All");
               }}
               className="mt-8 text-brand-navy font-bold text-sm hover:underline"
