@@ -349,7 +349,9 @@ ${segmentList}
 
 QUESTION: ${message}`;
 
-    console.log(`[chat] ${relevantSegments.length} segments sent to Gemini`);
+    const histChars = conversationHistory.reduce((a, m) => a + m.parts[0].text.length, 0);
+    const promptChars = systemPrompt.length + userMessageWithContext.length + histChars;
+    console.log(`[chat] ${relevantSegments.length} segments, ${conversationHistory.length} history turns (${histChars.toLocaleString()} chars), ~${Math.round(promptChars/3.8).toLocaleString()} input tokens (${promptChars.toLocaleString()} chars)`);
 
     // 10. Call Gemini with streaming
     const model = genAI.getGenerativeModel({

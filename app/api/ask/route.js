@@ -19,6 +19,12 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 // embed / DB work happens. See the guard in POST().
 const MAX_MESSAGE_LENGTH = 2000;
 
+// Max scripture references listed per sermon. The prompt only cites a verse
+// when one clearly fits the point being made, so a sermon's long tail of
+// references (p90 is 52) costs input tokens without improving the answer.
+// Rows are ordered by order_index, so this keeps the earliest-opened ones.
+const MAX_SCRIPTURES_PER_SERMON = 12;
+
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY || ''
@@ -214,37 +220,88 @@ export async function POST(req) {
 
     // 3b. Real scripture references for the sermons behind these segments, so
     // Gemini can cite verses it actually knows exist instead of guessing.
-    // sermon_scriptures has no per-segment timestamp (see migration comment),
-    // so this is sermon-wide — `theme` is included as a disambiguating hint
-    // when a sermon opened several verses and only one fits a given segment.
+    // `theme` is included as a disambiguating hint when a sermon opened several
+    // verses and only one fits a given segment.
+    //
+    // A sermon can open 40+ verses, far more than any one answer needs, so each
+    // sermon's list is trimmed to MAX_SCRIPTURES_PER_SERMON. The trim keeps the
+    // verses opened CLOSEST IN TIME to the segments actually retrieved from that
+    // sermon (97% of rows carry timestamp_seconds), not the first N in preaching
+    // order — a segment from minute 50 of a long message needs the verses from
+    // around minute 50, and an order_index trim would hand it the opening ones.
+    // Rows with no timestamp fall back to preaching order, ranked last.
     const sermonIds = [...new Set(relevantSegments.map((s) => s.sermon_id))];
     const scripturesBySermon = new Map();
     if (sermonIds.length) {
       const { data: scriptureRows, error: scriptureErr } = await supabaseAdmin
         .from('sermon_scriptures')
-        .select('sermon_id, reference, theme')
-        .in('sermon_id', sermonIds);
+        .select('sermon_id, reference, theme, order_index, timestamp_seconds')
+        .in('sermon_id', sermonIds)
+        .order('order_index', { ascending: true });
       if (scriptureErr) {
         console.error('[ask] sermon_scriptures fetch error:', scriptureErr.message);
       } else if (scriptureRows) {
+        // When did we actually retrieve from each sermon?
+        const segmentTimesBySermon = new Map();
+        for (const seg of relevantSegments) {
+          if (typeof seg.start_seconds !== 'number') continue;
+          if (!segmentTimesBySermon.has(seg.sermon_id)) segmentTimesBySermon.set(seg.sermon_id, []);
+          segmentTimesBySermon.get(seg.sermon_id).push(seg.start_seconds);
+        }
+
+        const rowsBySermon = new Map();
         for (const row of scriptureRows) {
-          if (!scripturesBySermon.has(row.sermon_id)) scripturesBySermon.set(row.sermon_id, []);
-          scripturesBySermon
-            .get(row.sermon_id)
-            .push(row.theme ? `${row.reference} (${row.theme})` : row.reference);
+          if (!rowsBySermon.has(row.sermon_id)) rowsBySermon.set(row.sermon_id, []);
+          rowsBySermon.get(row.sermon_id).push(row);
+        }
+
+        for (const [sermonId, rows] of rowsBySermon) {
+          const times = segmentTimesBySermon.get(sermonId) || [];
+          const distance = (row) => {
+            if (typeof row.timestamp_seconds !== 'number' || !times.length) return Infinity;
+            return Math.min(...times.map((t) => Math.abs(t - row.timestamp_seconds)));
+          };
+          const kept = rows
+            .map((row, i) => ({ row, i, d: distance(row) }))
+            // nearest first; ties and untimestamped rows keep preaching order
+            .sort((a, b) => (a.d - b.d) || (a.i - b.i))
+            .slice(0, MAX_SCRIPTURES_PER_SERMON)
+            // present them back in preaching order so the list reads naturally
+            .sort((a, b) => a.i - b.i)
+            .map(({ row }) => (row.theme ? `${row.reference} (${row.theme})` : row.reference));
+          scripturesBySermon.set(sermonId, kept);
         }
       }
     }
 
     // 4. Build the numbered segment list + the map the frontend renders as sources.
+    //
+    // Scriptures are listed ONCE per message, in their own block, rather than
+    // re-pasted onto every segment. The 18 segments typically come from only
+    // ~8 distinct sermons, so the old per-segment refLine repeated a sermon's
+    // entire reference list (avg 1,266 chars) once per segment it contributed —
+    // measured at ~11k duplicated characters, about 20% of the whole prompt.
+    // Each segment now carries an (M#) key pointing into that block instead.
+    const messageKeyBySermon = new Map();
+    sermonIds.forEach((id, i) => messageKeyBySermon.set(id, `M${i + 1}`));
+
+    const titleBySermon = new Map(
+      relevantSegments.map((seg) => [seg.sermon_id, seg.sermon_title])
+    );
+
+    const scriptureBlock = [...scripturesBySermon.entries()]
+      .filter(([, refs]) => refs.length)
+      .map(
+        ([sermonId, refs]) =>
+          `(${messageKeyBySermon.get(sermonId)}) ${titleBySermon.get(sermonId) || ''}\n${refs.join(', ')}`
+      )
+      .join('\n\n');
+
     const segmentList = relevantSegments
-      .map((seg, i) => {
-        const refs = scripturesBySermon.get(seg.sermon_id);
-        const refLine = refs?.length
-          ? `\nScriptures opened in this message: ${refs.join(', ')}`
-          : '';
-        return `[${i + 1}] SERMON:${seg.sermon_title}${refLine}\n"${seg.text}"`;
-      })
+      .map(
+        (seg, i) =>
+          `[${i + 1}] (${messageKeyBySermon.get(seg.sermon_id)}) SERMON:${seg.sermon_title}\n"${seg.text}"`
+      )
       .join('\n\n');
 
     const snippet = (t) =>
@@ -283,9 +340,9 @@ CITATION RULES — MANDATORY
 ═══════════════════════════════════════
 SCRIPTURE CITATION — WHEN AVAILABLE
 ═══════════════════════════════════════
-- Each segment may list "Scriptures opened in this message" — the real verses Rev. Peter cited in that sermon, sometimes with a short theme label.
+- A "SCRIPTURES OPENED IN EACH MESSAGE" block may appear above the segments. Each entry is keyed (M1), (M2)… and lists the real verses Rev. Peter cited in that message, sometimes with a short theme label. Every segment is tagged with the same (M#) key, so a segment's own verses are the ones under its matching key.
 - When a point you're making is clearly what one of those listed verses is about, name the reference inline right where the point is made, e.g. "...righteousness is God's gift by faith (Romans 3:21–26) [3]."
-- Only ever cite a reference that appears in that segment's own scripture list. Never infer, guess, or add a verse that isn't listed for that sermon — if a point has no listed verse that clearly fits, just use the [N] citation as usual, no verse.
+- Only ever cite a reference listed under that segment's own (M#) key. Never infer, guess, or add a verse that isn't listed for that message — if a point has no listed verse that clearly fits, just use the [N] citation as usual, no verse.
 - Don't force a verse onto every sentence — cite the way a preacher naturally references scripture while teaching, not a footnote on every line.
 ${weakGrounding ? `
 ═══════════════════════════════════════
@@ -318,12 +375,25 @@ FOLLOW-UP SUGGESTIONS — STRICT
 - Each suggestion MUST be answerable from the segments you were given — specific, not generic.
 - Each suggestion is a short tappable phrase or simple question, 4-8 words, ONE idea only — never a compound sentence, never multiple clauses joined by "and"/"or". These are tap targets, not essay prompts.${voicePromptSection()}`;
 
-    const userMessageWithContext = `TRANSCRIPT SEGMENTS FROM ACROSS REV. PETER'S MESSAGES — USE ONLY THESE:
+    const scriptureSection = scriptureBlock
+      ? `SCRIPTURES OPENED IN EACH MESSAGE — each block is keyed (M#) to the segments below:
+${scriptureBlock}
+
+`
+      : '';
+
+    const userMessageWithContext = `${scriptureSection}TRANSCRIPT SEGMENTS FROM ACROSS REV. PETER'S MESSAGES — USE ONLY THESE:
 ${segmentList}
 
 QUESTION: ${message}`;
 
-    console.log(`[ask] ${relevantSegments.length} segments (from ${new Set(relevantSegments.map(s => s.sermon_id)).size} sermons) sent to Gemini`);
+    // Prompt size is the main driver of per-question cost (input tokens are
+    // ~95% of the bill on this workload), so log it alongside the segment count.
+    const promptChars = systemPrompt.length + userMessageWithContext.length;
+    console.log(
+      `[ask] ${relevantSegments.length} segments (from ${new Set(relevantSegments.map(s => s.sermon_id)).size} sermons), ` +
+      `~${Math.round(promptChars / 3.8).toLocaleString()} input tokens (${promptChars.toLocaleString()} chars) sent to Gemini`
+    );
 
     // 6. Stream the answer, SEGMENT_MAP header first (same wire format as chat).
     const model = genAI.getGenerativeModel({
