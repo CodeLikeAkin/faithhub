@@ -8,9 +8,9 @@ Shared client instances and AI utility functions used across API routes.
 
 ## Files
 
-### `gemini.js` ⚠️ MISNAMED — Uses Groq, Not Gemini
+### `groq.js`
 
-Despite the filename, this contains the **Groq** client and two exported functions:
+Contains the **Groq** client and two exported functions:
 
 #### `getDeclarations(userMessage, declarations)`
 - Called by: `app/api/declarations/route.js`
@@ -27,7 +27,7 @@ Despite the filename, this contains the **Groq** client and two exported functio
 - Originally used for keyword-based Supabase filtering
 - Now supplementary — primary retrieval uses embeddings via `match_declarations()` RPC
 
-**Do not add Gemini logic here.** Gemini lives in `app/api/series-chat/route.js`.
+**Do not add Gemini logic here.** Gemini is called inline in `app/api/series-chat/route.js` and `app/api/ask/route.js` (model: `gemini-flash-latest` — `gemini-2.5-flash` was retired in mid-2026).
 
 ---
 
@@ -39,6 +39,17 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 ```
 
 For server-side routes needing elevated access (bypassing RLS), API routes create their own client using `SUPABASE_SERVICE_KEY` directly — they do not import from here.
+
+---
+
+### `bible.js`
+Verse text + book maps. `fetchPassage({ book, bookId, chapter, verseStart, verseEnd }, translation)`
+— `translation` defaults to `"KJV"`. KJV fetches live from the AO Lab API
+(`bible.helloao.org`, translation id `eng_kjv`); `"NLT"` reads from the local `bible_nlt`
+Supabase table instead (NLT is Tyndale-copyrighted, not on the free API — loaded once via
+`.claude/faithhub-pipeline/backfill-bible-nlt.js`). Also exports `TRANSLATIONS` (`["KJV","NLT"]`),
+`BOOK_ORDER`, `BOOK_ABBR`, `OT_COUNT`, `bookIdFor()`. Used by `VerseExplorer.js`,
+`StudyWorkspace.js` (key verses), and `word/page.js` (book lookups only, no verse text).
 
 ---
 
@@ -56,7 +67,6 @@ Used throughout components for conditional class names.
 
 ## What Does NOT Live Here
 
-- Gemini client → `app/api/series-chat/route.js`
+- Gemini client → `app/api/series-chat/route.js` and `app/api/ask/route.js`
 - Embedding logic → `supabase/functions/embed/index.ts`
-- Bible API fetch → `app/api/declarations/route.js`
 - Supabase service-role client → instantiated inline in each API route that needs it

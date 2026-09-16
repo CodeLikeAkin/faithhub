@@ -4,8 +4,15 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { voicePromptSection } from '@/lib/voice';
+import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// Max characters accepted for a user question, and the max per prior turn we
+// keep from client-supplied chatHistory. Both flow into the Gemini prompt
+// (paid per token), so we bound them before spending anything.
+const MAX_MESSAGE_LENGTH = 2000;
+const MAX_HISTORY_TURN_LENGTH = 4000;
 
 // Diversity-aware rerank over the fused (retrieve-more) candidate pool.
 // Rows arrive already ordered by hybrid score. We (a) drop near-duplicate text,
@@ -99,42 +106,84 @@ function plainStreamResponse(text) {
 }
 
 export async function POST(req) {
+  const rl = await rateLimit(req, { max: 8, windowMs: 60_000, prefix: 'series-chat' });
+  if (!rl.allowed) return rateLimitResponse(rl);
+
   try {
-    const { seriesId, message, chatHistory } = await req.json();
+    const { seriesId, sermonId, message, chatHistory } = await req.json();
 
     // Validate inputs
-    if (!seriesId || typeof seriesId !== 'string') {
-      return NextResponse.json({ error: true, message: 'Invalid or missing seriesId' }, { status: 400 });
-    }
-
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return NextResponse.json({ error: true, message: 'Message is required and cannot be empty' }, { status: 400 });
     }
 
-    // 1. Fetch series + sermon metadata
-    const { data: series, error: seriesError } = await supabaseAdmin
-      .from('series')
-      .select(`
-        title,
-        series_sermons (
-          part_number,
-          sermons (
-            id,
-            title,
-            youtube_video_id
-          )
-        )
-      `)
-      .eq('id', seriesId)
-      .single();
-
-    if (seriesError || !series) {
-      return NextResponse.json({ error: true, message: 'Series not found' }, { status: 404 });
+    // Cap input length before any paid embed / LLM work (see MAX_MESSAGE_LENGTH).
+    if (message.length > MAX_MESSAGE_LENGTH) {
+      return NextResponse.json(
+        { error: true, message: 'Please shorten your question and try again.' },
+        { status: 400 }
+      );
     }
 
-    const sortedSermons = series.series_sermons
-      .sort((a, b) => a.part_number - b.part_number)
-      .map((ss) => ss.sermons);
+    if ((!seriesId || typeof seriesId !== 'string') && (!sermonId || typeof sermonId !== 'string')) {
+      return NextResponse.json({ error: true, message: 'A seriesId or sermonId is required' }, { status: 400 });
+    }
+
+    // Scope of this study session: a single sermon (sermonId wins) or the whole
+    // series. When scoped to one sermon we retrieve only from that sermon and
+    // tell the model it is studying a single message, not a series.
+    const singleSermon = !!(sermonId && typeof sermonId === 'string');
+
+    let scopeTitle = '';
+    let sermonIds = [];
+    let overviewText = '';
+
+    if (singleSermon) {
+      // 1a. Fetch the single sermon's metadata
+      const { data: sermon, error: sermonError } = await supabaseAdmin
+        .from('sermons')
+        .select('id, title, youtube_video_id')
+        .eq('id', sermonId)
+        .single();
+
+      if (sermonError || !sermon) {
+        return NextResponse.json({ error: true, message: 'Sermon not found' }, { status: 404 });
+      }
+
+      scopeTitle = sermon.title;
+      sermonIds = [sermon.id];
+      overviewText = `SERMON: ${sermon.title}`;
+    } else {
+      // 1b. Fetch series + sermon metadata
+      const { data: series, error: seriesError } = await supabaseAdmin
+        .from('series')
+        .select(`
+          title,
+          series_sermons (
+            part_number,
+            sermons (
+              id,
+              title,
+              youtube_video_id
+            )
+          )
+        `)
+        .eq('id', seriesId)
+        .single();
+
+      if (seriesError || !series) {
+        return NextResponse.json({ error: true, message: 'Series not found' }, { status: 404 });
+      }
+
+      const sortedSermons = series.series_sermons
+        .sort((a, b) => a.part_number - b.part_number)
+        .map((ss) => ss.sermons);
+
+      scopeTitle = series.title;
+      sermonIds = sortedSermons.map((s) => s?.id).filter(Boolean);
+      overviewText = `SERMON SERIES: ${series.title}
+Parts: ${sortedSermons.map((s, i) => `Part ${i + 1} — ${s.title}`).join(', ')}`;
+    }
 
     // 2. Embed user question
     let queryEmbedding = null;
@@ -150,7 +199,6 @@ export async function POST(req) {
     //    populated). We retrieve a wide pool (40), then rerank down to 15 for
     //    diversity. If the embed service is down, queryEmbedding is null and the
     //    hybrid RPC degrades to keyword-only instead of returning nothing.
-    const sermonIds = sortedSermons.map((s) => s?.id).filter(Boolean);
     let relevantSegments = [];
     if (sermonIds.length > 0 && (queryEmbedding || message.trim())) {
       let candidatePool = null;
@@ -181,7 +229,9 @@ export async function POST(req) {
       }
 
       if (Array.isArray(candidatePool) && candidatePool.length > 0) {
-        relevantSegments = rerankSegments(candidatePool, 15);
+        // Single-sermon study: drop the per-sermon diversity cap (there is only
+        // one sermon, so capping at 4 would needlessly reshuffle the best hits).
+        relevantSegments = rerankSegments(candidatePool, 20, singleSermon ? 20 : 5);
       }
     }
 
@@ -192,10 +242,10 @@ export async function POST(req) {
     //    mislead: either the study service is down, or this series' segments have
     //    not been embedded yet (run backfill-embeddings.js to fix the latter).
     if (relevantSegments.length === 0) {
-      console.warn(`[chat] No grounded segments for series ${seriesId} (embedFailed=${embedFailed}). Refusing to fabricate.`);
+      console.warn(`[chat] No grounded segments for ${singleSermon ? `sermon ${sermonId}` : `series ${seriesId}`} (embedFailed=${embedFailed}). Refusing to fabricate.`);
       const honestMessage = embedFailed
         ? "I'm having trouble reaching the study service right now, so I can't pull up Rev. Peter's exact teaching for this question yet. Please try again in a moment."
-        : `I don't yet have Rev. Peter's teaching from “${series.title}” indexed for deep study, so I can't ground an answer in his exact words here. You can still watch the messages directly from the series page while this series is being prepared.`;
+        : `I don't yet have Rev. Peter's teaching from “${scopeTitle}” indexed for deep study, so I can't ground an answer in his exact words here. You can still watch ${singleSermon ? 'this message' : 'the messages'} directly while ${singleSermon ? 'it is' : 'this series is'} being prepared.`;
       return plainStreamResponse(honestMessage);
     }
 
@@ -218,11 +268,8 @@ export async function POST(req) {
       return acc;
     }, {});
 
-    const seriesOverview = `SERMON SERIES: ${series.title}
-Parts: ${sortedSermons.map((s, i) => `Part ${i + 1} — ${s.title}`).join(', ')}`;
-
     // 7. Improved system prompt
-    const systemPrompt = `You are a warm, knowledgeable Bible study companion for Heritage of Faith Church. You help believers study the exact teachings of Rev. Peter Ayoalabi from this sermon series.
+    const systemPrompt = `You are a warm, knowledgeable Bible study companion for Heritage of Faith Church. You help believers study the exact teachings of Rev. Peter Ayoalabi from this ${singleSermon ? 'message' : 'sermon series'}.
 
 ═══════════════════════════════════════
 SOURCING — YOUR MOST CRITICAL RULE
@@ -251,8 +298,16 @@ RESPONSE FORMAT — READ CAREFULLY
   • "List" or "what are the ways" questions → only then use a short list
 - NEVER default to bullet points for everything
 - NEVER use rigid "heading + 3 bullets" structure on every answer
+- EXCEPTION — if Rev. Peter himself enumerates points in the segments (e.g. "number
+  one... number two...", "the first thing is... secondly...", a sequence of named
+  steps or ways), preserve that structure: render it as a numbered list mirroring his
+  points, in his order, each item citing the segment(s) it came from. This is his
+  structure, not artificial padding — don't flatten it into a summary paragraph.
 - Write like a thoughtful study companion who has read these transcripts deeply
-- Keep answers focused — don't pad to fill space
+- Develop each point you make — a sentence naming it plus 1-2 more that explain or
+  quote what he actually said about it. Don't compress a point down to a single
+  clause just to move on to the next one.
+- Don't pad with content that isn't in the segments — but don't under-write what is
 
 ═══════════════════════════════════════
 VOICE & TONE
@@ -268,34 +323,40 @@ VOICE & TONE
 FOLLOW-UP SUGGESTIONS — STRICT RULES
 ═══════════════════════════════════════
 - At the very end of your response, output exactly this format:
-  SUGGESTIONS:["Question one?","Question two?","Question three?"]
+  SUGGESTIONS:["Suggestion one","Suggestion two","Suggestion three"]
 - CRITICAL: Every suggestion MUST be directly answerable from the segments you were given
 - Read the segments first — then generate questions only about what's actually there
 - Never suggest questions about topics not present in the provided segments
-- Do not generate generic Christian questions — they must be specific to this series content${voicePromptSection()}`;
+- Do not generate generic Christian questions — they must be specific to this ${singleSermon ? 'message' : 'series'}
+- STRICT LENGTH RULE: each suggestion is a short tappable phrase or simple question, 4-8 words, ONE idea only — never a compound sentence, never multiple clauses joined by "and"/"or". These are tap targets, not essay prompts. Think chip labels, not paragraphs.${voicePromptSection()}`;
 
-    // 8. Build conversation history
-    const conversationHistory = (chatHistory || [])
+    // 8. Build conversation history. chatHistory is client-supplied, so clamp
+    //    each turn's text (it flows into the Gemini prompt) before keeping the
+    //    last 6 turns.
+    const conversationHistory = (Array.isArray(chatHistory) ? chatHistory : [])
       .map((m) => ({
         role: m.role === 'ai' || m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.text || m.content || '' }],
+        parts: [{ text: (m.text || m.content || '').slice(0, MAX_HISTORY_TURN_LENGTH) }],
       }))
       .filter((m) => m.parts[0].text.trim() !== '')
       .slice(-6);
 
     // 9. User message with segments
-    const userMessageWithContext = `${seriesOverview}
+    const userMessageWithContext = `${overviewText}
 
 TRANSCRIPT SEGMENTS — USE ONLY THESE:
 ${segmentList}
 
 QUESTION: ${message}`;
 
-    console.log(`[chat] ${relevantSegments.length} segments sent to Gemini`);
+    const histChars = conversationHistory.reduce((a, m) => a + m.parts[0].text.length, 0);
+    const promptChars = systemPrompt.length + userMessageWithContext.length + histChars;
+    console.log(`[chat] ${relevantSegments.length} segments, ${conversationHistory.length} history turns (${histChars.toLocaleString()} chars), ~${Math.round(promptChars/3.8).toLocaleString()} input tokens (${promptChars.toLocaleString()} chars)`);
 
     // 10. Call Gemini with streaming
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      // "-latest" alias — gemini-2.5-flash was retired (404) in mid-2026.
+      model: 'gemini-flash-latest',
       systemInstruction: systemPrompt,
     });
 

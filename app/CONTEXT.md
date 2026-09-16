@@ -32,8 +32,8 @@ The main entry point. Links users to the two core features: Faith Declarations a
 - Shows follow-up suggestion buttons after each response
 
 ### `admin/page.js` — Admin Dashboard
-- Protected page for managing content
-- Details: ask the developer
+- Currently a static placeholder (unauthenticated, no content-management functionality yet)
+- Not linked from anywhere in the app
 
 ---
 
@@ -74,7 +74,7 @@ Flow:
 2. Embed `message` via Supabase Edge Function
 3. Call `match_segments()` RPC → top 15 relevant transcript segments
 4. Build lean context from those 15 segments only
-5. Stream Gemini 2.5 Flash response with `[N]` citations
+5. Stream Gemini (`gemini-flash-latest`) response with `[N]` citations
 6. Return streamed `text/plain` response
 
 **Rules:**

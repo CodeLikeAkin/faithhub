@@ -3,117 +3,132 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Menu, X, ArrowRight } from "lucide-react";
 
 const navLinks = [
   { name: "Home", href: "/" },
+  { name: "Ask", href: "/ask" },
   { name: "Declarations", href: "/declarations" },
   { name: "Series Study", href: "/series" },
+  { name: "The Word", href: "/word" },
+  { name: "Vision", href: "/vision" },
 ];
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const pathname = usePathname();
 
+  // Ground the pill once you scroll off the top (works on any page —
+  // /series and /word open on white, home opens on the dark hero).
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Immersive app views (chat, study, admin) bring their own chrome
+  const hidden =
+    pathname === "/declarations" ||
+    pathname === "/admin" ||
+    pathname === "/ask" ||
+    /^\/series\/.+/.test(pathname) ||
+    /^\/sermon\/.+/.test(pathname);
+  if (hidden) return null;
+
   return (
-    <nav 
-      className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-        scrolled 
-          ? "bg-white/95 backdrop-blur-md py-3 shadow-md border-b border-gray-100" 
-          : "bg-transparent py-5"
+    <header
+      className={`fixed inset-x-0 z-50 px-4 sm:px-6 transition-all duration-300 ${
+        scrolled ? "top-2 sm:top-3" : "top-3 sm:top-5"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <div className="flex-shrink-0 flex items-center">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="relative w-[150px] h-[50px]">
-                <Image
-                  src="/hofng-logo.png"
-                  alt="HOFNG Logo"
-                  fill
-                  className="object-contain"
-                  priority
-                />
-              </div>
-            </Link>
-          </div>
+      <nav className="mx-auto max-w-6xl flex">
+        {/* One unified pill: logo · links · CTA — centered on desktop,
+            a full-width bar (logo + menu) on mobile. */}
+        <div
+          className={`w-full md:w-auto md:mx-auto flex items-center justify-between gap-3 sm:gap-5 rounded-full backdrop-blur-md border py-2 pl-4 pr-2 transition-all duration-300 ${
+            scrolled
+              ? "bg-white/95 border-brand-navy/10 shadow-lg shadow-brand-navy/10"
+              : "bg-white/80 border-brand-navy/5 shadow-md shadow-brand-navy/5"
+          }`}
+        >
+          <Link href="/" onClick={() => setIsOpen(false)} className="flex items-center">
+            <Image
+              src="/hofng-logo.png"
+              alt="Heritage of Faith"
+              width={208}
+              height={146}
+              className="h-8 w-auto"
+              priority
+            />
+          </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <span className="hidden md:block w-px h-5 bg-brand-navy/15" />
+
+          <div className="hidden md:flex items-center gap-5">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
                 href={link.href}
-                className={`text-sm font-medium transition-colors hover:text-brand-green ${
-                  scrolled ? "text-brand-navy" : "text-white"
+                className={`text-sm font-medium transition-colors ${
+                  pathname === link.href
+                    ? "text-brand-navy"
+                    : "text-brand-gray hover:text-brand-navy"
                 }`}
               >
                 {link.name}
               </Link>
             ))}
-            <Link
-              href="/declarations"
-              className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all hover:scale-105 ${
-                scrolled 
-                  ? "bg-brand-navy text-white hover:bg-brand-green" 
-                  : "bg-white text-brand-navy hover:bg-brand-green hover:text-white"
-              }`}
-            >
-              Get Started
-            </Link>
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className={`p-3 rounded-md transition-colors ${
-                scrolled ? "text-brand-navy" : "text-white"
-              }`}
-              aria-label="Toggle menu"
-            >
-              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-          </div>
+          <span className="hidden md:block w-px h-5 bg-brand-navy/15" />
+
+          <Link
+            href="/declarations"
+            className="hidden md:inline-flex items-center gap-2 bg-brand-navy text-white text-sm font-bold rounded-full px-5 py-1.5 shadow-lg shadow-brand-navy/20 hover:bg-brand-deep transition-colors"
+          >
+            Start a declaration
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+
+          {/* Mobile menu button — lives inside the pill on small screens */}
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={isOpen}
+            className="md:hidden w-11 h-11 -mr-1 flex items-center justify-center rounded-full text-brand-navy hover:bg-brand-sky transition-colors"
+          >
+            {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
-      </div>
+      </nav>
 
-      {/* Mobile Navigation */}
-      <div
-        className={`md:hidden transition-all duration-300 ease-in-out ${
-          isOpen ? "max-h-screen opacity-100" : "max-h-0 opacity-0 overflow-hidden"
-        } bg-white border-b border-gray-100 shadow-xl`}
-      >
-        <div className="px-4 pt-2 pb-6 space-y-2">
+      {/* Tap-away scrim — covers the page behind the open menu */}
+      {isOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
+          onClick={() => setIsOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Mobile panel */}
+      {isOpen && (
+        <div className="md:hidden relative z-[41] mx-auto max-w-6xl mt-2 bg-white rounded-3xl border border-brand-navy/10 shadow-xl p-3">
           {navLinks.map((link) => (
             <Link
               key={link.name}
               href={link.href}
               onClick={() => setIsOpen(false)}
-              className="block px-3 py-4 text-base font-medium text-brand-navy hover:bg-gray-50 hover:text-brand-green rounded-lg"
+              className="block px-4 py-3.5 rounded-2xl text-base font-medium text-brand-ink hover:bg-brand-sky"
             >
               {link.name}
             </Link>
           ))}
-          <Link
-            href="/declarations"
-            onClick={() => setIsOpen(false)}
-            className="block w-full text-center px-4 py-4 bg-brand-navy text-white font-bold rounded-xl hover:bg-brand-green transition-colors"
-          >
-            Get Started
-          </Link>
         </div>
-      </div>
-    </nav>
+      )}
+    </header>
   );
 }

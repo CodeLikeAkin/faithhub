@@ -11,7 +11,7 @@
 
 create or replace function match_segments_by_sermons(
   query_embedding vector(384),
-  filter_sermon_ids uuid[],
+  filter_sermon_ids uuid[] default null,
   match_threshold float default 0.25,
   match_count int default 15
 )
@@ -27,6 +27,9 @@ returns table (
 language sql
 stable
 as $$
+  -- filter_sermon_ids NULL = search the whole library (see hybrid_search.sql
+  -- for why this matters more than it looks: a full-corpus id list is not a
+  -- selective filter, just wasted per-row comparison work).
   select
     ss.id,
     ss.sermon_id,
@@ -37,7 +40,7 @@ as $$
     1 - (ss.embedding <=> query_embedding) as similarity
   from sermon_segments ss
   join sermons s on s.id = ss.sermon_id
-  where ss.sermon_id = any(filter_sermon_ids)
+  where (filter_sermon_ids is null or ss.sermon_id = any(filter_sermon_ids))
     and ss.embedding is not null
     and 1 - (ss.embedding <=> query_embedding) > match_threshold
   order by ss.embedding <=> query_embedding
