@@ -107,6 +107,14 @@ function plainStreamResponse(text) {
   });
 }
 
+// A genuine, transient failure (service down/overloaded) — as opposed to an
+// honest "nothing relevant found" answer. Returned as a real non-200 error so
+// the frontend can tell the two apart and offer a "Try again" retry, instead
+// of a 200 stream that renders identically to a normal grounded refusal.
+function serviceErrorResponse(message) {
+  return NextResponse.json({ error: true, message }, { status: 503 });
+}
+
 export async function POST(req) {
   const rl = await rateLimit(req, { max: 8, windowMs: 60_000, prefix: 'ask' });
   if (!rl.allowed) return rateLimitResponse(rl);
@@ -212,10 +220,18 @@ export async function POST(req) {
     // 3. Nothing grounded → be honest, never fabricate.
     if (relevantSegments.length === 0) {
       console.warn(`[ask] No grounded segments (embedFailed=${embedFailed}). Refusing to fabricate.`);
-      const honest = embedFailed
-        ? "I'm having trouble reaching the study service right now, so I can't search Rev. Peter's messages for this yet. Please try again in a moment."
-        : "I couldn't find where Rev. Peter teaches on that across the messages I have indexed. Try rephrasing, or ask about a related idea — faith, prayer, righteousness, the Holy Spirit, giving, and more are all covered deeply.";
-      return plainStreamResponse(honest);
+      // embedFailed means the embed service itself is down — a real, transient
+      // failure worth retrying. A clean zero-match search is not a failure at
+      // all (retrying the same question won't change the answer), so that one
+      // stays a normal streamed "done" response.
+      if (embedFailed) {
+        return serviceErrorResponse(
+          "I'm having trouble reaching the study service right now, so I can't search Rev. Peter's messages for this yet. Please try again in a moment."
+        );
+      }
+      return plainStreamResponse(
+        "I couldn't find where Rev. Peter teaches on that across the messages I have indexed. Try rephrasing, or ask about a related idea — faith, prayer, righteousness, the Holy Spirit, giving, and more are all covered deeply."
+      );
     }
 
     // 3b. Real scripture references for the sermons behind these segments, so
@@ -411,7 +427,7 @@ QUESTION: ${message}`;
       result = await model.generateContentStream(userMessageWithContext);
     } catch (genErr) {
       console.error('[ask] Gemini generateContentStream failed:', genErr.message);
-      return plainStreamResponse(
+      return serviceErrorResponse(
         "The study service is busier than usual right now — please try that question again in a moment."
       );
     }

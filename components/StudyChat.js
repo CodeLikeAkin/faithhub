@@ -10,7 +10,7 @@ import {
   isValidElement,
   cloneElement,
 } from "react";
-import { Send, Loader2, Sparkles } from "lucide-react";
+import { Send, Loader2, Sparkles, RotateCcw } from "lucide-react";
 import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import { clientIdHeader } from "@/lib/client-id";
 import ReactMarkdown from "react-markdown";
@@ -242,10 +242,15 @@ export default function StudyChat({
     ta.style.height = Math.min(ta.scrollHeight, 120) + "px";
   }, [chatInput]);
 
-  const handleSendMessage = async (textToSubmit) => {
+  const handleSendMessage = async (textToSubmit, historyOverride = null) => {
     const actualText =
       typeof textToSubmit === "string" ? textToSubmit : chatInput;
     if (!actualText.trim() || chatLoading) return;
+
+    // A retry passes the history with the failed exchange already stripped
+    // out — reading `chatHistory` here instead would race the setChatHistory
+    // call retryMessage just made, since that update hasn't committed yet.
+    const baseHistory = historyOverride ?? chatHistory;
 
     const messageId = Date.now();
     const userMessage = { id: messageId, role: "user", text: actualText };
@@ -261,6 +266,8 @@ export default function StudyChat({
       text: "",
       isThinking: true,
       segmentMap: {},
+      question: actualText,
+      userMessageId: messageId,
     };
 
     setChatHistory((prev) => [...prev, userMessage, aiMessage]);
@@ -274,7 +281,7 @@ export default function StudyChat({
     setPendingSnapId(messageId);
 
     try {
-      const historyToSend = chatHistory.map((m) => ({ role: m.role, text: m.text }));
+      const historyToSend = baseHistory.map((m) => ({ role: m.role, text: m.text }));
       const res = await fetch("/api/series-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...clientIdHeader() },
@@ -288,7 +295,9 @@ export default function StudyChat({
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || "I encountered an error.");
+        const apiErr = new Error(errorData.message || "I encountered an error.");
+        apiErr.isApiMessage = true; // already a full, user-facing sentence
+        throw apiErr;
       }
 
       const reader = res.body.getReader();
@@ -354,20 +363,36 @@ export default function StudyChat({
       }
     } catch (err) {
       console.error("Chat error:", err);
-      setChatHistory((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          role: "ai",
-          text: `I encountered an error: ${err.message}`,
-          segmentMap: {},
-        },
-      ]);
+      const message = err.isApiMessage
+        ? err.message
+        : `I encountered an error: ${err.message}`;
+      // Resolve the same placeholder bubble into an error state, rather than
+      // leaving it stuck on "thinking" and appending a second, disconnected
+      // bubble below it.
+      setChatHistory((prev) =>
+        prev.map((m) =>
+          m.id === aiMessageId
+            ? { ...m, text: message, isThinking: false, status: "error", segmentMap: {} }
+            : m
+        )
+      );
     } finally {
       setChatLoading(false);
       clearInterval(thinkingInterval);
       inputRef.current?.focus();
     }
+  };
+
+  // Remove the failed exchange and resubmit the original question — reuses
+  // handleSendMessage's own pendingSnapId/spacer mechanism so the resubmitted
+  // question snaps to the top exactly like any other new question.
+  const retryMessage = (aiMsg) => {
+    if (chatLoading || !aiMsg.question) return;
+    const trimmedHistory = chatHistory.filter(
+      (m) => m.id !== aiMsg.id && m.id !== aiMsg.userMessageId
+    );
+    setChatHistory(trimmedHistory);
+    handleSendMessage(aiMsg.question, trimmedHistory);
   };
 
   return (
@@ -420,7 +445,7 @@ export default function StudyChat({
             let lastAiIdx = -1;
             chatHistory.forEach((m, idx) => {
               if (m.role === "user") lastUserIdx = idx;
-              if (m.role === "ai" && !m.isThinking) lastAiIdx = idx;
+              if (m.role === "ai" && !m.isThinking && m.status !== "error") lastAiIdx = idx;
             });
 
             return chatHistory.map((msg, i) => {
@@ -453,6 +478,28 @@ export default function StudyChat({
                   <span className="text-sm italic font-medium">
                     {THINKING_MESSAGES[thinkingStep]}
                   </span>
+                </div>
+              );
+            }
+
+            if (msg.status === "error") {
+              return (
+                <div key={msg.id || i} className="mt-4">
+                  <div
+                    role="alert"
+                    className="rounded-2xl border border-brand-navy/10 bg-brand-light px-5 py-4"
+                  >
+                    <p className="text-base leading-[1.7] text-brand-ink/90">
+                      {msg.text}
+                    </p>
+                    <button
+                      onClick={() => retryMessage(msg)}
+                      className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-brand-navy border border-brand-navy/20 rounded-full px-3.5 py-1.5 hover:bg-brand-sky transition-colors"
+                    >
+                      <RotateCcw size={12} />
+                      Try again
+                    </button>
+                  </div>
                 </div>
               );
             }

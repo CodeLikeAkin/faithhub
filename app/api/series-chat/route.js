@@ -105,6 +105,13 @@ function plainStreamResponse(text) {
   });
 }
 
+// A genuine, transient failure (service down/overloaded) — as opposed to an
+// honest "nothing relevant found" answer. Returned as a real non-200 error so
+// the frontend doesn't render it identically to a normal grounded answer.
+function serviceErrorResponse(message) {
+  return NextResponse.json({ error: true, message }, { status: 503 });
+}
+
 export async function POST(req) {
   const rl = await rateLimit(req, { max: 8, windowMs: 60_000, prefix: 'series-chat' });
   if (!rl.allowed) return rateLimitResponse(rl);
@@ -243,10 +250,18 @@ Parts: ${sortedSermons.map((s, i) => `Part ${i + 1} — ${s.title}`).join(', ')}
     //    not been embedded yet (run backfill-embeddings.js to fix the latter).
     if (relevantSegments.length === 0) {
       console.warn(`[chat] No grounded segments for ${singleSermon ? `sermon ${sermonId}` : `series ${seriesId}`} (embedFailed=${embedFailed}). Refusing to fabricate.`);
-      const honestMessage = embedFailed
-        ? "I'm having trouble reaching the study service right now, so I can't pull up Rev. Peter's exact teaching for this question yet. Please try again in a moment."
-        : `I don't yet have Rev. Peter's teaching from “${scopeTitle}” indexed for deep study, so I can't ground an answer in his exact words here. You can still watch ${singleSermon ? 'this message' : 'the messages'} directly while ${singleSermon ? 'it is' : 'this series is'} being prepared.`;
-      return plainStreamResponse(honestMessage);
+      // embedFailed means the embed service itself is down — a real, transient
+      // failure worth retrying. A series/sermon that just isn't indexed yet is
+      // not a failure at all (retrying won't change it), so that one stays a
+      // normal streamed "done" response.
+      if (embedFailed) {
+        return serviceErrorResponse(
+          "I'm having trouble reaching the study service right now, so I can't pull up Rev. Peter's exact teaching for this question yet. Please try again in a moment."
+        );
+      }
+      return plainStreamResponse(
+        `I don't yet have Rev. Peter's teaching from “${scopeTitle}” indexed for deep study, so I can't ground an answer in his exact words here. You can still watch ${singleSermon ? 'this message' : 'the messages'} directly while ${singleSermon ? 'it is' : 'this series is'} being prepared.`
+      );
     }
 
     // 5. Build segment index — pass video_id and start_seconds explicitly
@@ -361,7 +376,21 @@ QUESTION: ${message}`;
     });
 
     const chat = model.startChat({ history: conversationHistory });
-    const result = await chat.sendMessageStream(userMessageWithContext);
+
+    // Gemini can reject here (429 quota, 503 overload) before any streaming
+    // starts. Without this catch, the raw provider error (quota/billing
+    // details and all) falls through to the outer catch and leaks to the
+    // user as-is in the 500 body. Answer honestly instead, same tone as the
+    // no-segments case.
+    let result;
+    try {
+      result = await chat.sendMessageStream(userMessageWithContext);
+    } catch (genErr) {
+      console.error('[chat] Gemini sendMessageStream failed:', genErr.message);
+      return serviceErrorResponse(
+        "The study service is busier than usual right now — please try that question again in a moment."
+      );
+    }
 
     // 11. Stream back — prepend segment map as first line for frontend
     const encoder = new TextEncoder();

@@ -10,6 +10,7 @@ import {
   Check,
 } from "lucide-react";
 import DeclarationOfTheDay from "@/components/DeclarationOfTheDay";
+import Button from "@/components/Button";
 
 const entryCards = [
   {
@@ -80,19 +81,12 @@ export default function Home() {
               God&apos;s Word over your life and study any series in depth.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                href="/declarations"
-                className="inline-flex items-center gap-2 bg-white text-brand-navy font-bold text-sm sm:text-base rounded-full px-6 sm:px-7 py-3.5 hover:bg-brand-sky transition-colors"
-              >
+              <Button href="/declarations" variant="light" size="lg">
                 Start a declaration
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
-                href="/series"
-                className="inline-flex items-center gap-2 border border-white/40 text-white font-bold text-sm sm:text-base rounded-full px-6 sm:px-7 py-3.5 hover:bg-white/10 transition-colors"
-              >
+              </Button>
+              <Button href="/series" variant="outline" size="lg" icon={false}>
                 Browse series
-              </Link>
+              </Button>
             </div>
           </div>
 
@@ -146,23 +140,57 @@ export default function Home() {
 
       {/* ── The vision ── */}
       <section className="mx-auto max-w-[1400px] px-4 sm:px-6 py-10 sm:py-14">
-        <div className="relative overflow-hidden rounded-[2rem] bg-brand-deep px-6 py-12 sm:px-12 sm:py-16 lg:px-16 lg:py-20">
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/60">
-            The vision of the house
-          </p>
-          <blockquote className="mt-5 max-w-3xl font-display text-3xl font-normal leading-[1.18] tracking-tight text-white text-balance sm:text-4xl lg:text-5xl">
-            The vision of our ministry is raising stronger believers.
-          </blockquote>
-          <p className="mt-6 text-sm font-bold uppercase tracking-[0.14em] text-white/55">
-            Rev. Peter Ayo Alabi
-          </p>
-          <Link
-            href="/vision"
-            className="mt-9 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-brand-navy transition-colors hover:bg-brand-sky sm:text-base"
-          >
-            Read the vision
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+        <div className="relative overflow-clip rounded-[2rem] bg-brand-deep">
+          {/* Decoration: above the photo's fade (so the pattern doesn't cut off at its edge), below the text. */}
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-[1]">
+            <div className="absolute -left-40 -top-40 h-[28rem] w-[28rem] rounded-full bg-brand-navy blur-3xl" />
+            <div className="absolute -bottom-44 left-[28%] h-[26rem] w-[26rem] rounded-full bg-brand-mist/[0.12] blur-3xl" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.14)_1px,transparent_1.5px)] bg-[length:24px_24px] [mask-image:radial-gradient(ellipse_at_bottom_left,black,transparent_55%)]" />
+            <svg
+              viewBox="0 0 400 400"
+              fill="none"
+              className="absolute -bottom-48 -left-48 h-[34rem] w-[34rem] text-white/[0.06]"
+            >
+              {[60, 105, 150, 195, 240, 285, 330].map((r) => (
+                <circle key={r} cx="200" cy="200" r={r} stroke="currentColor" strokeWidth="1" />
+              ))}
+            </svg>
+            <span className="absolute -top-10 left-[38%] hidden select-none font-display text-[16rem] leading-none text-white/[0.04] sm:block">
+              &ldquo;
+            </span>
+          </div>
+
+          <div className="relative flex flex-row">
+            <div className="relative z-10 flex-1 px-6 py-12 sm:px-12 sm:py-16 lg:px-16 lg:py-20">
+              <p className="inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.22em] text-white/60">
+                <span aria-hidden="true" className="h-px w-8 bg-white/40" />
+                The vision of the house
+              </p>
+              <blockquote className="mt-5 max-w-3xl font-display text-3xl font-normal leading-[1.18] tracking-tight text-white text-balance sm:text-4xl lg:text-5xl">
+                The vision of our ministry is raising stronger believers.
+              </blockquote>
+              <p className="mt-6 text-sm font-bold uppercase tracking-[0.14em] text-white/55">
+                Rev. Peter Ayo Alabi
+              </p>
+              <Button href="/vision" variant="light" size="lg" className="mt-9">
+                Read the vision
+              </Button>
+            </div>
+
+            {/* Portrait strip, desktop only — the section reads fine text-only on mobile. */}
+            <div className="absolute inset-y-0 right-0 hidden w-[48%] lg:block">
+              <Image
+                src="/peter-alabi-vision.jpg"
+                alt="Rev. Peter Ayo Alabi"
+                fill
+                sizes="(min-width: 1024px) 48vw, 0px"
+                className="object-cover object-[65%_25%]"
+              />
+              {/* Tone the saturated backdrop toward the card, then fade fully into it. */}
+              <div className="absolute inset-0 bg-brand-deep/25" />
+              <div className="absolute inset-0 bg-gradient-to-r from-brand-deep via-brand-deep/70 via-30% to-transparent to-75%" />
+            </div>
+          </div>
         </div>
       </section>
 

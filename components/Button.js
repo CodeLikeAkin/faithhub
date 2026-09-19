@@ -1,0 +1,44 @@
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const base =
+  "inline-flex items-center gap-2 font-bold rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2";
+
+const variants = {
+  // white fill / navy text — for use on dark or photo backgrounds
+  light:
+    "bg-white text-brand-navy hover:bg-brand-sky focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand-deep",
+  // navy fill / white text — for use on light backgrounds
+  dark:
+    "bg-brand-navy text-white shadow-lg shadow-brand-navy/20 hover:bg-brand-deep focus-visible:ring-brand-navy focus-visible:ring-offset-2 focus-visible:ring-offset-white",
+  // translucent border / white text — secondary action on dark or photo backgrounds
+  outline:
+    "border border-white/40 text-white hover:bg-white/10 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand-deep",
+};
+
+const sizes = {
+  lg: "text-sm sm:text-base px-6 sm:px-7 py-3.5",
+  sm: "text-sm px-5 py-1.5",
+};
+
+export default function Button({
+  href,
+  variant = "light",
+  size = "lg",
+  icon = true,
+  className,
+  children,
+  ...rest
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(base, variants[variant], sizes[size], className)}
+      {...rest}
+    >
+      {children}
+      {icon && <ArrowRight className="w-4 h-4" />}
+    </Link>
+  );
+}

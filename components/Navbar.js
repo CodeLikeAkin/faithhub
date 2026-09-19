@@ -4,12 +4,12 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, X, ArrowRight } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import Button from "@/components/Button";
 
 const navLinks = [
   { name: "Home", href: "/" },
   { name: "Ask", href: "/ask" },
-  { name: "Declarations", href: "/declarations" },
   { name: "Series Study", href: "/series" },
   { name: "The Word", href: "/word" },
   { name: "Vision", href: "/vision" },
@@ -85,13 +85,14 @@ export default function Navbar() {
 
           <span className="hidden md:block w-px h-5 bg-brand-navy/15" />
 
-          <Link
+          <Button
             href="/declarations"
-            className="hidden md:inline-flex items-center gap-2 bg-brand-navy text-white text-sm font-bold rounded-full px-5 py-1.5 shadow-lg shadow-brand-navy/20 hover:bg-brand-deep transition-colors"
+            variant="dark"
+            size="sm"
+            className="hidden md:inline-flex"
           >
-            Start a declaration
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+            Declare the Word
+          </Button>
 
           {/* Mobile menu button — lives inside the pill on small screens */}
           <button
@@ -127,6 +128,17 @@ export default function Navbar() {
               {link.name}
             </Link>
           ))}
+          <div className="mt-1 pt-3 border-t border-brand-navy/10">
+            <Button
+              href="/declarations"
+              variant="dark"
+              size="lg"
+              onClick={() => setIsOpen(false)}
+              className="w-full justify-center"
+            >
+              Declare the Word
+            </Button>
+          </div>
         </div>
       )}
     </header>

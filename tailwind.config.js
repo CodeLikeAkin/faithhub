@@ -104,10 +104,16 @@ module.exports = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        /* SVG stroke draw-in; the path needs pathLength="1" + stroke-dasharray 1 */
+        draw: {
+          from: { strokeDashoffset: "1" },
+          to: { strokeDashoffset: "0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        draw: "draw 1.1s cubic-bezier(0.65, 0, 0.35, 1) 0.6s both",
       },
     },
   },

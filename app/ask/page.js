@@ -472,27 +472,32 @@ export default function AskPage() {
     }
   }, [studies, activeId, restored]);
 
+  // Scroll a block to the top of its scrollable ancestor. Waits two animation
+  // frames (not a fixed timeout) so the block is actually laid out first —
+  // with a long study outline, a fixed delay can fire before React commits
+  // the new block, silently no-op'ing the scroll. Sets scrollTop directly
+  // from offsetTop (an absolute target) rather than a scrollBy delta computed
+  // from the current position — a relative delta plus Chrome's scroll
+  // anchoring (which nudges scrollTop on its own when off-screen content
+  // resizes) made the old approach land short, leaving older messages
+  // visible above the new one.
   const scrollToBlock = (id) =>
-    setTimeout(() => {
-      const el = document.getElementById(`block-${id}`);
-      if (!el) return;
-      let node = el.parentElement;
-      while (
-        node &&
-        !(
-          /(auto|scroll)/.test(getComputedStyle(node).overflowY) &&
-          node.scrollHeight > node.clientHeight
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        const el = document.getElementById(`block-${id}`);
+        if (!el) return;
+        let node = el.parentElement;
+        while (
+          node &&
+          !(
+            /(auto|scroll)/.test(getComputedStyle(node).overflowY) &&
+            node.scrollHeight > node.clientHeight
+          )
         )
-      )
-        node = node.parentElement;
-      if (node)
-        smoothScrollBy(node, {
-          top:
-            el.getBoundingClientRect().top -
-            node.getBoundingClientRect().top -
-            12,
-        });
-    }, 80);
+          node = node.parentElement;
+        if (node) node.scrollTo({ top: Math.max(0, el.offsetTop - 12), behavior: "smooth" });
+      })
+    );
 
   const activateBlock = (id) => {
     setOpenId(id);
@@ -527,23 +532,6 @@ export default function AskPage() {
   const switchVerseTranslation = (ref, translation) => {
     setVerseTranslation((vt) => ({ ...vt, [ref]: translation }));
     if (!verseData[`${ref}|${translation}`]) loadVerse(ref, translation);
-  };
-
-  // Center an element inside every scrollable ancestor. scrollIntoView is
-  // unreliable across nested overflow containers, so scroll them directly —
-  // smooth when the browser animates it, snapping if it doesn't (some
-  // embedded/reduced-motion environments ignore smooth scrolling entirely).
-  const smoothScrollBy = (node, delta) => {
-    const start = { top: node.scrollTop, left: node.scrollLeft };
-    node.scrollBy({ ...delta, behavior: "smooth" });
-    setTimeout(() => {
-      const moved =
-        node.scrollTop !== start.top || node.scrollLeft !== start.left;
-      if (!moved) {
-        if (delta.top) node.scrollTop = start.top + delta.top;
-        if (delta.left) node.scrollLeft = start.left + delta.left;
-      }
-    }, 350);
   };
 
   const newStudy = () => {
@@ -654,7 +642,9 @@ export default function AskPage() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || "Something went wrong.");
+        const apiErr = new Error(err.message || "Something went wrong.");
+        apiErr.isApiMessage = true; // already a full, user-facing sentence
+        throw apiErr;
       }
 
       const reader = res.body.getReader();
@@ -710,7 +700,9 @@ export default function AskPage() {
     } catch (err) {
       patch({
         status: "error",
-        answer: `I ran into a problem: ${err.message}`,
+        answer: err.isApiMessage
+          ? err.message
+          : `I ran into a problem: ${err.message}`,
       });
     } finally {
       setBusy(false);
@@ -898,7 +890,12 @@ export default function AskPage() {
         </div>
 
         {/* Thread */}
-        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar relative" aria-live="polite" aria-atomic="false">
+        <div
+          className="flex-1 min-h-0 overflow-y-auto custom-scrollbar relative"
+          style={{ overflowAnchor: "none" }}
+          aria-live="polite"
+          aria-atomic="false"
+        >
           {!hasBlocks ? (
             /* Empty study — hero */
             <div className="h-full flex flex-col items-center justify-center px-4 sm:px-6 py-10 relative">
@@ -1034,8 +1031,13 @@ export default function AskPage() {
                       </div>
                     )}
 
-                    {/* No sources (honest refusal) or error */}
-                    {b.answer && !hasSources && (
+                    {/* No sources (honest refusal) or error. A mid-stream
+                        failure can happen after sources were already found
+                        (segmentMap populated before the connection dropped),
+                        so this has to show on b.status === "error" regardless
+                        of hasSources — otherwise the failure renders nothing
+                        at all. */}
+                    {b.answer && (b.status === "error" || !hasSources) && (
                       <div
                         className="mt-6 rounded-2xl border border-brand-navy/10 bg-brand-light px-5 py-4"
                         {...(b.status === "error" ? { role: "alert" } : {})}
@@ -1122,6 +1124,20 @@ export default function AskPage() {
                   </article>
                 );
               })}
+              {/* Scroll headroom: right after a question is asked, its block
+                  is still just a short "searching…" row, so there isn't
+                  enough content below it yet for the browser to actually
+                  scroll it up to the top of the container — scrollTo clamps
+                  to the content that exists. This reserves the room so the
+                  very first scroll lands correctly instead of stopping short
+                  and leaving older questions visible above it. It shrinks
+                  away once the answer finishes streaming in. */}
+              {(() => {
+                const last = blocks[blocks.length - 1];
+                return last?.status === "searching" || last?.status === "answering" ? (
+                  <div aria-hidden="true" className="min-h-[70vh]" />
+                ) : null;
+              })()}
             </div>
           )}
         </div>
