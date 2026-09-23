@@ -15,6 +15,9 @@ const variants = {
   // translucent border / white text — secondary action on dark or photo backgrounds
   outline:
     "border border-white/40 text-white hover:bg-white/10 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand-deep",
+  // navy border / navy text — secondary action on light backgrounds
+  quiet:
+    "border border-brand-navy/20 bg-white text-brand-navy hover:bg-brand-sky focus-visible:ring-brand-navy focus-visible:ring-offset-2 focus-visible:ring-offset-white",
 };
 
 const sizes = {
@@ -22,6 +25,7 @@ const sizes = {
   sm: "text-sm px-5 py-1.5",
 };
 
+/** A pill link — or, with no `href`, a pill <button> in the same styles. */
 export default function Button({
   href,
   variant = "light",
@@ -29,16 +33,28 @@ export default function Button({
   icon = true,
   className,
   children,
+  type = "button",
   ...rest
 }) {
-  return (
-    <Link
-      href={href}
-      className={cn(base, variants[variant], sizes[size], className)}
-      {...rest}
-    >
+  const classes = cn(base, variants[variant], sizes[size], className);
+  const content = (
+    <>
       {children}
-      {icon && <ArrowRight className="w-4 h-4" />}
+      {icon && <ArrowRight className="w-4 h-4" aria-hidden="true" />}
+    </>
+  );
+
+  if (!href) {
+    return (
+      <button type={type} className={classes} {...rest}>
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <Link href={href} className={classes} {...rest}>
+      {content}
     </Link>
   );
 }

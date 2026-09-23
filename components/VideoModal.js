@@ -29,11 +29,19 @@ export default function VideoModal({ seg, onClose }) {
   const cardRef = useRef(null);
   const dragRef = useRef(null); // { dx, dy } while a drag is live
 
-  // Each newly-cited video opens full-size, even if the last one was minimized,
-  // and back in the default corner.
+  // A citation clicked while the player is closed always opens full-size in
+  // the default corner. But if the player is already open — including
+  // minimized — clicking a different citation just swaps the video in
+  // place and keeps whatever state (minimized, dragged position) it had, so
+  // playback keeps going in the mini-player instead of popping back open.
+  const wasOpenRef = useRef(false);
   useEffect(() => {
-    setMinimized(false);
-    setPos(null);
+    const isFreshOpen = !!seg && !wasOpenRef.current;
+    if (isFreshOpen) {
+      setMinimized(false);
+      setPos(null);
+    }
+    wasOpenRef.current = !!seg;
   }, [seg?.video_id, seg?.start_seconds]);
 
   // A dragged-to position is absolute, so a resize (or a phone rotating) can
@@ -230,7 +238,7 @@ export default function VideoModal({ seg, onClose }) {
         >
           <iframe
             src={src}
-            title={seg.sermon_title}
+            title={cleanTitle(seg.sermon_title)}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
             className="absolute inset-0 w-full h-full"
