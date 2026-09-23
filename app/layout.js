@@ -14,6 +14,11 @@ const newsreader = Newsreader({
   weight: ['400', '500', '600'],
   style: ['normal', 'italic'],
   variable: '--font-newsreader',
+  // Next has no fallback metrics for Newsreader, so it can't build a
+  // size-adjusted local fallback and warns on every build. Asking for the
+  // plain serif fallback instead silences it and changes nothing on screen.
+  adjustFontFallback: false,
+  fallback: ['Georgia', 'Times New Roman', 'serif'],
 })
 
 export const metadata = {
