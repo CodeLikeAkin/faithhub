@@ -15,8 +15,11 @@ import { fetchPassage, BOOK_ORDER, BOOK_ABBR, TRANSLATIONS } from "@/lib/bible";
  * Accepts preloaded `scriptures` (the sermon page lifts the query to share a
  * count with its hero); self-fetches when the prop is absent. Renders nothing
  * if the sermon has no extracted scriptures yet.
+ *
+ * `embedded` drops the card chrome and title, for a page section that
+ * supplies its own heading (the lesson page).
  */
-export default function VerseExplorer({ sermonId, scriptures: preloaded }) {
+export default function VerseExplorer({ sermonId, scriptures: preloaded, embedded = false }) {
   const [fetched, setFetched] = useState([]);
   const [view, setView] = useState("book"); // "book" | "spoken"
   const [expandedId, setExpandedId] = useState(null);
@@ -200,21 +203,23 @@ export default function VerseExplorer({ sermonId, scriptures: preloaded }) {
   };
 
   return (
-    <div className="rounded-3xl border border-brand-navy/10 bg-white p-5 sm:p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <span className="flex items-center gap-3">
-          <span className="w-9 h-9 rounded-xl bg-brand-sky text-brand-navy flex items-center justify-center flex-shrink-0">
-            <BookOpen size={18} />
-          </span>
-          <span>
-            <span className="block text-base font-bold text-brand-ink">
-              Scriptures in this message
+    <div className={embedded ? "" : "rounded-3xl border border-brand-navy/10 bg-white p-5 sm:p-6"}>
+      <div className={`flex flex-wrap items-center gap-3 ${embedded ? "justify-end" : "justify-between"}`}>
+        {!embedded && (
+          <span className="flex items-center gap-3">
+            <span className="w-9 h-9 rounded-xl bg-brand-sky text-brand-navy flex items-center justify-center flex-shrink-0">
+              <BookOpen size={18} />
             </span>
-            <span className="block text-xs text-brand-gray">
-              Tap a verse to read it — the note under each is why it was read
+            <span>
+              <span className="block text-base font-bold text-brand-ink">
+                Scriptures in this message
+              </span>
+              <span className="block text-xs text-brand-gray">
+                Tap a verse to read it — the note under each is why it was read
+              </span>
             </span>
           </span>
-        </span>
+        )}
         <span className="flex items-center gap-2.5">
           <span className="flex rounded-full border border-brand-navy/15 p-0.5">
             {[

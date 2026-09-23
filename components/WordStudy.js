@@ -57,7 +57,7 @@ function highlightWord(text, needle) {
  * Renders nothing if the sermon has no extracted word studies yet, so it's
  * safe to drop onto every sermon page before the pipeline has run.
  */
-export default function WordStudy({ sermonId, words: wordsProp, embedded = false }) {
+export default function WordStudy({ sermonId, words: wordsProp, embedded = false, onWatch }) {
   const [fetchedWords, setFetchedWords] = useState([]);
   const [open, setOpen] = useState(embedded); // embedded → always expanded (a tab is the toggle)
   const [expandedId, setExpandedId] = useState(null);
@@ -208,7 +208,9 @@ export default function WordStudy({ sermonId, words: wordsProp, embedded = false
         return (
           <button
             type="button"
-            onClick={() => setWatching({ ...parsed, sermon_title: w.word })}
+            // A lesson page passes onWatch to play the moment in its own
+            // player; everywhere else it opens in the video modal.
+            onClick={() => (onWatch || setWatching)({ ...parsed, sermon_title: w.word })}
             className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-navy bg-white border border-brand-navy/15 rounded-full px-3 py-1.5 hover:bg-brand-sky/70 transition-colors"
           >
             <Play className="w-3 h-3 fill-current" />
