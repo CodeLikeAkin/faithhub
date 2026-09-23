@@ -1,22 +1,17 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
-import StudyWorkspace from "@/components/StudyWorkspace";
+import LessonPage from "@/components/lesson/LessonPage";
 
 /**
- * Message page — the unified study workspace, opened in "message" scope on
- * this sermon. Its series (if any) is resolved inside the shell, so the scope
- * toggle can broaden to the whole series live. Sermons with no series render
- * a message-only workspace. See components/StudyWorkspace.js.
+ * /sermon/[id] — a message as a lesson: embedded player, the series as a
+ * numbered course, then notes / scriptures / word studies / declarations as
+ * one page, with an Ask panel beside it. `?t=<seconds>` starts the player
+ * there. Sermons in no series render as a single lesson.
+ * See components/lesson/LessonPage.js.
  */
 export default function SermonPage() {
   const { id } = useParams();
-  if (!id)
-    return (
-      <div className="h-dvh bg-white flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-brand-navy motion-safe:animate-spin" />
-      </div>
-    );
-  return <StudyWorkspace entry={{ type: "sermon", sermonId: id }} />;
+  if (!id) return <div className="h-dvh bg-white" />;
+  return <LessonPage sermonId={id} />;
 }

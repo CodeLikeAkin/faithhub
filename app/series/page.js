@@ -1,362 +1,484 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Calendar, List, ChevronDown, Filter, Mic2 } from "lucide-react";
+import { ArrowRight, ChevronDown, Search, X } from "lucide-react";
+import ToolShell from "@/components/shell/ToolShell";
+import { DotGrid, Rings } from "@/components/Decor";
+import YtThumb from "@/components/YtThumb";
 import { supabase } from "@/lib/supabase";
-import { cleanTitle, parseSermonDate } from "@/lib/titles";
+import { cleanTitle, displayTitle, parseSermonDate, partTitle } from "@/lib/titles";
 import { detectSpeaker } from "@/lib/speakers";
+import { cn } from "@/lib/utils";
 
-const FALLBACK_COVER = "/church-hero.jpg";
+/**
+ * /series — the catalog: the latest series featured, then a row per year of
+ * typographic covers, then guest speakers. `?q=` searches series titles and
+ * the titles of their parts (and guest messages).
+ */
+
+const fmtRange = (start, end) => {
+  if (!start) return "";
+  const o = { month: "short", year: "numeric", timeZone: "UTC" };
+  const s = new Date(start).toLocaleDateString("en-US", o);
+  const e = end ? new Date(end).toLocaleDateString("en-US", o) : s;
+  return s === e ? s : `${s} – ${e}`;
+};
+
+const fmtDay = (d) => (d ? d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) : "");
+
+/** Same shape as GuestCard: the picture in its own frame, the words below it. */
+function SeriesCover({ s, className }) {
+  return (
+    <Link
+      href={`/series/${s.id}`}
+      className={cn(
+        "group relative flex flex-col overflow-hidden rounded-[1.5rem] bg-white p-5 ring-1 ring-inset ring-brand-navy/10 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_30px_50px_-30px_rgba(16,42,78,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy",
+        className
+      )}
+    >
+      <Rings className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 text-brand-navy/[0.07]" />
+      <span className="relative aspect-video w-full flex-shrink-0 overflow-hidden rounded-xl bg-brand-deep">
+        {/* Shows through only when no part has a live thumbnail. */}
+        <DotGrid dark className="inset-0" />
+        <YtThumb
+          ids={s.covers}
+          quality="mqdefault"
+          className="relative h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+        <span className="absolute bottom-1.5 right-1.5 rounded-md bg-brand-ink/80 px-1.5 py-0.5 text-xs font-semibold text-white">
+          {s.parts} {s.parts === 1 ? "part" : "parts"}
+        </span>
+      </span>
+      <span className="relative mt-4">
+        <span className="line-clamp-2 block h-[3.125rem] hyphens-auto break-words font-display text-xl font-medium leading-tight text-brand-ink">
+          {s.title}
+        </span>
+        <span className="mt-1 block text-xs text-brand-gray">{s.range || " "}</span>
+      </span>
+    </Link>
+  );
+}
+
+function GuestCard({ g, className }) {
+  return (
+    <Link
+      href={`/sermon/${g.id}`}
+      className={cn(
+        "group relative flex aspect-[4/5] flex-col justify-between overflow-hidden rounded-[1.5rem] bg-white p-5 ring-1 ring-inset ring-brand-navy/10 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_30px_50px_-30px_rgba(16,42,78,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy",
+        className
+      )}
+    >
+      <Rings className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 text-brand-navy/[0.07]" />
+      <span className="relative aspect-video w-full overflow-hidden rounded-xl bg-brand-sky">
+        {g.youtube_video_id && (
+          <img src={`https://img.youtube.com/vi/${g.youtube_video_id}/mqdefault.jpg`} alt="" loading="lazy" className="h-full w-full object-cover" />
+        )}
+      </span>
+      <span className="relative">
+        <span className="block font-display text-xl font-medium leading-tight text-brand-ink">{g.speaker}</span>
+        <span className="mt-1 line-clamp-2 block text-sm text-brand-gray">{cleanTitle(g.title)}</span>
+        {g.date && <span className="mt-1 block text-xs text-brand-gray">{fmtDay(g.date)}</span>}
+      </span>
+    </Link>
+  );
+}
+
+/** Sits beside the "Series" heading: narrows the grid below to one year. */
+function YearFilterSelect({ value, onChange, years }) {
+  return (
+    <div className="flex flex-shrink-0 items-center gap-3">
+      <label htmlFor="year-filter" className="text-sm font-medium text-brand-gray">
+        Filter by year
+      </label>
+      <div className="relative w-36">
+        <select
+          id="year-filter"
+          value={value}
+          onChange={onChange}
+          className="w-full appearance-none rounded-full border border-brand-navy/15 bg-white py-2.5 pl-4 pr-9 text-sm font-bold text-brand-ink focus:border-brand-navy/40 focus:outline-none"
+        >
+          <option value="All">All years</option>
+          {years.map(([year]) => (
+            <option key={year} value={String(year)}>
+              {year}
+            </option>
+          ))}
+        </select>
+        <ChevronDown
+          size={15}
+          aria-hidden="true"
+          className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-brand-gray"
+        />
+      </div>
+    </div>
+  );
+}
+
+// Every sermon, for the guest-speaker row. Paged: one select stops at
+// PostgREST's 1,000 rows, and the corpus is heading past that.
+async function fetchAllSermons() {
+  const all = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabase
+      .from("sermons")
+      .select("id, title, sermon_date, youtube_video_id")
+      .order("id")
+      .range(from, from + 999);
+    if (error) return { data: all, error };
+    all.push(...(data || []));
+    if (!data || data.length < 1000) return { data: all, error: null };
+  }
+}
 
 export default function SeriesBrowsePage() {
-  const [series, setSeries] = useState([]);
-  const [guestSermons, setGuestSermons] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [view, setView] = useState("Series"); // "Series" | "Guest Speakers"
+  const [series, setSeries] = useState(null); // null = loading
+  const [guests, setGuests] = useState([]);
+  const [error, setError] = useState(false);
+  const [query, setQuery] = useState("");
   const [filterYear, setFilterYear] = useState("All");
 
-  // Filter options
-  const years = ["All", "2022", "2023", "2024", "2025", "2026"];
-  const views = ["Series", "Guest Speakers"];
-
   useEffect(() => {
-    fetchSeries();
-    fetchGuestSermons();
+    document.title = "Series Study · FaithHub";
+    setQuery(new URLSearchParams(window.location.search).get("q") || "");
+    let cancelled = false;
+    (async () => {
+      const [seriesRes, sermonsRes] = await Promise.all([
+        supabase
+          .from("series")
+          .select("id, title, start_date, end_date, series_sermons ( part_number, sermons ( id, title, youtube_video_id ) )")
+          .order("start_date", { ascending: false, nullsFirst: false }),
+        fetchAllSermons(),
+      ]);
+      if (cancelled) return;
+      if (seriesRes.error) {
+        console.error("Error fetching series:", seriesRes.error);
+        setError(true);
+        setSeries([]);
+        return;
+      }
+      setSeries(
+        (seriesRes.data || []).map((s) => {
+          const parts = [...(s.series_sermons || [])].sort((a, b) => a.part_number - b.part_number);
+          return {
+            id: s.id,
+            title: displayTitle(s.title),
+            start: s.start_date,
+            year: s.start_date ? new Date(s.start_date).getUTCFullYear() : null,
+            range: fmtRange(s.start_date, s.end_date),
+            parts: parts.length,
+            partList: parts.map((p) => ({ n: p.part_number, id: p.sermons?.id, title: partTitle(p.sermons?.title, s.title) })),
+            // Every part's video, in order: YtThumb takes the first whose thumbnail is still live.
+            covers: parts.map((p) => p.sermons?.youtube_video_id).filter(Boolean),
+          };
+        })
+      );
+      setGuests(
+        (sermonsRes.data || [])
+          .map((s) => ({ ...s, info: detectSpeaker(s.title), date: parseSermonDate(s.title) }))
+          .filter((s) => s.info.isGuest)
+          .map((s) => ({ ...s, speaker: s.info.name }))
+          .sort((a, b) => (b.date?.getTime() || 0) - (a.date?.getTime() || 0))
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const fetchSeries = async () => {
-    setLoading(true);
+  const updateQuery = (q) => {
+    setQuery(q);
     try {
-      const { data, error } = await supabase
-        .from("series")
-        .select(`
-          *,
-          series_sermons (
-            part_number,
-            sermons (
-              youtube_video_id
-            )
-          )
-        `)
-        .order("start_date", { ascending: false });
-
-      if (error) throw error;
-      setSeries(data || []);
-    } catch (err) {
-      console.error("Error fetching series:", err);
-    } finally {
-      setLoading(false);
+      window.history.replaceState(null, "", q.trim() ? `/series?q=${encodeURIComponent(q.trim())}` : "/series");
+    } catch {
+      /* noop */
     }
   };
 
-  const fetchGuestSermons = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("sermons")
-        .select("id, title, sermon_date, youtube_video_id");
-
-      if (error) throw error;
-
-      const guests = (data || [])
-        .map((s) => ({ ...s, speaker: detectSpeaker(s.title) }))
-        .filter((s) => s.speaker.isGuest)
-        .sort((a, b) => {
-          const da = parseSermonDate(a.title);
-          const db = parseSermonDate(b.title);
-          return (db?.getTime() || 0) - (da?.getTime() || 0);
-        });
-
-      setGuestSermons(guests);
-    } catch (err) {
-      console.error("Error fetching guest sermons:", err);
+  const years = useMemo(() => {
+    if (!series) return [];
+    const map = new Map();
+    for (const s of series) {
+      const k = s.year ?? "Undated";
+      if (!map.has(k)) map.set(k, []);
+      map.get(k).push(s);
     }
-  };
+    return [...map.entries()].sort((a, b) => (b[0] === "Undated" ? -1 : a[0] === "Undated" ? 1 : b[0] - a[0]));
+  }, [series]);
 
-  const filteredSeries = series.filter((s) => {
-    return (
-      filterYear === "All" ||
-      new Date(s.start_date).getFullYear().toString() === filterYear
+  // Same bucketing as `years` (Undated included), so the dropdown's value
+  // always lines up with a real group instead of falling through to "All".
+  const filteredSeriesForYear = useMemo(() => {
+    if (!series || filterYear === "All") return [];
+    return series.filter((s) => String(s.year ?? "Undated") === filterYear);
+  }, [series, filterYear]);
+
+  const filteredGuestsForYear = useMemo(() => {
+    if (filterYear === "All") return [];
+    return guests.filter((g) => g.date && String(g.date.getUTCFullYear()) === filterYear);
+  }, [guests, filterYear]);
+
+  const q = query.trim().toLowerCase();
+  const results = useMemo(() => {
+    if (!q || !series) return null;
+    const matchSeries = series.filter(
+      (s) => s.title.toLowerCase().includes(q) || s.partList.some((p) => p.title?.toLowerCase().includes(q))
     );
-  });
+    const matchGuests = guests.filter(
+      (g) => g.speaker?.toLowerCase().includes(q) || cleanTitle(g.title).toLowerCase().includes(q)
+    );
+    return { series: matchSeries, guests: matchGuests };
+  }, [q, series, guests]);
 
-  const filteredGuestSermons = useMemo(
-    () =>
-      guestSermons.filter((s) => {
-        if (filterYear === "All") return true;
-        const trueDate = parseSermonDate(s.title);
-        return trueDate?.getUTCFullYear().toString() === filterYear;
-      }),
-    [guestSermons, filterYear]
-  );
-
-  const formatDateRange = (start, end) => {
-    if (!start) return "";
-    const s = new Date(start);
-    const e = end ? new Date(end) : s;
-    const options = { month: "short", year: "numeric" };
-
-    if (s.getFullYear() === e.getFullYear() && s.getMonth() === e.getMonth()) {
-      return s.toLocaleDateString("en-US", options);
-    }
-
-    return `${s.toLocaleDateString("en-US", options)} – ${e.toLocaleDateString("en-US", options)}`;
-  };
+  const featured = series?.[0];
+  const totalMessages = series ? series.reduce((n, s) => n + s.parts, 0) : 0;
 
   return (
-    <main id="main-content" className="min-h-screen bg-white">
-      {/* Page heading */}
-      <section className="mx-auto max-w-[1400px] px-4 sm:px-6 pt-28 sm:pt-36 pb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-navy">
-            Study
-          </p>
-          <h1 className="mt-3 text-3xl sm:text-5xl font-bold text-brand-ink tracking-tight">
-            Series Study
-          </h1>
-          <p className="mt-3 text-brand-gray max-w-lg">
-            Explore Rev. Peter&apos;s teaching series by series — then ask
-            questions, grounded in the messages themselves.
-          </p>
-        </div>
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-sky rounded-full border border-brand-navy/10 self-start sm:self-auto">
-          <List size={14} className="text-brand-navy" />
-          <span className="text-xs font-bold text-brand-navy">
-            {view === "Series"
-              ? `${series.length} series available`
-              : `${guestSermons.length} guest messages`}
-          </span>
-        </div>
-      </section>
+    <ToolShell kind="series" title="Series Study" titleAs="p">
+      <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
+        <header className="mx-auto flex max-w-[1400px] flex-col gap-6 px-4 pt-10 sm:px-8 sm:pt-14 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h1 className="font-display text-5xl font-medium tracking-tight text-brand-ink sm:text-6xl">Series Study</h1>
+            <p className="mt-3 text-lg text-brand-gray">
+              {series?.length
+                ? `${series.length} series · ${totalMessages} messages, each one a course to study and ask about.`
+                : "Rev. Peter’s teaching, series by series."}
+            </p>
+          </div>
+          <div className="relative w-full lg:w-96">
+            <Search size={18} aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-brand-gray" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => updateQuery(e.target.value)}
+              placeholder="Search series and messages"
+              aria-label="Search series and messages"
+              className="h-12 w-full rounded-full border border-brand-navy/15 bg-white pl-11 pr-11 text-base text-brand-ink placeholder:text-brand-gray/70 focus:border-brand-navy/40 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => updateQuery("")}
+                aria-label="Clear search"
+                className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-brand-gray hover:bg-brand-sky hover:text-brand-navy"
+              >
+                <X size={16} aria-hidden="true" />
+              </button>
+            )}
+          </div>
+        </header>
 
-      {/* Filter bar */}
-      <section className="mx-auto max-w-[1400px] px-4 sm:px-6 pb-8">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-brand-sky/60 border border-brand-navy/10 p-4 sm:p-5 rounded-3xl">
-          <div className="flex items-center gap-3">
-            <Filter size={18} className="text-brand-navy flex-shrink-0" />
-            <div className="flex p-1 bg-white rounded-2xl border border-brand-navy/10">
-              {views.map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setView(v)}
-                  className={`px-5 sm:px-6 py-2.5 rounded-xl text-sm font-bold transition-all inline-flex items-center gap-2 ${
-                    view === v
-                      ? "bg-brand-navy text-white shadow-lg shadow-brand-navy/20"
-                      : "text-brand-gray hover:text-brand-ink"
-                  }`}
-                >
-                  {v === "Guest Speakers" && <Mic2 size={14} />}
-                  {v}
-                </button>
+        {series === null && (
+          <div aria-hidden="true" className="mx-auto mt-10 max-w-[1400px] px-4 sm:px-8">
+            <div className="h-72 rounded-[2rem] bg-brand-sky motion-safe:animate-pulse" />
+            <div className="mt-10 flex gap-4 overflow-hidden">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div key={i} className="aspect-[4/5] w-52 flex-shrink-0 rounded-[1.5rem] bg-brand-sky/70 motion-safe:animate-pulse" />
               ))}
             </div>
           </div>
+        )}
 
-          <div className="flex items-center gap-4 w-full md:w-auto">
-            <span className="text-sm font-medium text-brand-gray">Year</span>
-            <div className="relative flex-1 md:w-40">
-              <select
-                value={filterYear}
-                onChange={(e) => setFilterYear(e.target.value)}
-                className="w-full appearance-none bg-white border border-brand-navy/10 rounded-2xl px-5 py-3 text-sm font-bold text-brand-ink focus:outline-none focus:border-brand-navy/40 transition-colors cursor-pointer"
-              >
-                {years.map((year) => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
-              <ChevronDown
-                size={16}
-                className="absolute right-5 top-1/2 -translate-y-1/2 text-brand-gray pointer-events-none"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
+        {error && (
+          <p className="mx-auto mt-10 max-w-[1400px] px-4 text-brand-gray sm:px-8">
+            Couldn&rsquo;t load the series just now. Please refresh in a moment.
+          </p>
+        )}
 
-      {/* Grid */}
-      <section className="mx-auto max-w-[1400px] px-4 sm:px-6 pb-24">
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {[...Array(8)].map((_, i) => (
-              <div
-                key={i}
-                className="aspect-[16/10] bg-brand-sky rounded-3xl motion-safe:animate-pulse"
-              />
-            ))}
-          </div>
-        ) : view === "Guest Speakers" ? (
-          filteredGuestSermons.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredGuestSermons.map((s) => {
-                const thumbSrc = s.youtube_video_id
-                  ? `https://img.youtube.com/vi/${s.youtube_video_id}/hqdefault.jpg`
-                  : FALLBACK_COVER;
-                const trueDate = parseSermonDate(s.title);
-
-                return (
-                  <Link
-                    key={s.id}
-                    href={`/sermon/${s.id}`}
-                    className="group relative flex flex-col bg-white rounded-3xl overflow-hidden border border-brand-navy/10 hover:border-brand-navy/25 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-navy/10"
-                  >
-                    <div className="aspect-[16/10] relative overflow-hidden">
-                      <img
-                        src={thumbSrc}
-                        alt={s.title}
-                        onError={(e) => {
-                          if (e.currentTarget.dataset.fallback) return;
-                          e.currentTarget.dataset.fallback = "1";
-                          e.currentTarget.src = FALLBACK_COVER;
-                        }}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                      <div className="absolute bottom-4 right-4 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-full flex items-center gap-1.5">
-                        <Mic2 size={12} className="text-white" />
-                        <span className="text-xs font-bold uppercase tracking-wider text-white">
-                          Guest Message
-                        </span>
-                      </div>
+        {results ? (
+          <section aria-label="Search results" className="mx-auto max-w-[1400px] px-4 pb-24 pt-10 sm:px-8">
+            <p className="text-sm text-brand-gray" role="status">
+              {results.series.length + results.guests.length === 0
+                ? `Nothing matches “${query.trim()}”.`
+                : `${results.series.length} series${results.guests.length ? ` · ${results.guests.length} guest messages` : ""} for “${query.trim()}”`}
+            </p>
+            <ul className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+              {results.series.map((s) => (
+                <li key={s.id}>
+                  <SeriesCover s={s} />
+                </li>
+              ))}
+              {results.guests.map((g) => (
+                <li key={g.id}>
+                  <GuestCard g={g} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : (
+          series?.length > 0 && (
+            <div className="pb-24">
+              {filterYear === "All" ? (
+                <>
+                  {/* Latest series */}
+                  {featured && (
+                    <div className="mx-auto mt-10 max-w-[1400px] px-4 sm:px-8">
+                      <section
+                        aria-labelledby="latest-heading"
+                        className="relative grid overflow-hidden rounded-[1.75rem] bg-brand-deep text-white sm:rounded-[2.5rem] lg:grid-cols-[1.15fr_1fr]"
+                      >
+                        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+                          <YtThumb
+                            ids={featured.covers}
+                            className="absolute inset-0 h-full w-full object-cover opacity-[0.13] mix-blend-luminosity"
+                          />
+                          <div className="absolute -left-40 -top-40 h-[28rem] w-[28rem] rounded-full bg-brand-navy/80 blur-3xl" />
+                          <DotGrid dark className="inset-0 [mask-image:radial-gradient(ellipse_at_top_left,black,transparent_55%)]" />
+                          <Rings className="absolute -bottom-56 -right-56 h-[36rem] w-[36rem] text-white/[0.06]" />
+                        </div>
+                        <div className="relative px-6 py-10 sm:px-12 sm:py-14">
+                          <p className="text-sm text-white/70">Latest series</p>
+                          <h2 id="latest-heading" className="mt-3 font-display text-4xl font-medium leading-[1.05] tracking-tight text-balance sm:text-5xl">
+                            {featured.title}
+                          </h2>
+                          <p className="mt-4 text-sm text-white/65">
+                            {featured.parts} parts{featured.range && ` · ${featured.range}`}
+                          </p>
+                          <div className="mt-8 flex flex-wrap gap-3">
+                            {featured.partList[0]?.id && (
+                              <Link
+                                href={`/sermon/${featured.partList[0].id}`}
+                                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-bold text-brand-navy transition-colors hover:bg-brand-sky sm:text-base"
+                              >
+                                Start with Part 1 <ArrowRight size={16} aria-hidden="true" />
+                              </Link>
+                            )}
+                            <Link
+                              href={`/series/${featured.id}`}
+                              className="inline-flex items-center gap-2 rounded-full border border-white/40 px-6 py-3.5 text-sm font-bold text-white transition-colors hover:bg-white/10 sm:text-base"
+                            >
+                              Open the series
+                            </Link>
+                          </div>
+                        </div>
+                        <ol className="relative border-t border-white/10 px-4 py-4 sm:px-8 lg:border-l lg:border-t-0 lg:py-10">
+                          {featured.partList.slice(0, 6).map((p) => (
+                            <li key={p.id || p.n}>
+                              <Link
+                                href={`/sermon/${p.id}`}
+                                className="flex items-center gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-white/[0.07]"
+                              >
+                                <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-full border border-white/25 text-sm font-bold tabular-nums">
+                                  {p.n}
+                                </span>
+                                <span className="min-w-0 truncate text-sm text-white/85">{p.title}</span>
+                              </Link>
+                            </li>
+                          ))}
+                          {featured.parts > 6 && (
+                            <li className="px-2 pt-2 text-sm text-white/60">+ {featured.parts - 6} more parts</li>
+                          )}
+                        </ol>
+                      </section>
                     </div>
+                  )}
 
-                    <div className="p-5 sm:p-6 flex flex-col flex-1">
-                      <h3 className="text-lg font-bold text-brand-ink mb-2 line-clamp-2 group-hover:text-brand-navy transition-colors leading-tight">
-                        {cleanTitle(s.title)}
-                      </h3>
-                      <p className="text-sm font-semibold text-brand-navy mb-2">
-                        {s.speaker.name}
-                      </p>
-                      <div className="mt-auto flex items-center gap-2 text-brand-gray">
-                        <Calendar size={14} className="text-brand-navy" />
-                        <span className="text-xs font-medium">
-                          {trueDate
-                            ? trueDate.toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                                timeZone: "UTC",
-                              })
-                            : "Date unavailable"}
-                        </span>
+                  <div className="mx-auto mt-12 max-w-[1400px] px-4 sm:px-8">
+                    <section aria-labelledby="all-series-heading">
+                      <div className="flex flex-wrap items-end justify-between gap-4">
+                        <div>
+                          <h2 id="all-series-heading" className="font-display text-2xl font-medium text-brand-ink">
+                            Series
+                          </h2>
+                          <p className="mt-1 text-sm text-brand-gray">{series.length} series</p>
+                        </div>
+                        <YearFilterSelect value={filterYear} onChange={(e) => setFilterYear(e.target.value)} years={years} />
                       </div>
+                      <ul className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                        {series.map((s) => (
+                          <li key={s.id}>
+                            <SeriesCover s={s} />
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+
+                    {guests.length > 0 && (
+                      <section aria-labelledby="all-guests-heading" className="mt-12">
+                        <h2 id="all-guests-heading" className="font-display text-2xl font-medium text-brand-ink">
+                          Guest speakers
+                        </h2>
+                        <p className="mt-1 text-sm text-brand-gray">
+                          {guests.length} messages from ministers who visited Heritage of Faith
+                        </p>
+                        <ul className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                          {guests.map((g) => (
+                            <li key={g.id}>
+                              <GuestCard g={g} />
+                            </li>
+                          ))}
+                        </ul>
+                      </section>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="mx-auto mt-10 max-w-[1400px] px-4 sm:px-8">
+                  {filteredSeriesForYear.length === 0 && filteredGuestsForYear.length === 0 ? (
+                    <div className="flex flex-col items-center py-24 text-center">
+                      <p className="text-lg font-medium text-brand-ink">Nothing from {filterYear}.</p>
+                      <p className="mt-2 text-sm text-brand-gray">Try a different year.</p>
+                      <button
+                        type="button"
+                        onClick={() => setFilterYear("All")}
+                        className="mt-6 text-sm font-bold text-brand-navy hover:underline"
+                      >
+                        Reset filter
+                      </button>
                     </div>
-                  </Link>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-32 text-center">
-              <div className="w-20 h-20 bg-brand-sky rounded-full flex items-center justify-center mb-6 border border-brand-navy/10">
-                <Mic2 size={32} className="text-brand-navy" />
-              </div>
-              <h2 className="text-2xl font-bold text-brand-ink mb-2">
-                No guest messages found for this filter.
-              </h2>
-              <p className="text-brand-gray max-w-md mx-auto">
-                Try adjusting the year or resetting the filters.
-              </p>
-              <button
-                onClick={() => {
-                  setView("Series");
-                  setFilterYear("All");
-                }}
-                className="mt-8 text-brand-navy font-bold text-sm hover:underline"
-              >
-                Reset all filters
-              </button>
+                  ) : (
+                    <>
+                      {filteredSeriesForYear.length > 0 && (
+                        <section aria-labelledby="filtered-series-heading">
+                          <div className="flex flex-wrap items-end justify-between gap-4">
+                            <div>
+                              <h2 id="filtered-series-heading" className="font-display text-2xl font-medium text-brand-ink">
+                                Series
+                              </h2>
+                              <p className="mt-1 text-sm text-brand-gray">
+                                {filteredSeriesForYear.length} series in {filterYear}
+                              </p>
+                            </div>
+                            <YearFilterSelect value={filterYear} onChange={(e) => setFilterYear(e.target.value)} years={years} />
+                          </div>
+                          <ul className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                            {filteredSeriesForYear.map((s) => (
+                              <li key={s.id}>
+                                <SeriesCover s={s} />
+                              </li>
+                            ))}
+                          </ul>
+                        </section>
+                      )}
+
+                      {filteredGuestsForYear.length > 0 && (
+                        <section
+                          aria-labelledby="filtered-guests-heading"
+                          className={filteredSeriesForYear.length > 0 ? "mt-12" : undefined}
+                        >
+                          <h2 id="filtered-guests-heading" className="font-display text-2xl font-medium text-brand-ink">
+                            Guest speakers
+                          </h2>
+                          <p className="mt-1 text-sm text-brand-gray">
+                            {filteredGuestsForYear.length} guest {filteredGuestsForYear.length === 1 ? "message" : "messages"} in {filterYear}
+                          </p>
+                          <ul className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                            {filteredGuestsForYear.map((g) => (
+                              <li key={g.id}>
+                                <GuestCard g={g} />
+                              </li>
+                            ))}
+                          </ul>
+                        </section>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           )
-        ) : filteredSeries.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredSeries.map((s) => {
-              const thumbId =
-                s.series_sermons?.find((ss) => ss.part_number === 1)?.sermons
-                  ?.youtube_video_id ||
-                s.series_sermons?.[0]?.sermons?.youtube_video_id;
-
-              // A curated cover wins over the part-1 still. It is the only
-              // option for a series whose videos have been pulled from
-              // YouTube — "The Glory Cloud (June 2026)" lost all five, so its
-              // part-1 thumbnail 404s and the card rendered a broken image.
-              const thumbSrc =
-                s.thumbnail_url ||
-                (thumbId
-                  ? `https://img.youtube.com/vi/${thumbId}/hqdefault.jpg`
-                  : FALLBACK_COVER);
-
-              return (
-                <Link
-                  key={s.id}
-                  href={`/series/${s.id}`}
-                  className="group relative flex flex-col bg-white rounded-3xl overflow-hidden border border-brand-navy/10 hover:border-brand-navy/25 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-navy/10"
-                >
-                  {/* Thumbnail */}
-                  <div className="aspect-[16/10] relative overflow-hidden">
-                    <img
-                      src={thumbSrc}
-                      alt={s.title}
-                      onError={(e) => {
-                        // A video can be taken down after its row was written,
-                        // so a working thumbnail today is no guarantee. Degrade
-                        // to the house image, not a broken-image icon.
-                        if (e.currentTarget.dataset.fallback) return;
-                        e.currentTarget.dataset.fallback = "1";
-                        e.currentTarget.src = FALLBACK_COVER;
-                      }}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-
-                    {/* Part count badge */}
-                    <div className="absolute bottom-4 right-4 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-full flex items-center gap-1.5">
-                      <List size={12} className="text-white" />
-                      <span className="text-xs font-bold uppercase tracking-wider text-white">
-                        {/* series_sermons is the live link count; total_parts is a
-                            cached high-water mark that never decreases when a
-                            sermon is unlinked, so it can overstate the real count. */}
-                        {s.series_sermons?.length || s.total_parts || 0} Parts
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Info */}
-                  <div className="p-5 sm:p-6 flex flex-col flex-1">
-                    <h3 className="text-lg font-bold text-brand-ink mb-2 line-clamp-2 group-hover:text-brand-navy transition-colors leading-tight">
-                      {s.title}
-                    </h3>
-                    <div className="mt-auto flex items-center gap-2 text-brand-gray">
-                      <Calendar size={14} className="text-brand-navy" />
-                      <span className="text-xs font-medium">
-                        {formatDateRange(s.start_date, s.end_date)}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-32 text-center">
-            <div className="w-20 h-20 bg-brand-sky rounded-full flex items-center justify-center mb-6 border border-brand-navy/10">
-              <Filter size={32} className="text-brand-navy" />
-            </div>
-            <h2 className="text-2xl font-bold text-brand-ink mb-2">
-              No series found for this filter.
-            </h2>
-            <p className="text-brand-gray max-w-md mx-auto">
-              Try adjusting your selections or resetting the filters.
-            </p>
-            <button
-              onClick={() => {
-                setFilterYear("All");
-              }}
-              className="mt-8 text-brand-navy font-bold text-sm hover:underline"
-            >
-              Reset all filters
-            </button>
-          </div>
         )}
-      </section>
-    </main>
+      </div>
+    </ToolShell>
   );
 }

@@ -1,22 +1,16 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
-import StudyWorkspace from "@/components/StudyWorkspace";
+import SeriesOverview from "@/components/lesson/SeriesOverview";
 
 /**
- * Series studio — the unified study workspace, opened in "series" scope.
- * The toggle inside can narrow it to a single message (rewriting the URL to
- * /sermon/[id] without a reload); the message page boots the same shell in
- * "message" scope. See components/StudyWorkspace.js.
+ * /series/[id] — a series as a course overview (cover, what it teaches, its
+ * parts in order, key scriptures, declarations) with an Ask panel scoped to
+ * the whole series. Each part opens its lesson at /sermon/[id].
+ * See components/lesson/SeriesOverview.js.
  */
 export default function SeriesDetailPage() {
   const { id } = useParams();
-  if (!id)
-    return (
-      <div className="h-dvh bg-brand-light flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-brand-navy motion-safe:animate-spin" />
-      </div>
-    );
-  return <StudyWorkspace entry={{ type: "series", seriesId: id }} />;
+  if (!id) return <div className="h-dvh bg-white" />;
+  return <SeriesOverview seriesId={id} />;
 }
