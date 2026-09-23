@@ -1,10 +1,14 @@
 // app/api/declarations/route.js
-// Replaces keyword/topic matching with semantic vector search.
-// Flow: embed message → match_declarations RPC → Groq response
+// "What are you facing?" — semantic + keyword search over declarations.
+// Flow: Groq plans 3 declaration-shaped lines + keywords → embed each line →
+//       several match_declarations_hybrid legs, fused (RRF) → Groq reranks the
+//       fused pool against the actual sentences → ranked top 10. Falls back to
+//       a single hybrid search on the raw message if Groq is unreachable or
+//       nothing comes back. The Groq pastoral note runs alongside all of it.
 
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getDeclarations } from "@/lib/groq";
+import { getDeclarations, planDeclarationSearch, rerankDeclarations } from "@/lib/groq";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 const serviceKey = process.env.SUPABASE_SERVICE_KEY;
@@ -45,6 +49,69 @@ async function embedText(text) {
 
   const { embedding } = await res.json();
   return embedding;
+}
+
+// ─────────────────────────────────────────────
+// Helper: normalize declaration text for de-duplication (lowercase, strip
+// punctuation & extra spaces). Two rows can be the same declaration with
+// trivial punctuation/casing differences from how they were transcribed.
+// ─────────────────────────────────────────────
+function normalizeText(text) {
+  return (text || "")
+    .toLowerCase()
+    .replace(/[^\w\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// De-dupes by normalized text, keeping the first (best-ranked) occurrence —
+// every list this is called on is already ordered by relevance.
+function dedupeByText(rows) {
+  const seen = new Map();
+  for (const row of rows) {
+    const key = normalizeText(row.declaration_text);
+    if (!seen.has(key)) seen.set(key, row);
+  }
+  return Array.from(seen.values());
+}
+
+// One leg of the multi-line search (see planDeclarationSearch in lib/groq.js):
+// queryEmbedding + queryText="" is a semantic-only leg on one declaration
+// line; queryEmbedding=null + queryText is a keyword-only leg (the plan's
+// need-nouns, or the user's own words for exact phrases/scripture refs).
+// Never throws — a failed leg just contributes nothing, so the other legs
+// (and ultimately the raw-message fallback below) still carry the search.
+async function hybridLeg(queryEmbedding, queryText, excludeIds, matchCount = 40) {
+  const { data, error } = await supabase.rpc("match_declarations_hybrid", {
+    query_embedding: queryEmbedding,
+    query_text: queryText,
+    match_count: matchCount,
+    exclude_ids: excludeIds.length > 0 ? excludeIds : [],
+  });
+  if (error) {
+    console.error("[declarations] Hybrid leg RPC error:", error.message);
+    return [];
+  }
+  return data || [];
+}
+
+// Reciprocal Rank Fusion across several leg results into one ranked list —
+// one layer up from the RRF match_declarations_hybrid already does between
+// its own semantic/keyword legs (see supabase/migrations/hybrid_search.sql).
+// Positional, like that RPC's `similarity`: every leg has a "rank 1", so this
+// is for ordering candidates, not for judging whether any of them are good.
+function fuseRanked(lists, rrfK = 50) {
+  const score = new Map();
+  const row = new Map();
+  for (const list of lists) {
+    list.forEach((d, i) => {
+      score.set(d.id, (score.get(d.id) || 0) + 1 / (rrfK + i + 1));
+      row.set(d.id, d);
+    });
+  }
+  return [...score.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([id]) => row.get(id));
 }
 
 // ─────────────────────────────────────────────
@@ -101,6 +168,19 @@ export async function POST(request) {
       );
     }
 
+    // The pastoral note depends only on the message, so start it now and let it
+    // run alongside the rewrite → embed → search chain instead of after it.
+    // "Show 10 more" (shownIds present) never displays a note, so it gets none.
+    // Whenever the note turns out not to be needed (nothing relevant matched,
+    // or an early return below), noteAbort cancels the Groq request instead of
+    // paying for a reply nobody sees. The no-op catch stops a cancelled or
+    // failed note from becoming an unhandled rejection; a real failure still
+    // throws where it's awaited in step 7.
+    const wantNote = !(Array.isArray(shownIds) && shownIds.length);
+    const noteAbort = new AbortController();
+    const replyPromise = wantNote ? getDeclarations(message, { signal: noteAbort.signal }) : Promise.resolve(null);
+    replyPromise.catch(() => {});
+
     let declarations = [];
     let embeddingFailed = false;
     // True when the freeform (non-topic) search found nothing relevant, so any
@@ -127,49 +207,104 @@ export async function POST(request) {
         declarations = data || [];
       }
     } else {
-      // ── 1. Embed the user's message ──────────────────────────
-      let queryEmbedding;
-      try {
-        queryEmbedding = await embedText(message);
-      } catch (embedErr) {
-        console.error("[declarations] Embed failed:", embedErr.message);
-        embeddingFailed = true;
-        queryEmbedding = null;
+      // ── 1. Plan the search ────────────────────────────────────
+      // Three short declaration-shaped lines (plain need, church/Bible
+      // phrasing, specific outcome) + the need's own nouns for a keyword leg.
+      // See planDeclarationSearch in lib/groq.js for why three lines instead
+      // of one rewrite. Fails fast (6s, no retries) so a Groq outage falls
+      // through to step 4 instead of hanging the request.
+      const plan = await planDeclarationSearch(message);
+
+      let candidates = [];
+      if (plan && plan.declarations.length > 0) {
+        // ── 2. Multi-leg hybrid search, fused ───────────────────
+        const lines = plan.declarations.slice(0, 3);
+
+        const lineEmbeddings = await Promise.all(
+          lines.map(async (line) => {
+            try {
+              return await embedText(line);
+            } catch (err) {
+              console.error("[declarations] Line embed failed:", err.message);
+              return null;
+            }
+          })
+        );
+        // Only matters for the fallback-to-random log message below — if some
+        // lines embedded fine, their legs still carry the search past this point.
+        if (lineEmbeddings.every((e) => e === null)) embeddingFailed = true;
+
+        const legs = await Promise.all([
+          ...lineEmbeddings
+            .filter((e) => e !== null)
+            .map((e) => hybridLeg(e, "", shownIds)),
+          // Keyword leg on the plan's need-nouns, plus one on the user's own
+          // words — catches exact scripture refs/names the lines paraphrase away.
+          plan.keywords.length > 0 ? hybridLeg(null, plan.keywords.join(" or "), shownIds) : Promise.resolve([]),
+          hybridLeg(null, message, shownIds),
+        ]);
+
+        candidates = dedupeByText(fuseRanked(legs)).slice(0, 60);
+
+        // ── 3. Rerank ────────────────────────────────────────────
+        // The fused order is positional, not a relevance judgement (see
+        // fuseRanked) — read the actual sentences and re-pick. If this fails,
+        // the fused order still stands (step 2's quality, not step 4's).
+        if (candidates.length > 0) {
+          const picks = await rerankDeclarations(message, candidates.map((d) => d.declaration_text));
+          if (picks) {
+            const chosen = picks.map((n) => candidates[n - 1]);
+            const chosenIds = new Set(chosen.map((d) => d.id));
+            candidates = [...chosen, ...candidates.filter((d) => !chosenIds.has(d.id))];
+          }
+        }
       }
 
-      // ── 2. Hybrid search (semantic + keyword, RRF-fused) ─────────────────
-      // Keyword recall catches exact phrases/scripture the small embedding model
-      // misses. If embedding failed, queryEmbedding is null and the hybrid RPC
-      // degrades to keyword-only rather than falling straight to random.
-      if (queryEmbedding || message.trim()) {
-        const { data, error } = await supabase.rpc("match_declarations_hybrid", {
-          query_embedding: queryEmbedding, // may be null → keyword-only
-          query_text: message,
-          match_count: 30,
-          exclude_ids: shownIds.length > 0 ? shownIds : [],
-        });
+      if (candidates.length > 0) {
+        declarations = candidates;
+      } else {
+        // ── 4. Fallback: single hybrid search on the raw message ──
+        // Groq is unreachable (plan failed) or every leg came back empty —
+        // fall back to embedding the message as-is against the library.
+        let queryEmbedding;
+        try {
+          queryEmbedding = await embedText(message);
+        } catch (embedErr) {
+          console.error("[declarations] Embed failed:", embedErr.message);
+          embeddingFailed = true;
+          queryEmbedding = null;
+        }
 
-        if (error) {
-          // Hybrid RPC not applied yet (migration pending) or failed — fall back
-          // to the vector-only RPC when we have an embedding.
-          console.error("[declarations] Hybrid RPC error, falling back to vector-only:", error.message);
-          if (queryEmbedding) {
-            const { data: vec, error: vecErr } = await supabase.rpc("match_declarations", {
-              query_embedding: queryEmbedding,
-              match_threshold: 0.3,
-              match_count: 30,
-              exclude_ids: shownIds.length > 0 ? shownIds : [],
-            });
-            if (vecErr) console.error("[declarations] Vector fallback RPC error:", vecErr.message);
-            else if (vec && vec.length > 0) declarations = vec;
+        if (queryEmbedding || message.trim()) {
+          const { data, error } = await supabase.rpc("match_declarations_hybrid", {
+            query_embedding: queryEmbedding, // may be null → keyword-only
+            query_text: message,
+            match_count: 30,
+            exclude_ids: shownIds.length > 0 ? shownIds : [],
+          });
+
+          if (error) {
+            // Hybrid RPC not applied yet (migration pending) or failed — fall back
+            // to the vector-only RPC when we have an embedding.
+            console.error("[declarations] Hybrid RPC error, falling back to vector-only:", error.message);
+            if (queryEmbedding) {
+              const { data: vec, error: vecErr } = await supabase.rpc("match_declarations", {
+                query_embedding: queryEmbedding,
+                match_threshold: 0.3,
+                match_count: 30,
+                exclude_ids: shownIds.length > 0 ? shownIds : [],
+              });
+              if (vecErr) console.error("[declarations] Vector fallback RPC error:", vecErr.message);
+              else if (vec && vec.length > 0) declarations = vec;
+            }
+          } else if (data && data.length > 0) {
+            declarations = data;
           }
-        } else if (data && data.length > 0) {
-          declarations = data;
         }
       }
     }
 
-    // ── 3. Fallback: random declarations if semantic returns nothing ──
+    // ── 5. Fallback: random declarations if nothing else returned ──
     if (declarations.length === 0) {
       const reason = embeddingFailed
         ? "embedding service unavailable"
@@ -211,36 +346,30 @@ export async function POST(request) {
         sermon_title: d.sermons?.title || "Heritage of Faith Church",
         similarity: 0,
       }));
-    }
 
-    // ── 4. Deduplicate by declaration text ────────────────────
-    // Normalize text for comparison: lowercase, strip punctuation & extra spaces
-    function normalizeText(text) {
-      return (text || "")
-        .toLowerCase()
-        .replace(/[^\w\s]/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
-    }
-
-    const seen = new Map(); // normalized text → declaration object
-    for (const d of declarations) {
-      const key = normalizeText(d.declaration_text);
-      const existing = seen.get(key);
-      if (!existing || (d.similarity || 0) > (existing.similarity || 0)) {
-        seen.set(key, d);
+      // This query has no ORDER BY, so without a shuffle it would serve the same
+      // first 30 rows every time. Fisher-Yates for variety (fallback only; ranked
+      // results keep their order, see step 7).
+      for (let i = declarations.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [declarations[i], declarations[j]] = [declarations[j], declarations[i]];
       }
     }
-    declarations = Array.from(seen.values());
 
-    // ── 5. Shuffle for variety on each reload ────────────────
-    // Fisher-Yates shuffle so the same query returns different declarations
-    for (let i = declarations.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [declarations[i], declarations[j]] = [declarations[j], declarations[i]];
-    }
+    // ── 6. Deduplicate by declaration text ────────────────────
+    // Candidates from the new plan+rerank path are already deduped (step 2);
+    // this catches the fallback paths (single hybrid/vector search, random).
+    // Every list here is already ordered by relevance, so first-occurrence
+    // and highest-similarity agree — see dedupeByText.
+    declarations = dedupeByText(declarations);
 
-    // ── 6. Determine hasMore and slice to 10 ─────────────────
+    // ── 7. Keep the ranked order ─────────────────────────────
+    // No shuffle for RPC results. Shuffling the top 30 and showing 10 of them
+    // used to bury the best matches (ranks 1-3) under the tail. The hybrid RPC
+    // already orders by relevance (the topic RPC in random order), and "Show 10
+    // more" pages down the same list via shownIds.
+
+    // ── 8. Determine hasMore and slice to 10 ─────────────────
     const hasMore = declarations.length > 10;
     const toReturn = declarations.slice(0, 10).map((d) => ({
       id: d.id,
@@ -250,10 +379,11 @@ export async function POST(request) {
       topic_tags: d.topic_tags || [],
     }));
 
-    // ── 6b. No declarations at all → data layer is down or empty. ──
+    // ── 8b. No declarations at all → data layer is down or empty. ──
     // Do NOT fabricate a pastoral paragraph with nothing behind it (that is what
     // made the paused-database outage look like a working "write-up"). Fail loud.
     if (toReturn.length === 0) {
+      noteAbort.abort();
       console.error("[declarations] No declarations available — data layer unreachable or empty. Returning 503 instead of a fabricated response.");
       return NextResponse.json(
         { error: "Declarations library is temporarily unavailable. Please try again in a moment." },
@@ -261,15 +391,16 @@ export async function POST(request) {
       );
     }
 
-    // ── 7. Generate pastoral AI response via Groq ────────────
+    // ── 9. Generate pastoral AI response via Groq ────────────
     // If nothing actually matched what the user shared, don't have the model
     // write a "personal to what they said" reply around unrelated declarations
     // — that's the same fabrication risk /ask and /series-chat already refuse.
     // Say so plainly and let the (still real, still Rev. Peter's) declarations
     // below stand on their own as general encouragement.
+    if (noRelevantMatch) noteAbort.abort();
     const botResponse = noRelevantMatch
       ? "I couldn't find declarations that speak directly to what you shared, but here are some from across Rev. Peter's messages to stand on in the meantime."
-      : await getDeclarations(message, toReturn);
+      : await replyPromise;
 
     return NextResponse.json({
       response: botResponse,
