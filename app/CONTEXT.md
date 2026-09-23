@@ -48,11 +48,18 @@ Input:
 ```
 
 Flow:
-1. Embed `message` via Supabase Edge Function
-2. Call `match_declarations()` RPC (pgvector cosine search)
-3. Fallback to random if 0 results
-4. Call Groq (`getDeclarations`) for pastoral response
-5. Return `{ response, declarations[], hasMore }`
+1. Groq plans the search (`planDeclarationSearch`): 3 declaration-shaped lines + up to 3 need-nouns
+2. Embed each line; run several `match_declarations_hybrid()` legs (one per line, one on the
+   need-nouns, one on the raw message) in parallel, fused with a second RRF pass across legs
+3. Groq rereanks the fused pool against the actual sentences (`rerankDeclarations`) — picks and
+   orders what actually fits; falls back to the fused order if this fails
+4. Fallback: if the plan failed or every leg came back empty, a single `match_declarations_hybrid()`
+   call on the raw message (the pre-multi-leg behavior), degrading further to vector-only if the
+   hybrid RPC errors
+5. Fallback: random (shuffled) if 0 results
+6. Groq (`getDeclarations`) pastoral response, started in parallel with steps 1-5 — skipped
+   when `shownIds` is set ("Show 10 more" shows no note) and aborted if nothing relevant matched
+7. Return `{ response, declarations[], hasMore }`
 
 **Rules:**
 - Never use `ilike` or `contains` for retrieval

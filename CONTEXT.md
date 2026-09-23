@@ -137,12 +137,25 @@ sermon_segments               ← NEW table (added in semantic refactor)
 ### Faith Declarations
 ```
 User types situation
-  → embedText(message) via Supabase Edge Function (gte-small)
-  → match_declarations_hybrid() RPC — vector + keyword (FTS) fused with RRF
-      (degrades to keyword-only if the embed service is down;
-       falls back to match_declarations() if the hybrid RPC isn't applied yet)
-  → top 10 declarations returned
-  → getDeclarations() — Groq generates pastoral response
+  → planDeclarationSearch(message) — Groq writes 3 declaration-shaped lines
+      (plain need / church-Bible phrasing / specific outcome) + up to 3
+      need-nouns. One rewrite only ever recovers the library slice that one
+      phrasing happens to sit near; three differently-worded lines each land
+      in a different neighbourhood of gte-small's vector space
+  → embed each line (gte-small) → match_declarations_hybrid() once per line
+      (semantic leg) + once on the need-nouns + once on the raw message
+      (keyword legs, catches exact scripture refs/names the lines paraphrase
+      away) → all legs fused with a second RRF pass → top 60 candidates
+  → rerankDeclarations() — Groq reads the actual candidate sentences and
+      picks/orders what fits (the fused order is positional, not a relevance
+      judgement — a candidate can rank high by sharing one word with the
+      need); falls back to the fused order if this fails
+  → if the plan failed or every leg was empty: fall back to a single
+      match_declarations_hybrid() call on the raw message (degrades further
+      to vector-only match_declarations() if the hybrid RPC errors)
+  → top 10 returned in ranked order (only the random fallback is shuffled)
+  → getDeclarations() — Groq pastoral response, started in parallel with the
+      search (skipped for "Show 10 more", cancelled if nothing relevant matched)
   → frontend shows AI text + declaration cards with YouTube links
 ```
 
