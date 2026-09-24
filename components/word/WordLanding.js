@@ -10,9 +10,9 @@ import BibleNav from "./BibleNav";
 const fmt = (n) => Number(n || 0).toLocaleString();
 
 /**
- * /word with nothing selected: the headline numbers, the passages and
- * chapters Rev. Peter returns to most, the books he preaches from most — and,
- * below xl (where there's no left pane), the whole Bible to browse.
+ * /word with nothing selected: the headline numbers, then — below xl, where
+ * there's no left pane — the whole Bible to browse, then the passages and
+ * chapters Rev. Peter returns to most and the books he preaches from most.
  */
 export default function WordLanding({ stats }) {
   const [translation, setTranslation] = useState("KJV");
@@ -40,10 +40,13 @@ export default function WordLanding({ stats }) {
                   [fmt(stats.totals.messages), "messages"],
                   [`${stats.totals.books} of 66`, "books"],
                 ].map(([value, label]) => (
-                  <div key={label} className="rounded-2xl bg-white/[0.07] px-4 py-3 ring-1 ring-white/10">
+                  <div key={label} className="rounded-2xl bg-white/[0.07] px-3 py-3 ring-1 ring-white/10 sm:px-4">
                     <dt className="sr-only">{label}</dt>
                     <dd>
-                      <span className="block font-display text-2xl font-medium tabular-nums sm:text-3xl">{value}</span>
+                      {/* "65 of 66" is the long one — it has to sit on one line beside the counts. */}
+                      <span className="block whitespace-nowrap font-display text-lg font-medium tabular-nums sm:text-2xl lg:text-3xl">
+                        {value}
+                      </span>
                       <span className="block text-xs text-white/60 sm:text-sm">{label}</span>
                     </dd>
                   </div>
@@ -55,6 +58,16 @@ export default function WordLanding({ stats }) {
       </div>
 
       <div className="mx-auto max-w-4xl px-4 sm:px-8">
+        {/* Browsing comes first: someone opening The Word wants to go to a verse,
+            not read the rankings. Above xl the left pane already holds the nav. */}
+        <section aria-labelledby="browse-heading" className="pt-10 xl:hidden">
+          <h2 id="browse-heading" className="font-display text-3xl font-medium tracking-tight text-brand-ink">
+            Browse the Bible
+          </h2>
+          <p className="mt-1.5 text-sm text-brand-gray">Tap a book to open its chapters</p>
+          <BibleNav className="-mx-3 mt-2" />
+        </section>
+
         {stats?.passages?.length > 0 && (
           <section aria-labelledby="passages-heading" className="pt-14">
             <div className="flex flex-wrap items-end justify-between gap-3">
@@ -143,14 +156,6 @@ export default function WordLanding({ stats }) {
             </ol>
           </section>
         )}
-
-        <section aria-labelledby="browse-heading" className="pt-14 xl:hidden">
-          <h2 id="browse-heading" className="font-display text-3xl font-medium tracking-tight text-brand-ink">
-            Browse the Bible
-          </h2>
-          <p className="mt-1.5 text-sm text-brand-gray">Each bar is how many messages open that book</p>
-          <BibleNav className="-mx-3 mt-2" />
-        </section>
       </div>
     </div>
   );

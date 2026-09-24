@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { bookFromSlug, passageLabel, sectionFor } from "@/lib/canon";
 import { loadBookRows, loadBookStats, useLoad } from "@/lib/word-data";
 import { cleanTitle, parseSermonDate } from "@/lib/titles";
+import { cn } from "@/lib/utils";
 
 const MESSAGES_PREVIEW = 24; // 200+ messages open the big books — don't load 200 thumbnails at once
 
@@ -22,43 +23,39 @@ export function AllBooksLink() {
   );
 }
 
-/** The chapters of a book as a bar chart — each bar opens that chapter. */
-function ChapterChart({ book, chapters }) {
+/**
+ * The chapters of a book as a tappable grid — every chapter number visible, so
+ * Genesis 38 is one tap away instead of a bar you have to count across to find.
+ * The tint carries what the old bar chart did: darker = opened in more messages.
+ */
+function ChapterGrid({ book, chapters }) {
   const max = Math.max(1, ...chapters.map((c) => c.messages));
-  const every = book.chapters <= 30 ? 1 : book.chapters <= 70 ? 5 : 10;
-  const minWidth = book.chapters * 12;
   return (
-    <div className="-mx-4 overflow-x-auto px-4 pb-2 custom-scrollbar sm:mx-0 sm:px-0">
-      <div style={{ minWidth }}>
-        <div className="flex h-44 items-end gap-[3px]">
-          {chapters.map((c, i) => (
+    <ol className="grid grid-cols-5 gap-2 sm:grid-cols-8 sm:gap-2.5 lg:grid-cols-10">
+      {chapters.map((c, i) => {
+        // Square-root scaled, like BibleNav: one message still reads as
+        // "preached" beside a chapter opened forty times. Capped at 0.53 so
+        // the number stays legible in dark ink on every tile — a heatmap that
+        // needs white text on its mid-tones fails contrast right in the middle.
+        const weight = c.messages ? 0.08 + 0.45 * Math.sqrt(c.messages / max) : 0;
+        return (
+          <li key={i}>
             <Link
-              key={i}
               href={`/word/${book.slug}/${i + 1}`}
               aria-label={`Chapter ${i + 1}: ${c.messages ? `${c.messages} messages` : "not preached yet"}`}
-              title={`Chapter ${i + 1} · ${c.messages} messages`}
-              className="group flex h-full min-w-0 flex-1 flex-col justify-end focus-visible:outline-none"
+              title={`Chapter ${i + 1} · ${c.messages} ${c.messages === 1 ? "message" : "messages"}`}
+              style={c.messages ? { backgroundColor: `rgba(23, 58, 104, ${weight.toFixed(3)})` } : undefined}
+              className={cn(
+                "grid h-14 place-items-center rounded-xl text-base font-semibold tabular-nums transition-transform duration-150 hover:scale-[1.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy",
+                c.messages ? "text-brand-ink" : "bg-brand-navy/[0.04] text-brand-gray"
+              )}
             >
-              <span
-                className={
-                  c.messages
-                    ? "block w-full rounded-t-md bg-brand-navy/70 transition-colors group-hover:bg-brand-navy group-focus-visible:bg-brand-navy"
-                    : "block h-0.5 w-full rounded-full bg-brand-navy/15"
-                }
-                style={c.messages ? { height: `${Math.max(4, (c.messages / max) * 100)}%` } : undefined}
-              />
+              {i + 1}
             </Link>
-          ))}
-        </div>
-        <div aria-hidden="true" className="mt-2 flex gap-[3px] border-t border-brand-navy/10 pt-1.5">
-          {chapters.map((_, i) => (
-            <span key={i} className="min-w-0 flex-1 text-center text-xs tabular-nums text-brand-gray">
-              {(i + 1) % every === 0 || i === 0 ? i + 1 : ""}
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
@@ -127,7 +124,7 @@ export default function BookView({ slug }) {
       <header className="mt-4 xl:mt-0">
         <p className="text-sm text-brand-gray">{sectionFor(book)?.name}</p>
         <h1 className="mt-1 font-display text-5xl font-medium tracking-tight text-brand-ink sm:text-6xl">{book.name}</h1>
-        <p className="mt-3 text-lg text-brand-gray">
+        <p className="mt-3 text-sm text-brand-gray">
           {s
             ? `Opened in ${s.sermons.toLocaleString()} messages · ${s.refs.toLocaleString()} references`
             : stats
@@ -137,9 +134,9 @@ export default function BookView({ slug }) {
       </header>
 
       {loading && !rows && (
-        <div aria-hidden="true" className="mt-10 flex h-44 items-end gap-1">
-          {Array.from({ length: Math.min(book.chapters, 40) }, (_, i) => (
-            <span key={i} className="flex-1 rounded-t-md bg-brand-sky motion-safe:animate-pulse" style={{ height: `${20 + ((i * 37) % 70)}%` }} />
+        <div aria-hidden="true" className="mt-10 grid grid-cols-5 gap-2 sm:grid-cols-8 sm:gap-2.5 lg:grid-cols-10">
+          {Array.from({ length: book.chapters }, (_, i) => (
+            <span key={i} className="h-14 rounded-xl bg-brand-sky motion-safe:animate-pulse" />
           ))}
         </div>
       )}
@@ -147,13 +144,13 @@ export default function BookView({ slug }) {
 
       {view && (
         <>
-          <section aria-labelledby="chapters-heading" className="pt-12">
+          <section aria-labelledby="chapters-heading" className="pt-10">
             <h2 id="chapters-heading" className="font-display text-2xl font-medium tracking-tight text-brand-ink sm:text-3xl">
               Chapters
             </h2>
-            <p className="mt-1.5 text-sm text-brand-gray">How many messages open each chapter — tap a bar to read it with them</p>
-            <div className="mt-6">
-              <ChapterChart book={book} chapters={view.chapters} />
+            <p className="mt-1.5 text-sm text-brand-gray">Tap a chapter to read it — the darker it is, the more messages open it</p>
+            <div className="mt-5">
+              <ChapterGrid book={book} chapters={view.chapters} />
             </div>
           </section>
 
@@ -205,7 +202,7 @@ export default function BookView({ slug }) {
                         )}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="line-clamp-2 block text-sm font-semibold leading-snug text-brand-ink group-hover:text-brand-navy">
+                        <span className="line-clamp-2 text-sm font-semibold leading-snug text-brand-ink group-hover:text-brand-navy">
                           {cleanTitle(sermon.title)}
                         </span>
                         <span className="mt-0.5 block text-xs text-brand-gray">

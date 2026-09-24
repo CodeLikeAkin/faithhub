@@ -43,7 +43,8 @@ function Passage({ book, group, text, onWatch }) {
       </header>
 
       {verses.length > 0 && (
-        <blockquote className="mt-3 font-display text-xl leading-relaxed text-brand-ink">
+        // 16px on a phone, matching VerseCard; larger as the screen grows.
+        <blockquote className="mt-3 font-display text-base leading-relaxed text-brand-ink sm:text-lg lg:text-xl">
           {verses.map(([n, t]) => (
             <span key={n}>
               <sup className="mr-1 font-sans text-xs font-bold text-brand-navy/50">{n}</sup>
