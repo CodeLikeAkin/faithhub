@@ -2,6 +2,7 @@ import { adminApiGuard } from '@/lib/admin-auth';
 import { adminDb } from '@/lib/admin-db';
 import { UUID_RE, audit, fail, failFrom, ok, readJson } from '@/lib/admin-api';
 import { syncSeriesTotals } from '@/lib/admin-series-db';
+import { gapClosingMoves } from '@/lib/admin-parts';
 
 export const dynamic = 'force-dynamic';
 
@@ -119,15 +120,28 @@ export async function DELETE(req, { params }) {
 
     const { error } = await db.from('series_sermons').delete().eq('id', link.id);
     if (error) throw error;
+
+    // Close the hole it leaves, so removing the first six of 19 leaves 1 to 13, not 7 to 19.
+    const { data: rest, error: restError } = await db.from('series_sermons').select('id, part_number').eq('series_id', params.id);
+    if (restError) throw restError;
+    const moves = gapClosingMoves(rest || [], link.part_number);
+    for (const m of moves) {
+      const { error: e } = await db.from('series_sermons').update({ part_number: m.to }).eq('id', m.id);
+      if (e) throw e;
+    }
+
     await syncSeriesTotals(params.id);
     await audit({
       action: 'series.remove_part',
       entity: 'series',
       entityId: params.id,
-      summary: `Took "${link.sermons?.title || sermon_id}" (part ${link.part_number}) out of "${title}"`,
+      summary:
+        `Took "${link.sermons?.title || sermon_id}" (part ${link.part_number}) out of "${title}"` +
+        (moves.length ? `, and moved ${moves.length} later ${moves.length === 1 ? 'part' : 'parts'} up by one` : ''),
       before: { sermon_id, part_number: link.part_number },
+      after: moves.length ? { renumbered: moves.map(({ from, to }) => ({ from, to })) } : null,
     });
-    return ok();
+    return ok({ ok: true, moved: moves.length });
   } catch (e) {
     return failFrom(e, "Couldn't remove it from the series.");
   }
