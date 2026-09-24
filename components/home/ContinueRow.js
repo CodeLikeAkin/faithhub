@@ -28,7 +28,7 @@ export default function ContinueRow() {
       </h2>
       <ul className="mt-6 grid gap-4 md:grid-cols-3">
         {last && (
-          <li>
+          <li className="min-w-0">
             <Link
               href={last.href}
               className="group flex h-full items-center gap-4 rounded-[1.5rem] border border-brand-navy/10 bg-white p-3 pr-5 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-brand-navy/25 hover:shadow-[0_24px_50px_-35px_rgba(23,58,104,0.5)]"
@@ -49,7 +49,9 @@ export default function ContinueRow() {
                     ? `Series · ${last.parts} parts`
                     : "Message"}
                 </span>
-                <span className="mt-0.5 line-clamp-2 block font-display text-xl font-medium leading-snug text-brand-ink">
+                {/* No `block` beside line-clamp-* — it overrides the -webkit-box
+                    display the clamp needs, and the text spills instead of clamping. */}
+                <span className="mt-0.5 line-clamp-2 font-display text-xl font-medium leading-snug text-brand-ink">
                   {displayTitle(last.title)}
                 </span>
                 <span className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-brand-navy">

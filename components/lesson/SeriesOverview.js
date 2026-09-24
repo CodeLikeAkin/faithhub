@@ -241,7 +241,9 @@ export default function SeriesOverview({ seriesId }) {
                             Part {p.part_number}
                             {partDate(p) && ` · ${partDate(p)}`}
                           </span>
-                          <span className="mt-1 line-clamp-2 block font-display text-lg font-medium leading-snug text-brand-ink sm:text-xl">
+                          {/* No `block` beside line-clamp-* — it overrides the -webkit-box
+                              display the clamp needs, and the text spills instead of clamping. */}
+                          <span className="mt-1 line-clamp-2 font-display text-lg font-medium leading-snug text-brand-ink sm:text-xl">
                             {partTitle(p.title, series.title)}
                           </span>
                           {p.summary && (

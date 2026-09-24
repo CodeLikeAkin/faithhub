@@ -420,7 +420,9 @@ export default function LessonPage({ sermonId }) {
                   </span>
                   <span className="relative min-w-0 flex-1">
                     <span className="block text-sm text-white/70">Up next · Part {next.part_number}</span>
-                    <span className="mt-1 line-clamp-2 block font-display text-xl font-medium leading-snug sm:text-2xl">
+                    {/* No `block` beside line-clamp-* — it overrides the -webkit-box
+                        display the clamp needs, and the text spills instead of clamping. */}
+                    <span className="mt-1 line-clamp-2 font-display text-xl font-medium leading-snug sm:text-2xl">
                       {nameOf(next)}
                     </span>
                   </span>

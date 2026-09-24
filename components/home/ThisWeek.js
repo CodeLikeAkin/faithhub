@@ -124,7 +124,9 @@ export default function ThisWeek() {
                 className="object-cover"
               />
               <p className="relative text-sm text-white/70">Today&rsquo;s declaration</p>
-              <blockquote className="relative mt-4 font-display text-2xl font-normal leading-snug text-balance sm:text-3xl">
+              {/* Verse-card size on mobile (text-base) — a declaration reads like
+                  scripture, not like a headline. */}
+              <blockquote className="relative mt-4 font-display text-base font-normal leading-relaxed text-balance sm:text-2xl sm:leading-snug">
                 &ldquo;{today.declaration_text}&rdquo;
               </blockquote>
             </div>
@@ -136,23 +138,25 @@ export default function ThisWeek() {
           <Skeleton />
         ) : (
           series && (
+            /* The cover carries its own lettering, so it gets its own frame
+               rather than sitting behind our words — same shape as the latest
+               message card beside it. */
             <Link
               href={`/series/${series.id}`}
-              className="group relative flex min-h-[18rem] flex-col justify-between overflow-hidden rounded-[1.75rem] bg-brand-sky p-6 ring-1 ring-inset ring-brand-navy/10 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_30px_50px_-35px_rgba(23,58,104,0.5)] sm:p-7"
+              className="group flex flex-col overflow-hidden rounded-[1.75rem] border border-brand-navy/10 bg-white transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-brand-navy/25 hover:shadow-[0_30px_50px_-35px_rgba(23,58,104,0.5)]"
             >
-              <YtThumb
-                ids={series.covers}
-                className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.22] mix-blend-luminosity"
-              />
-              <span className="relative text-sm text-brand-gray">Current series</span>
-              <span className="relative">
-                <span className="block font-display text-3xl font-medium leading-tight tracking-tight text-brand-ink text-balance">
+              <span className="relative block aspect-video bg-brand-sky">
+                <YtThumb ids={series.covers} className="h-full w-full object-cover" />
+              </span>
+              <span className="flex flex-1 flex-col p-5">
+                <span className="text-sm text-brand-gray">Current series</span>
+                <span className="mt-1.5 block font-display text-2xl font-medium leading-snug text-brand-ink">
                   {series.title}
                 </span>
-                <span className="mt-2 block text-sm text-brand-gray">
+                <span className="mt-1 block text-sm text-brand-gray">
                   {series.parts} parts{series.range && ` · ${series.range}`}
                 </span>
-                <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-navy">
+                <span className="mt-auto inline-flex items-center gap-1.5 pt-4 text-sm font-semibold text-brand-navy">
                   Study the series <ArrowRight size={14} aria-hidden="true" className="transition-transform group-hover:translate-x-0.5" />
                 </span>
               </span>

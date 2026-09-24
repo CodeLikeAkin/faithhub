@@ -30,12 +30,14 @@ export default function DeclarationLine({
   return (
     <li className="flex gap-3 py-5 sm:gap-5">
       {index != null && (
-        <span aria-hidden="true" className="w-7 flex-shrink-0 pt-1 text-right font-display text-lg tabular-nums text-brand-navy/35">
+        <span aria-hidden="true" className="w-7 flex-shrink-0 pt-0.5 text-right font-display text-base tabular-nums sm:pt-1 sm:text-lg text-brand-navy/35">
           {index + 1}
         </span>
       )}
       <div className="min-w-0 flex-1">
-        <p className="font-display text-xl leading-snug text-brand-ink text-pretty sm:text-2xl">
+        {/* 16px on a phone — the same as a verse card (VerseCard.js) — then up
+            to reading-aloud size as the screen grows. */}
+        <p className="font-display text-base leading-relaxed text-brand-ink text-pretty sm:text-xl sm:leading-snug lg:text-2xl">
           {declaration.declaration_text}
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
