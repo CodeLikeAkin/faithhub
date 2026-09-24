@@ -109,11 +109,22 @@ module.exports = {
           from: { strokeDashoffset: "1" },
           to: { strokeDashoffset: "0" },
         },
+        /* Admin dashboard: a mark grows from its baseline to its own final
+           size (no `to` step, so the element's own style is the end state). */
+        "grow-x": { from: { transform: "scaleX(0)" } },
+        "grow-y": { from: { transform: "scaleY(0)" } },
+        /* A ring meter: needs pathLength="1" and stroke-dasharray "<share> 1" */
+        "ring-fill": { from: { strokeDasharray: "0 1" } },
+        rise: { from: { opacity: "0", transform: "translateY(10px)" } },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         draw: "draw 1.1s cubic-bezier(0.65, 0, 0.35, 1) 0.6s both",
+        "grow-x": "grow-x 0.9s cubic-bezier(0.22, 1, 0.36, 1) both",
+        "grow-y": "grow-y 0.8s cubic-bezier(0.22, 1, 0.36, 1) both",
+        "ring-fill": "ring-fill 1.3s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both",
+        rise: "rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both",
       },
     },
   },
