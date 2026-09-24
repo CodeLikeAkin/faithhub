@@ -131,7 +131,7 @@ export default function ToolRail({
         <div className="flex items-center justify-between px-5">
           <h2 className="text-sm font-bold text-brand-ink">Your studies</h2>
           <Link
-            href="/ask"
+            href="/ask?new=1"
             onClick={onNavigate}
             aria-label="New study"
             title="New study"

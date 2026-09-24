@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 /**
  * The cited sermon moments behind an answer — the most trustworthy part of
  * it — as a swipeable row of video thumbnails with timestamps. Shown at every
- * screen size, directly under the question.
+ * screen size, after the answer and its related questions.
  */
 
 const BLEED = {
@@ -77,20 +77,6 @@ function MomentCard({ n, seg, onCite, highlighted, describe, density }) {
         </span>
       )}
     </Tag>
-  );
-}
-
-export function MomentsSkeleton({ density = "page" }) {
-  return (
-    <div aria-hidden="true" className={cn("mt-7 flex gap-3 overflow-hidden", BLEED[density])}>
-      {[0, 1, 2, 3].map((i) => (
-        <div key={i} className={cn("flex-shrink-0", density === "panel" ? "w-44" : "w-56 sm:w-60")}>
-          <div className="aspect-video rounded-2xl bg-brand-sky motion-safe:animate-pulse" />
-          <div className="mt-2.5 h-3 w-3/4 rounded-full bg-brand-sky motion-safe:animate-pulse" />
-          <div className="mt-2 h-3 w-1/2 rounded-full bg-brand-sky/70 motion-safe:animate-pulse" />
-        </div>
-      ))}
-    </div>
   );
 }
 

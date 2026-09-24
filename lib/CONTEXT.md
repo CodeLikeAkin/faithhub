@@ -80,10 +80,19 @@ The saved-studies store behind every grounded-answer surface (`/ask`, the lesson
 panel, the rail). `useStudies()` → `{ studies, busy, ready }`; `askQuestion({ studyId, question,
 scope, context })` streams the answer **in the store** (it survives navigation) and maps the
 scope to the unchanged backend call (Everything → `/api/ask`, series/message →
-`/api/series-chat`). Persists to localStorage `hof-ask-studies-v2` (never mid-stream; caps
-12 studies × 30 blocks — segment maps are ~7 KB a block). A transient 503 ("high demand") is
-retried once, 1.5s later, before anything has streamed. Also `retryBlock`, `deleteStudy` /
-`restoreStudy` (Undo), `scopesFor(context)`, `latestStudyFor()`.
+`/api/series-chat`). Persists to localStorage `hof-ask-studies-v2` (caps 12 studies × 30
+blocks — segment maps are ~7 KB a block). Streamed chunks are NOT saved, but `askQuestion`
+saves once when the question is asked, with the in-flight block written as an "interrupted —
+Try again" error: a reload mid-search leaves a retryable block, and a half-written answer never
+survives as if complete. A transient 503 ("high demand") is retried once, 1.5s later, before
+anything has streamed. Also `retryBlock`, `deleteStudy` / `restoreStudy` (Undo),
+`scopesFor(context)`, `latestStudyFor()`.
+
+**Open study (sessionStorage `hof-ask-open-study`).** `openStudyId()` / `rememberOpenStudy()` /
+`forgetOpenStudy()`: `/ask` remembers the study it's showing for the browser session, so a bare
+`/ask` (rail, nav, back from another tool) resumes it instead of opening a blank search box.
+`/ask?new=1` is the explicit "start fresh" link (New study buttons, the home card) — a plain
+`/ask` link must never mean "new study".
 
 ### `declarations.js`
 The declarations library: `THEMES` (the 10 biggest `topic_tags`), `fetchThemePage` /

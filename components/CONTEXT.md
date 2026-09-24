@@ -21,13 +21,20 @@ the answer stream live in `lib/studies.js`, not in these components.
 
 ### `ask/` — the grounded answer, laid out as a research brief
 - `Composer.js` — the one composer. `variant="hero"` (empty states) or `"docked"`
-  (rides above the keyboard via `useKeyboardInset`, safe-area padding).
+  (rides above the keyboard via `useKeyboardInset`, safe-area padding). A hero composer
+  blurs itself after a submit on touch devices (`pointer: coarse`) so the keyboard doesn't
+  cover the results that appear below it (Declarations "Speak Life").
 - `ScopeChip.js` — the scope switch inside the composer.
 - `StudyDocument.js` — a study as one document; every question stays expanded. Keeps
   the old Ask scroll fixes: absolute scroll-to-top for a new question, the
   `min-h-[70vh]` headroom spacer while streaming, `overflowAnchor: none`.
-- `AnswerBlock.js` — one question: heading → `MomentsRow` → `AnswerBody` +
-  `ScriptureMargin` → `FollowUps`; plus searching / error / "nothing found" states.
+- `AnswerBlock.js` — one question: heading → `AnswerBody` + `ScriptureMargin` → `FollowUps` →
+  `MomentsRow`; plus searching / error / "nothing found" states. The searching state is
+  `SearchingStatus`: a status line under the heading that steps through phases on a timer
+  ("Searching every message…" → "Reading through…" → … → "Still working…"), measured from the
+  block's id so a remount doesn't restart it. The route sends nothing until retrieval is done,
+  so these phases are cosmetic — keep the wording true for every scope (only `/api/ask` fetches
+  scriptures, so only the global scope says so).
 - `AnswerBody.js` — markdown answer with `[N]` citation pills and scripture links.
 - `MomentsRow.js` — cited moments as swipeable video thumbnails (every screen size).
 - `ScriptureMargin.js` — the scriptures an answer names, with verse text (KJV/NLT).

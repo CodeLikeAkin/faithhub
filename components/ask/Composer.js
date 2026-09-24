@@ -61,7 +61,13 @@ export default function Composer({
   const submit = () => {
     const t = text.trim();
     if (!t || busy) return;
-    if (onSubmit(t) !== false) setText("");
+    if (onSubmit(t) === false) return;
+    setText("");
+    // A page-flow (hero) composer hands off to results that appear right
+    // below it. On a touch device the keyboard would keep covering them, so
+    // put it away. Docked composers keep it up for follow-ups, and a mouse
+    // user keeps their cursor.
+    if (hero && window.matchMedia("(pointer: coarse)").matches) ref.current?.blur();
   };
 
   const field = (

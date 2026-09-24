@@ -89,7 +89,7 @@ export default function FeatureCards() {
               </li>
             ))}
           </ul>
-          <CardFoot href="/ask" label="Ask a question" />
+          <CardFoot href="/ask?new=1" label="Ask a question" />
         </li>
 
         <li className={card}>

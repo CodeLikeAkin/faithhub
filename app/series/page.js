@@ -479,7 +479,11 @@ export default function SeriesBrowsePage() {
                     <div className="mx-auto mt-10 max-w-[1400px] px-2 sm:px-8">
                       <section
                         aria-labelledby="latest-heading"
-                        className="relative grid overflow-hidden rounded-[1.75rem] bg-brand-deep text-white sm:rounded-[2.5rem] lg:grid-cols-[1.15fr_1fr]"
+                        // minmax(0, …) on every track: a bare 1fr / implicit auto track won't
+                        // shrink below its content's min-content, and the part titles are
+                        // long no-wrap strings — they blew the columns out past the card
+                        // (clipped titles, a wrapped button, a cropped cover on phones).
+                        className="relative grid grid-cols-[minmax(0,1fr)] overflow-hidden rounded-[1.75rem] bg-brand-deep text-white sm:rounded-[2.5rem] lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]"
                       >
                         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
                           {/* Blurred past legibility on purpose: the cover art carries
@@ -494,7 +498,7 @@ export default function SeriesBrowsePage() {
                           <DotGrid dark className="inset-0 [mask-image:radial-gradient(ellipse_at_top_left,black,transparent_55%)]" />
                           <Rings className="absolute -bottom-56 -right-56 h-[36rem] w-[36rem] text-white/[0.06]" />
                         </div>
-                        <div className="relative px-4 py-6 sm:px-12 sm:py-12">
+                        <div className="relative min-w-0 px-4 py-6 sm:px-12 sm:py-12">
                           <span className="mb-6 block aspect-video overflow-hidden rounded-2xl bg-brand-deep shadow-[0_25px_50px_-20px_rgba(0,0,0,0.6)] ring-1 ring-white/15 sm:max-w-md">
                             <YtThumb ids={featured.covers} className="h-full w-full object-cover" />
                           </span>
@@ -522,7 +526,7 @@ export default function SeriesBrowsePage() {
                             </Link>
                           </div>
                         </div>
-                        <ol className="relative border-t border-white/10 px-4 py-4 sm:px-8 lg:border-l lg:border-t-0 lg:py-10">
+                        <ol className="relative min-w-0 border-t border-white/10 px-4 py-4 sm:px-8 lg:border-l lg:border-t-0 lg:py-10">
                           {featured.partList.slice(0, 6).map((p) => (
                             <li key={p.id || p.n}>
                               <Link

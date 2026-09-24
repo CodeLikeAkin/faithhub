@@ -10,7 +10,15 @@ import StudyDocument from "@/components/ask/StudyDocument";
 import Composer from "@/components/ask/Composer";
 import AskEmptyState from "@/components/ask/AskEmptyState";
 import VideoModal from "@/components/VideoModal";
-import { askQuestion, retryBlock, scopesFor, useStudies } from "@/lib/studies";
+import {
+  askQuestion,
+  forgetOpenStudy,
+  openStudyId,
+  rememberOpenStudy,
+  retryBlock,
+  scopesFor,
+  useStudies,
+} from "@/lib/studies";
 import { plainText } from "@/lib/ask-format";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +26,9 @@ import { cn } from "@/lib/utils";
  * Ask the Word — one grounded question → answer surface over every message
  * (or, for a study begun on a lesson, that series / message).
  *
- *   /ask                      empty state: search box, examples, your studies
+ *   /ask                      resumes the study last open this browser session;
+ *                             with none, the empty state (search box, examples, your studies)
+ *   /ask?new=1                a fresh study: forgets the open one, then becomes /ask
  *   /ask?study=<id>           a saved study as one document (device-local)
  *   /ask?study=<id>#q-<id>    …opened at one question
  *   /ask?q=<text>             asks once, then becomes ?study=<new id>
@@ -111,11 +121,17 @@ function AskView() {
   const params = useSearchParams();
   const studyParam = params.get("study");
   const qParam = params.get("q");
+  const newParam = params.get("new");
   const { studies, busy, ready } = useStudies();
+  // A bare /ask means "Ask the Word", not "start over": it picks up the study
+  // last open this session. ?new=1 (the New study buttons) opts out.
+  const resumeId = ready && !studyParam && !qParam && !newParam ? openStudyId() : null;
+  const openId = studyParam || resumeId;
   const study = useMemo(
-    () => (studyParam ? studies.find((s) => String(s.id) === studyParam) || null : null),
-    [studies, studyParam]
+    () => (openId ? studies.find((s) => String(s.id) === String(openId)) || null : null),
+    [studies, openId]
   );
+  const studyId = study?.id ?? null;
 
   const [scopeType, setScopeType] = useState(null); // null → follow the study's latest question
   const [activeBlockId, setActiveBlockId] = useState(null);
@@ -173,12 +189,30 @@ function AskView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, studyParam, study]);
 
-  // Empty state on a desktop pointer: put the cursor in the search box.
+  // Remember what's open, so leaving for another tool and coming back resumes it.
   useEffect(() => {
-    if (ready && !studyParam && window.matchMedia("(pointer: fine)").matches) {
+    if (studyId != null) rememberOpenStudy(studyId);
+  }, [studyId]);
+
+  // ?new=1 — start fresh: drop the remembered study and tidy the URL.
+  useEffect(() => {
+    if (!newParam) return;
+    forgetOpenStudy();
+    window.history.replaceState(null, "", "/ask");
+  }, [newParam]);
+
+  // A resumed study gets its own URL, like one opened from the rail.
+  useEffect(() => {
+    if (resumeId && studyId != null) window.history.replaceState(null, "", `/ask?study=${studyId}`);
+  }, [resumeId, studyId]);
+
+  // Empty state on a desktop pointer: put the cursor in the search box.
+  const emptyState = !studyParam && studyId == null;
+  useEffect(() => {
+    if (ready && emptyState && window.matchMedia("(pointer: fine)").matches) {
       inputRef.current?.focus({ preventScroll: true });
     }
-  }, [ready, studyParam]);
+  }, [ready, emptyState]);
 
   // Re-asserted every render: Next re-applies the layout's metadata title on
   // client navigations, which would otherwise win.
@@ -211,7 +245,7 @@ function AskView() {
       )}
       <HeaderButton icon={Copy} label="Copy study" onClick={copyStudy} />
       <Link
-        href="/ask"
+        href="/ask?new=1"
         aria-label="New study"
         title="New study"
         className="inline-flex h-10 items-center gap-1.5 rounded-full bg-brand-navy px-3 text-sm font-medium text-white transition-colors hover:bg-brand-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy focus-visible:ring-offset-2 sm:h-9"

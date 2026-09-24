@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Globe, RotateCcw } from "lucide-react";
 import { extractScriptures, plainText } from "@/lib/ask-format";
 import { SCOPE_ALL } from "@/lib/studies";
@@ -9,32 +9,105 @@ import { scrollToElement } from "@/lib/scroll";
 import { displayTitle } from "@/lib/titles";
 import { cn } from "@/lib/utils";
 import AnswerBody from "./AnswerBody";
-import MomentsRow, { MomentsSkeleton } from "./MomentsRow";
+import MomentsRow from "./MomentsRow";
 import ScriptureMargin, { verseAnchor } from "./ScriptureMargin";
 import FollowUps from "./FollowUps";
 import { SCOPE_ICONS, scopePhrase } from "./ScopeChip";
 
+const STATUS_TEXT = "text-base font-medium text-brand-ink/70 sm:text-lg";
+const RETRY_TEXT = "Still in high demand — trying once more…";
+
+function Dots() {
+  return (
+    <span className="flex flex-shrink-0 gap-1" aria-hidden="true">
+      {[0, 1, 2].map((d) => (
+        <span
+          key={d}
+          className="h-1.5 w-1.5 rounded-full bg-brand-navy/40 motion-safe:animate-pulse"
+          style={{ animationDelay: `${d * 150}ms` }}
+        />
+      ))}
+    </span>
+  );
+}
+
 function StatusLine({ children }) {
   return (
-    <p role="status" className="mt-6 flex items-center gap-3 text-sm font-medium text-brand-gray">
-      <span className="flex gap-1" aria-hidden="true">
-        {[0, 1, 2].map((d) => (
-          <span
-            key={d}
-            className="h-1.5 w-1.5 rounded-full bg-brand-navy/40 motion-safe:animate-pulse"
-            style={{ animationDelay: `${d * 150}ms` }}
-          />
-        ))}
-      </span>
+    <p role="status" className={cn("mt-8 flex items-center gap-3", STATUS_TEXT)}>
+      <Dots />
       {children}
     </p>
   );
 }
 
+// What the search says while it runs. The route sends nothing until retrieval
+// is done, so there is no real progress to report: the phases just advance on
+// a timer and are worded to stay true whichever one is showing. The last one
+// holds (looping back to the start would look stuck), then a slow-going note.
+// Scriptures are only fetched by the global /api/ask, so only that scope says so.
+function phasesFor(type) {
+  const all = type === "all";
+  const closing = all ? 11800 : 8800;
+  return [
+    { at: 0, text: `Searching ${scopePhrase({ type })}…` },
+    { at: 2800, text: "Reading through Rev. Peter’s teaching…" },
+    { at: 5800, text: "Finding the moments that speak to this…" },
+    ...(all ? [{ at: 8800, text: "Checking the scriptures he opened…" }] : []),
+    { at: closing, text: "Putting your answer together…" },
+    { at: 18000, text: "Still working — this one is taking a little longer…" },
+  ];
+}
+
+/**
+ * The wait between asking and the first word. `startedAt` is the block's id
+ * (the moment it was asked), so leaving the page and coming back mid-search
+ * picks the phases up where they'd got to instead of restarting them.
+ */
+function SearchingStatus({ scope, startedAt, retrying }) {
+  const type = scope?.type || "all";
+  const phases = useMemo(() => phasesFor(type), [type]);
+  const stepAt = (ms) => phases.reduce((n, p, i) => (ms >= p.at ? i : n), 0);
+  const [step, setStep] = useState(() => stepAt(Date.now() - startedAt));
+
+  useEffect(() => {
+    const t = setInterval(() => setStep(stepAt(Date.now() - startedAt)), 500);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phases, startedAt]);
+
+  const text = retrying ? RETRY_TEXT : phases[step].text;
+
+  return (
+    <div className="mt-8 sm:mt-10">
+      {/* One steady announcement — the rotating text below would be re-read
+          every few seconds by a screen reader. */}
+      <p role="status" className="sr-only">
+        {retrying ? RETRY_TEXT : `Searching ${scopePhrase(scope)}…`}
+      </p>
+      <p aria-hidden="true" className={cn("flex items-center gap-3", STATUS_TEXT)}>
+        <Dots />
+        <span
+          key={retrying ? "retry" : step}
+          className="motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-500"
+        >
+          {text}
+        </span>
+      </p>
+      {/* The answer's own shape, faint — where the words will land. */}
+      <div aria-hidden="true" className="mt-7 max-w-3xl space-y-3">
+        {["w-full", "w-[94%]", "w-[68%]"].map((w) => (
+          <div key={w} className={cn("h-3.5 rounded-full bg-brand-sky/70 motion-safe:animate-pulse", w)} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /**
  * One question laid out as a research brief: the question as a heading, the
- * cited moments right under it, the answer as article text with a margin of
- * the scriptures it names, then related questions.
+ * answer as article text with a margin of the scriptures it names, related
+ * questions, then the cited moments. While it searches, the heading is
+ * followed by a status line that steps through phases (SearchingStatus).
  */
 export default function AnswerBlock({
   block,
@@ -114,12 +187,7 @@ export default function AnswerBlock({
       </p>
 
       {block.status === "searching" && (
-        <>
-          <MomentsSkeleton density={density} />
-          <StatusLine>
-            {block.retrying ? "Still in high demand — trying once more…" : `Searching ${scopePhrase(scope)}…`}
-          </StatusLine>
-        </>
+        <SearchingStatus scope={scope} startedAt={block.id} retrying={!!block.retrying} />
       )}
 
       {!isError && !refused && block.status !== "searching" && (
