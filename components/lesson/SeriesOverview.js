@@ -15,7 +15,7 @@ import AskPanel from "./AskPanel";
 import Section from "./Section";
 import { partDate } from "./CourseOutline";
 import { useSeriesBundle } from "./useSeriesBundle";
-import { partTitle } from "@/lib/titles";
+import { partTitle, seriesName } from "@/lib/titles";
 import { parseScriptureRef } from "@/lib/ask-format";
 import { useMediaQuery, PANEL_DOCKED_QUERY } from "@/lib/useMediaQuery";
 import { recordLastLesson } from "@/lib/recent";
@@ -72,7 +72,7 @@ export default function SeriesOverview({ seriesId }) {
   const panelShown = panelOpen ?? docked;
   const sheetShown = panelOpen === true && !docked;
 
-  const pageTitle = series ? `${series.title} · Series Study` : "Series Study · FaithHub";
+  const pageTitle = series ? `${seriesName(series.title)} · Series Study` : "Series Study · FaithHub";
   useEffect(() => {
     if (document.title !== pageTitle) document.title = pageTitle;
   });
@@ -136,7 +136,7 @@ export default function SeriesOverview({ seriesId }) {
     <ToolShell
       kind="lesson"
       back={<Link href="/series" className="hover:text-brand-navy">Series Study</Link>}
-      title={series?.title || ""}
+      title={series ? seriesName(series.title) : ""}
       titleAs="p"
       actions={
         panel ? (
@@ -192,7 +192,7 @@ export default function SeriesOverview({ seriesId }) {
                     {dateRange && ` · ${dateRange}`}
                   </p>
                   <h1 className="mt-4 font-display text-4xl font-medium leading-[1.05] tracking-tight text-balance sm:text-6xl">
-                    {series.title}
+                    {seriesName(series.title)}
                   </h1>
                 </div>
               </section>
@@ -202,7 +202,7 @@ export default function SeriesOverview({ seriesId }) {
               {(summaryLoading || summary) && (
                 <Section id="summary" title="What this series teaches">
                   {summary ? (
-                    <div className="max-w-2xl text-lg leading-relaxed text-brand-ink/85">
+                    <div className="max-w-2xl text-justify [hyphens:auto] text-lg leading-relaxed text-brand-ink/85">
                       <ReactMarkdown components={SUMMARY_MARKDOWN}>{summary}</ReactMarkdown>
                     </div>
                   ) : (
@@ -326,10 +326,14 @@ export default function SeriesOverview({ seriesId }) {
         <button
           type="button"
           onClick={() => setPanelOpen(true)}
-          className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-20 inline-flex items-center gap-2 rounded-full bg-brand-navy px-5 py-3.5 text-sm font-bold text-white shadow-xl shadow-brand-navy/30 transition-colors hover:bg-brand-deep xl:hidden"
+          aria-label="Ask about this series"
+          /* Icon-only on a phone: the labelled pill ran half the width of the
+             screen and sat on top of whatever part you were reading. The
+             label comes back where there's room for it. */
+          className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-20 inline-flex h-14 w-14 items-center justify-center gap-2 rounded-full bg-brand-navy text-sm font-bold text-white shadow-xl shadow-brand-navy/30 transition-colors hover:bg-brand-deep sm:h-auto sm:w-auto sm:px-5 sm:py-3.5 xl:hidden"
         >
           <Sparkles size={16} aria-hidden="true" />
-          Ask about this series
+          <span className="hidden sm:inline">Ask about this series</span>
         </button>
       )}
 

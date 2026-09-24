@@ -85,7 +85,8 @@ export default function Navbar() {
           <span className="hidden md:block w-px h-4 bg-brand-navy/15" />
 
           <div className="hidden md:flex items-center gap-4">
-            {navLinks.map((link) => (
+            {/* No "Home" here — the logo beside it already goes home. The mobile menu keeps it. */}
+            {navLinks.filter((link) => link.href !== "/").map((link) => (
               <Link
                 key={link.name}
                 href={link.href}

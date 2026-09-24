@@ -25,6 +25,12 @@ const supabase = createClient(
 // embed function, the FTS query, and the Groq pastoral reply run on it.
 const MAX_MESSAGE_LENGTH = 2000;
 
+// Fewest characters that can describe a need. A stray keystroke ("d") carries
+// no need at all, but the planner will still invent three plausible
+// declarations from it and the search will dutifully return ten — so it is
+// turned away here rather than answered with something that looks considered.
+const MIN_MESSAGE_LENGTH = 3;
+
 // ─────────────────────────────────────────────
 // Helper: call Supabase Edge Function to embed text
 // Uses gte-small (384 dims) — free, no OpenAI needed
@@ -160,6 +166,15 @@ export async function POST(request) {
       );
     }
 
+    // Too short to be a need (see MIN_MESSAGE_LENGTH). Only the freeform path
+    // reads `message`; topic-grid browsing sends its chips instead.
+    if (topics.length === 0 && message.trim().length < MIN_MESSAGE_LENGTH) {
+      return NextResponse.json(
+        { error: "Tell me a little more about what you're facing — a letter or two isn't enough to search on." },
+        { status: 400 }
+      );
+    }
+
     // Cap input length before any paid embed / Groq work (see MAX_MESSAGE_LENGTH).
     if (message.length > MAX_MESSAGE_LENGTH) {
       return NextResponse.json(
@@ -187,6 +202,9 @@ export async function POST(request) {
     // declarations we end up showing come from the table-wide random fallback,
     // not from anything actually matching what the user shared.
     let noRelevantMatch = false;
+    // True when the reranker read the candidates and judged that none of them
+    // speak to the need — a verdict, unlike an empty search result.
+    let judgedIrrelevant = false;
 
     // ── Topic-grid browsing (Faith/Finances/etc.) is a filter over the fixed
     // topic_tags taxonomy, not freeform retrieval — go straight to the tag
@@ -248,21 +266,26 @@ export async function POST(request) {
 
         // ── 3. Rerank ────────────────────────────────────────────
         // The fused order is positional, not a relevance judgement (see
-        // fuseRanked) — read the actual sentences and re-pick. If this fails,
-        // the fused order still stands (step 2's quality, not step 4's).
+        // fuseRanked) — read the actual sentences and keep only the ones that
+        // answer the need. The rejects are dropped rather than trailed behind
+        // the picks: padding a short list of good matches back up to ten is
+        // what put "I have a special slot." under "long life". If Groq itself
+        // fails (null, not an empty verdict) the fused order still stands.
         if (candidates.length > 0) {
-          const picks = await rerankDeclarations(message, candidates.map((d) => d.declaration_text));
-          if (picks) {
-            const chosen = picks.map((n) => candidates[n - 1]);
-            const chosenIds = new Set(chosen.map((d) => d.id));
-            candidates = [...chosen, ...candidates.filter((d) => !chosenIds.has(d.id))];
+          const ranked = await rerankDeclarations(message, candidates.map((d) => d.declaration_text));
+          if (ranked) {
+            candidates = ranked.picks.map((n) => candidates[n - 1]).filter(Boolean);
+            // It read every candidate and none fit. Going on to step 4 would
+            // only re-run the same search and re-find them, so stop here and
+            // let step 5 answer with general declarations, plainly labelled.
+            if (candidates.length === 0) judgedIrrelevant = true;
           }
         }
       }
 
       if (candidates.length > 0) {
         declarations = candidates;
-      } else {
+      } else if (!judgedIrrelevant) {
         // ── 4. Fallback: single hybrid search on the raw message ──
         // Groq is unreachable (plan failed) or every leg came back empty —
         // fall back to embedding the message as-is against the library.
@@ -301,6 +324,24 @@ export async function POST(request) {
             declarations = data;
           }
         }
+      }
+    }
+
+    // ── 4b. Drop anything already shown, by wording ────────────
+    // The library holds the same declaration more than once under different
+    // ids (the same line transcribed from two messages). Paging excludes by
+    // id, and dedupeByText below only sees one response at a time, so a twin
+    // row used to reappear on "Show 10 more". Look up what the earlier pages
+    // actually said and exclude that wording too.
+    if (shownIds.length > 0 && declarations.length > 0) {
+      const { data: seen, error: seenErr } = await supabase
+        .from("declarations")
+        .select("declaration_text")
+        .in("id", shownIds);
+      if (seenErr) console.error("[declarations] Shown-text lookup failed:", seenErr.message);
+      const shownTexts = new Set((seen || []).map((d) => normalizeText(d.declaration_text)));
+      if (shownTexts.size > 0) {
+        declarations = declarations.filter((d) => !shownTexts.has(normalizeText(d.declaration_text)));
       }
     }
 
@@ -399,13 +440,17 @@ export async function POST(request) {
     // below stand on their own as general encouragement.
     if (noRelevantMatch) noteAbort.abort();
     const botResponse = noRelevantMatch
-      ? "I couldn't find declarations that speak directly to what you shared, but here are some from across Rev. Peter's messages to stand on in the meantime."
+      ? "Nothing in Rev. Peter's messages speaks directly to that. Here are some general declarations to stand on in the meantime."
       : await replyPromise;
 
     return NextResponse.json({
       response: botResponse,
       declarations: toReturn,
       hasMore,
+      // The declarations below are general encouragement, not answers to what
+      // was shared — the UI says so plainly instead of titling them "A word
+      // for you", which would read as if they had been chosen for this person.
+      general: noRelevantMatch,
     });
 
   } catch (error) {

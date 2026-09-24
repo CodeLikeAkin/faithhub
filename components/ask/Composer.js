@@ -33,6 +33,7 @@ export default function Composer({
   autoFocus = false,
   showScope = true,
   submitLabel = "Ask",
+  minLength = 1,
 }) {
   const [text, setText] = useState("");
   const innerRef = useRef(null);
@@ -60,7 +61,7 @@ export default function Composer({
 
   const submit = () => {
     const t = text.trim();
-    if (!t || busy) return;
+    if (t.length < minLength || busy) return;
     if (onSubmit(t) === false) return;
     setText("");
     // A page-flow (hero) composer hands off to results that appear right
@@ -97,7 +98,7 @@ export default function Composer({
   const send = (
     <button
       type="submit"
-      disabled={busy || !text.trim()}
+      disabled={busy || text.trim().length < minLength}
       aria-label={busy ? "Working…" : submitLabel}
       className={cn(
         "grid flex-shrink-0 place-items-center rounded-full bg-brand-navy text-white transition-[transform,background-color,opacity] hover:bg-brand-deep active:scale-[0.96] disabled:opacity-35",

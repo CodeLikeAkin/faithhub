@@ -36,8 +36,8 @@ export default function DeclarationLine({
       )}
       <div className="min-w-0 flex-1">
         {/* 16px on a phone — the same as a verse card (VerseCard.js) — then up
-            to reading-aloud size as the screen grows. */}
-        <p className="font-display text-base leading-relaxed text-brand-ink text-pretty sm:text-xl sm:leading-snug lg:text-2xl">
+            to 20px as the screen grows. */}
+        <p className="font-display text-base leading-relaxed text-brand-ink text-pretty sm:text-lg sm:leading-snug lg:text-xl">
           {declaration.declaration_text}
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-1.5">

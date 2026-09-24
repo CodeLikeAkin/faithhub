@@ -148,7 +148,7 @@ export default function BookView({ slug }) {
             <h2 id="chapters-heading" className="font-display text-2xl font-medium tracking-tight text-brand-ink sm:text-3xl">
               Chapters
             </h2>
-            <p className="mt-1.5 text-sm text-brand-gray">Tap a chapter to read it — the darker it is, the more messages open it</p>
+            <p className="mt-1.5 text-sm text-brand-gray">Tap a chapter to read it. The darker it is, the more messages open it.</p>
             <div className="mt-5">
               <ChapterGrid book={book} chapters={view.chapters} />
             </div>

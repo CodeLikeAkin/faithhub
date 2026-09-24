@@ -215,7 +215,7 @@ export default function VerseExplorer({ sermonId, scriptures: preloaded, embedde
                 Scriptures in this message
               </span>
               <span className="block text-xs text-brand-gray">
-                Tap a verse to read it — the note under each is why it was read
+                Tap a verse to read it. The note under each is why it was read.
               </span>
             </span>
           </span>

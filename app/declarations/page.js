@@ -44,7 +44,7 @@ import { cn } from "@/lib/utils";
 const apiError = (data) =>
   typeof data?.error === "string"
     ? data.error
-    : data?.message || "Something went wrong — please try again in a moment.";
+    : data?.message || "Something went wrong, please try again in a moment.";
 
 function setParams(changes) {
   try {
@@ -86,7 +86,8 @@ export default function DeclarationsPage() {
 
   const runFacing = async (query, { append = false } = {}) => {
     const q = query.trim();
-    if (!q) return false;
+    // Also guards the ?facing= deep link, which doesn't go through the composer.
+    if (q.length < 3) return false;
     const shownIds = append ? facing.items.map((d) => d.id).filter(Boolean) : [];
     if (append) setFacing((f) => ({ ...f, loadingMore: true }));
     else {
@@ -106,7 +107,7 @@ export default function DeclarationsPage() {
       setFacing((f) =>
         append
           ? { ...f, items: [...f.items, ...items], hasMore: !!data.hasMore && items.length > 0, loadingMore: false }
-          : { query: q, status: "done", response: data.response, items, hasMore: !!data.hasMore }
+          : { query: q, status: "done", response: data.response, general: !!data.general, items, hasMore: !!data.hasMore }
       );
     } catch (err) {
       if (append) {
@@ -199,6 +200,10 @@ export default function DeclarationsPage() {
                 onSubmit={(q) => runFacing(q)}
                 placeholder="A diagnosis, a debt, a decision, a fear…"
                 submitLabel="Find declarations"
+                /* A stray keystroke is not a need — the search stays shut
+                   until there's a word to search on (see the API's
+                   MIN_MESSAGE_LENGTH). */
+                minLength={3}
               />
             </div>
 
@@ -233,12 +238,19 @@ export default function DeclarationsPage() {
                   <p className="text-sm text-brand-gray">
                     For <span className="font-semibold text-brand-ink">&ldquo;{facing.query}&rdquo;</span>
                   </p>
-                  {facing.response && (
-                    <div className="mt-3 rounded-[1.5rem] bg-brand-sky/60 p-5 sm:p-6">
-                      <p className="text-sm font-semibold text-brand-navy">A word for you</p>
-                      <p className="mt-2 whitespace-pre-line text-base leading-relaxed text-brand-ink/90">{facing.response}</p>
-                    </div>
-                  )}
+                  {facing.response &&
+                    (facing.general ? (
+                      /* Nothing matched what they shared. These are general
+                         declarations, so they get a plain note — calling it
+                         "A word for you" would claim they were chosen for
+                         this person. */
+                      <p className="mt-3 text-base leading-relaxed text-brand-gray">{facing.response}</p>
+                    ) : (
+                      <div className="mt-3 rounded-[1.5rem] bg-brand-sky/60 p-5 sm:p-6">
+                        <p className="text-sm font-semibold text-brand-navy">A word for you</p>
+                        <p className="mt-2 whitespace-pre-line text-base leading-relaxed text-brand-ink/90">{facing.response}</p>
+                      </div>
+                    ))}
                   <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
                     <h3 className="font-display text-2xl font-medium text-brand-ink">Declarations to speak</h3>
                     <Button variant="dark" size="sm" icon={false} onClick={() => openSpeak("facing")} className="py-2.5">

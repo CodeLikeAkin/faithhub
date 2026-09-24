@@ -16,7 +16,7 @@ import CourseOutline, { partDate } from "./CourseOutline";
 import AskPanel from "./AskPanel";
 import Section from "./Section";
 import { useSeriesBundle } from "./useSeriesBundle";
-import { cleanTitle, partTitle } from "@/lib/titles";
+import { cleanTitle, parseTitle, partTitle, seriesName } from "@/lib/titles";
 import { scrollToElement } from "@/lib/scroll";
 import { useMediaQuery, PANEL_DOCKED_QUERY } from "@/lib/useMediaQuery";
 import { recordLastLesson } from "@/lib/recent";
@@ -85,6 +85,10 @@ export default function LessonPage({ sermonId }) {
   const next = idx >= 0 ? parts[idx + 1] || null : null;
   // A part's own name within its series ("Day One Morning", not the event name every part shares).
   const nameOf = (p) => (series ? partTitle(p.title, series.title) : cleanTitle(p.title));
+
+  // The header splits the title into its own slots: name, event session, speaker · date.
+  const header = part ? parseTitle(part.title, series?.title) : null;
+  const headerDate = part ? partDate(part, { month: "long", day: "numeric", year: "numeric" }) : null;
 
   const scrollToPlayer = () => {
     if (playerRef.current) scrollToElement(playerRef.current, { offset: 16 });
@@ -199,7 +203,7 @@ export default function LessonPage({ sermonId }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, part?.id, series?.id]);
 
-  const pageTitle = part ? `${nameOf(part)} · ${series?.title || "FaithHub"}` : "FaithHub";
+  const pageTitle = part ? `${nameOf(part)} · ${series ? seriesName(series.title) : "FaithHub"}` : "FaithHub";
   useEffect(() => {
     if (document.title !== pageTitle) document.title = pageTitle;
   });
@@ -242,7 +246,7 @@ export default function LessonPage({ sermonId }) {
     <ToolShell
       kind="lesson"
       back={<Link href="/series" className="hover:text-brand-navy">Series Study</Link>}
-      title={series?.title || (part ? cleanTitle(part.title) : "")}
+      title={series ? seriesName(series.title) : part ? cleanTitle(part.title) : ""}
       titleAs="p"
       actions={
         panel ? (
@@ -287,7 +291,7 @@ export default function LessonPage({ sermonId }) {
                 {series && (
                   <p className="text-sm text-brand-gray">
                     <Link href={`/series/${series.id}`} className="font-semibold text-brand-navy hover:underline">
-                      {series.title}
+                      {seriesName(series.title)}
                     </Link>
                     {part.part_number && (
                       <>
@@ -297,16 +301,21 @@ export default function LessonPage({ sermonId }) {
                     )}
                   </p>
                 )}
-                <h1 className="mt-2 font-display text-3xl font-medium leading-[1.1] tracking-tight text-brand-ink text-balance sm:text-4xl lg:text-5xl">
-                  {nameOf(part)}
+                <h1 className="mt-2 font-display text-2xl font-medium leading-[1.1] tracking-tight text-brand-ink text-balance sm:text-3xl lg:text-4xl">
+                  {header.name}
                 </h1>
-                {partDate(part, { month: "long", day: "numeric", year: "numeric" }) && (
-                  <p className="mt-3 text-sm text-brand-gray">
-                    {partDate(part, { month: "long", day: "numeric", year: "numeric" })}
+                {header.session && (
+                  <p className="mt-4">
+                    <span className="inline-flex items-center rounded-full bg-brand-sky px-3 py-1 text-sm font-semibold text-brand-navy">
+                      {header.session}
+                    </span>
                   </p>
                 )}
+                {(header.speaker || headerDate) && (
+                  <p className="mt-3 text-sm text-brand-gray">{[header.speaker, headerDate].filter(Boolean).join(" · ")}</p>
+                )}
                 {part.summary && (
-                  <p className="mt-5 max-w-2xl text-lg leading-relaxed text-brand-ink/80">{part.summary}</p>
+                  <p className="mt-5 max-w-2xl text-justify [hyphens:auto] text-lg leading-relaxed text-brand-ink/80">{part.summary}</p>
                 )}
               </header>
 
@@ -354,7 +363,7 @@ export default function LessonPage({ sermonId }) {
 
               {pd?.notes && (
                 <Section id="notes" title="Notes" intro="As if you sat in the service with a notebook open">
-                  <div className="max-w-2xl text-base leading-[1.8] text-brand-ink/90 lg:text-lg lg:leading-[1.75]">
+                  <div className="max-w-2xl text-justify [hyphens:auto] text-base leading-[1.8] text-brand-ink/90 lg:text-lg lg:leading-[1.75]">
                     <ReactMarkdown components={NOTES_MARKDOWN}>{pd.notes}</ReactMarkdown>
                   </div>
                 </Section>
@@ -364,14 +373,14 @@ export default function LessonPage({ sermonId }) {
                 <Section
                   id="scriptures"
                   title="Scriptures in this message"
-                  intro={`${pd.scriptures.length} readings — tap one to read it, with why it was read`}
+                  intro={`${pd.scriptures.length} readings. Tap one to read it and see why it was read.`}
                 >
                   <VerseExplorer sermonId={part.id} scriptures={pd.scriptures} embedded />
                 </Section>
               )}
 
               {pd?.wordStudies?.length > 0 && (
-                <Section id="words" title="Words he explained" intro="The Greek and Hebrew behind the message — tap a word">
+                <Section id="words" title="Words he explained" intro="The Greek and Hebrew behind the message. Tap a word.">
                   <WordStudy sermonId={part.id} words={pd.wordStudies} embedded onWatch={playMoment} />
                 </Section>
               )}

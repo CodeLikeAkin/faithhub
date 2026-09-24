@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronLeft, ChevronRight, Play } from "lucide-react";
-import { parseSermonDate, partTitle } from "@/lib/titles";
+import { parseSermonDate, partTitle, seriesName } from "@/lib/titles";
 import { cn } from "@/lib/utils";
 
 export const partDate = (p, opts = { month: "short", day: "numeric", year: "numeric" }) => {
@@ -67,7 +67,7 @@ export default function CourseOutline({ series, parts, activeId, onSelect, class
             href={`/series/${series.id}`}
             className="block truncate font-display text-lg font-medium text-brand-ink hover:text-brand-navy"
           >
-            {series.title}
+            {seriesName(series.title)}
           </Link>
         </div>
         <div className="flex flex-shrink-0 items-center gap-2">

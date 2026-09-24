@@ -9,7 +9,7 @@ import FeatureCards from "@/components/home/FeatureCards";
 const communityPoints = [
   "Answers cited to the exact sermon moment on YouTube",
   "Declarations drawn from years of Rev. Peter's messages",
-  "Every Bible verse in every message, mapped — The Word",
+  "Every Bible verse in every message, mapped in The Word",
 ];
 
 export default function Home() {
@@ -40,8 +40,8 @@ export default function Home() {
               in the Word.
             </h1>
             <p className="mt-5 text-base sm:text-lg text-white/80 leading-relaxed max-w-md">
-              Years of HOF&apos;s messages, made searchable — speak
-              God&apos;s Word over your life and study any series in depth.
+              Years of HOF&apos;s messages, made searchable.
+              Speak God&apos;s Word. Study any series in depth.
             </p>
           </div>
 
@@ -145,7 +145,7 @@ export default function Home() {
             </h2>
             <p className="mt-4 text-brand-gray leading-relaxed max-w-lg">
               FaithHub turns years of teaching into something you can search,
-              question, and pray with — free and open, no account needed.
+              question, and pray with. Free, no account needed.
             </p>
             <ul className="mt-7 space-y-4">
               {communityPoints.map((point) => (

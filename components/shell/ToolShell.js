@@ -63,11 +63,6 @@ function useRailPref(kind) {
 
 const RAIL_WIDTH = { expanded: "w-[248px]", collapsed: "w-[72px]", auto: "w-[72px] 2xl:w-[248px]" };
 
-// Set when the reader picks a page from the expanded desktop rail: their next
-// click on the new page tucks the rail away. Module scope, because most tool
-// pages mount their own ToolShell and the route change would reset any state.
-let collapseRailOnNextPageClick = false;
-
 export default function ToolShell({
   kind = "ask",
   title,
@@ -107,22 +102,17 @@ export default function ToolShell({
     mode === "expanded" || (mode === "auto" && window.matchMedia("(min-width: 1536px)").matches);
 
   const toggleCollapse = () => {
-    collapseRailOnNextPageClick = false;
     setRailAnimate(true);
     setPref(railExpandedNow() ? "closed" : "open");
   };
 
-  // Picking a page from the expanded rail arms the auto-collapse (plain
-  // left-clicks on links only, so a new-tab click doesn't).
-  const armRailCollapse = (e) => {
-    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    if (e.target.closest("a[href]") && railExpandedNow()) collapseRailOnNextPageClick = true;
-  };
+  // Whenever the rail is expanded (opened by the reader, or the page default,
+  // or just arrived at from the rail), the next click outside it tucks it away.
   // Runs on click (not pointerdown) so the click lands on what the reader
-  // aimed at before the layout shifts under it.
-  const collapseRailAfterPageClick = () => {
-    if (!collapseRailOnNextPageClick) return;
-    collapseRailOnNextPageClick = false;
+  // aimed at before the layout shifts under it. Clicks inside the rail itself
+  // don't count.
+  const collapseRailAfterPageClick = (e) => {
+    if (e.target.closest?.("[data-tool-rail]")) return;
     if (window.matchMedia("(min-width: 1024px)").matches && railExpandedNow()) {
       setRailAnimate(true);
       setPref("closed");
@@ -169,15 +159,15 @@ export default function ToolShell({
   const inertProps = overlayOpen || coveredByOverlay ? { inert: "" } : {};
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-white text-brand-ink">
+    <div onClickCapture={collapseRailAfterPageClick} className="flex h-dvh overflow-hidden bg-white text-brand-ink">
       {/* Rail — desktop */}
       <aside
+        data-tool-rail=""
         {...inertProps}
         aria-label="FaithHub"
-        onClick={armRailCollapse}
         className={cn(
-          "hidden flex-shrink-0 border-r border-brand-navy/10 bg-brand-sky/40 lg:block",
-          railAnimate && "transition-[width] duration-200",
+          "hidden flex-shrink-0 overflow-hidden border-r border-brand-navy/10 bg-brand-sky/40 lg:block",
+          railAnimate && "transition-[width] duration-200 ease-out",
           RAIL_WIDTH[mode]
         )}
       >
@@ -193,7 +183,7 @@ export default function ToolShell({
       </aside>
 
       {/* Header + main */}
-      <div {...inertProps} onClickCapture={collapseRailAfterPageClick} className="flex min-w-0 flex-1 flex-col">
+      <div {...inertProps} className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 flex-shrink-0 items-center gap-1.5 border-b border-brand-navy/10 bg-white px-2 sm:h-16 sm:gap-2 sm:px-4 lg:px-6">
           <button
             ref={menuButtonRef}

@@ -38,17 +38,14 @@ const TOOLS = [
 //   auto      — icon strip below 2xl, expanded from 2xl (lesson pages)
 const SHOW_BLOCK = { expanded: "block", collapsed: "hidden", auto: "hidden 2xl:block" };
 const SHOW_FLEX = { expanded: "flex", collapsed: "hidden", auto: "hidden 2xl:flex" };
-const SHOW_INLINE = { expanded: "inline", collapsed: "hidden", auto: "hidden 2xl:inline" };
 const ONLY_COLLAPSED_FLEX = { expanded: "hidden", collapsed: "flex", auto: "flex 2xl:hidden" };
-const ITEM_LAYOUT = {
-  expanded: "justify-start px-3",
-  collapsed: "justify-center px-0",
-  auto: "justify-center px-0 2xl:justify-start 2xl:px-3",
-};
-const HEADER_LAYOUT = {
-  expanded: "justify-start pl-5 pr-3",
-  collapsed: "justify-center",
-  auto: "justify-center 2xl:justify-start 2xl:pl-5 2xl:pr-3",
+// The icons sit at the same left position whichever way the rail is showing —
+// they never jump. Each tool label lives to their right and fades + collapses
+// to zero width in sync with the panel, so collapse/expand reads as one motion.
+const LABEL = {
+  expanded: "max-w-[10rem] opacity-100",
+  collapsed: "max-w-0 opacity-0",
+  auto: "max-w-0 opacity-0 2xl:max-w-[10rem] 2xl:opacity-100",
 };
 
 /**
@@ -71,7 +68,7 @@ export default function ToolRail({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className={cn("flex h-16 flex-shrink-0 items-center gap-2", HEADER_LAYOUT[mode])}>
+      <div className="flex h-16 flex-shrink-0 items-center gap-2 pl-5 pr-3">
         <Link href="/" onClick={onNavigate} className="flex min-w-0 items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy">
           <Image
             src="/hofng-logo.png"
@@ -110,15 +107,16 @@ export default function ToolRail({
                   aria-current={active ? "page" : undefined}
                   title={name}
                   className={cn(
-                    "flex h-10 items-center gap-3 rounded-xl text-sm font-medium transition-colors",
-                    ITEM_LAYOUT[mode],
+                    "flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors",
                     active
                       ? "bg-white text-brand-navy shadow-sm ring-1 ring-brand-navy/10"
                       : "text-brand-ink/75 hover:bg-white/70 hover:text-brand-navy"
                   )}
                 >
                   <Icon size={18} aria-hidden="true" className="flex-shrink-0" />
-                  <span className={SHOW_INLINE[mode]}>{name}</span>
+                  <span className={cn("overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-200 ease-out", LABEL[mode])}>
+                    {name}
+                  </span>
                 </Link>
               </li>
             );

@@ -8,7 +8,7 @@ import { STARTER_QUESTIONS } from "@/lib/ask-examples";
 import { THEMES, fetchThemeCount } from "@/lib/declarations";
 import { loadBookStats, useLoad } from "@/lib/word-data";
 import { bookFromId } from "@/lib/canon";
-import { displayTitle } from "@/lib/titles";
+import { seriesName } from "@/lib/titles";
 
 // min-w-0: a grid cell otherwise refuses to shrink below its longest
 // single-line title, which widened the whole page on phones.
@@ -115,7 +115,7 @@ export default function FeatureCards() {
             {(series || []).map((s) => (
               <li key={s.id}>
                 <Link href={`/series/${s.id}`} className={rowLink}>
-                  <span className="min-w-0 truncate font-display text-lg">{displayTitle(s.title)}</span>
+                  <span className="min-w-0 truncate font-display text-lg">{seriesName(s.title)}</span>
                   <span className="flex-shrink-0 text-xs tabular-nums text-brand-gray">{s.series_sermons?.length || 0} parts</span>
                 </Link>
               </li>

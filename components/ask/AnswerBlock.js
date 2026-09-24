@@ -15,7 +15,7 @@ import FollowUps from "./FollowUps";
 import { SCOPE_ICONS, scopePhrase } from "./ScopeChip";
 
 const STATUS_TEXT = "text-base font-medium text-brand-ink/70 sm:text-lg";
-const RETRY_TEXT = "Still in high demand — trying once more…";
+const RETRY_TEXT = "Still in high demand, trying once more…";
 
 function Dots() {
   return (
@@ -54,7 +54,7 @@ function phasesFor(type) {
     { at: 5800, text: "Finding the moments that speak to this…" },
     ...(all ? [{ at: 8800, text: "Checking the scriptures he opened…" }] : []),
     { at: closing, text: "Putting your answer together…" },
-    { at: 18000, text: "Still working — this one is taking a little longer…" },
+    { at: 18000, text: "Still working, this one is taking a little longer…" },
   ];
 }
 

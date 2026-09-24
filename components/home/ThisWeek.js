@@ -7,7 +7,7 @@ import { ArrowRight, Play } from "lucide-react";
 import YtThumb from "@/components/YtThumb";
 import { supabase } from "@/lib/supabase";
 import { fetchTodaysDeclaration } from "@/lib/declarations";
-import { cleanTitle, displayTitle, parseSermonDate } from "@/lib/titles";
+import { cleanTitle, parseSermonDate, seriesName } from "@/lib/titles";
 
 const longDate = (d) =>
   d ? d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" }) : "";
@@ -44,7 +44,7 @@ async function fetchCurrentSeries() {
   const parts = [...(s.series_sermons || [])].sort((a, b) => a.part_number - b.part_number);
   return {
     id: s.id,
-    title: displayTitle(s.title),
+    title: seriesName(s.title),
     parts: parts.length,
     range: fmtRange(s.start_date, s.end_date),
     firstPartId: parts[0]?.sermons?.id || null,
@@ -100,8 +100,9 @@ export default function ThisWeek() {
                 </span>
               </span>
               <span className="flex flex-1 flex-col p-5">
-                <span className="text-sm text-brand-gray">Latest message{latest.date && ` · ${longDate(latest.date)}`}</span>
-                <span className="mt-1.5 font-display text-2xl font-medium leading-snug text-brand-ink">{cleanTitle(latest.title)}</span>
+                <span className="text-sm text-brand-gray">Latest message</span>
+                <span className="mt-1.5 block font-display text-2xl font-medium leading-snug text-brand-ink">{cleanTitle(latest.title)}</span>
+                {latest.date && <span className="mt-1 block text-sm text-brand-gray">{longDate(latest.date)}</span>}
                 <span className="mt-auto inline-flex items-center gap-1.5 pt-4 text-sm font-semibold text-brand-navy">
                   Watch and study <ArrowRight size={14} aria-hidden="true" className="transition-transform group-hover:translate-x-0.5" />
                 </span>

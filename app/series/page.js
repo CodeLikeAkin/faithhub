@@ -7,7 +7,7 @@ import ToolShell from "@/components/shell/ToolShell";
 import { DotGrid, Rings } from "@/components/Decor";
 import YtThumb from "@/components/YtThumb";
 import { supabase } from "@/lib/supabase";
-import { cleanTitle, displayTitle, parseSermonDate, partTitle } from "@/lib/titles";
+import { cleanTitle, parseSermonDate, partTitle, seriesName } from "@/lib/titles";
 import { detectSpeaker } from "@/lib/speakers";
 import { clientIdHeader } from "@/lib/client-id";
 import { cn } from "@/lib/utils";
@@ -59,7 +59,7 @@ function SeriesCover({ s, className }) {
         </span>
       </span>
       <span className="block px-2.5 pb-2.5 pt-2">
-        <span className="line-clamp-2 h-[2.1875rem] hyphens-auto break-words font-display text-sm font-medium leading-tight text-brand-ink sm:h-[2.5rem] sm:text-base">
+        <span className="line-clamp-2 h-[2.75rem] hyphens-auto break-words font-display text-sm font-medium leading-snug text-brand-ink sm:h-12 sm:text-base">
           {s.title}
         </span>
         <span className="mt-0.5 block text-xs text-brand-gray">{s.range || " "}</span>
@@ -103,7 +103,7 @@ function GuestCard({ g, className }) {
  */
 function MessageRow({ m }) {
   const href = m.startSeconds != null ? `/sermon/${m.id}?t=${m.startSeconds}` : `/sermon/${m.id}`;
-  const meta = [m.speaker, m.date ? fmtDay(m.date) : null, m.series?.title].filter(Boolean).join(" · ");
+  const meta = [m.speaker, m.date ? fmtDay(m.date) : null, m.series?.title && seriesName(m.series.title)].filter(Boolean).join(" · ");
   return (
     <Link
       href={href}
@@ -218,7 +218,8 @@ export default function SeriesBrowsePage() {
           const parts = [...(s.series_sermons || [])].sort((a, b) => a.part_number - b.part_number);
           return {
             id: s.id,
-            title: displayTitle(s.title),
+            title: seriesName(s.title),
+            fullTitle: s.title, // searchable with its year, even though the display name drops it
             start: s.start_date,
             year: s.start_date ? new Date(s.start_date).getUTCFullYear() : null,
             range: fmtRange(s.start_date, s.end_date),
@@ -322,7 +323,7 @@ export default function SeriesBrowsePage() {
   const results = useMemo(() => {
     if (!q || !series) return null;
     const matchSeries = series.filter(
-      (s) => s.title.toLowerCase().includes(q) || s.partList.some((p) => p.title?.toLowerCase().includes(q))
+      (s) => s.fullTitle.toLowerCase().includes(q) || s.partList.some((p) => p.title?.toLowerCase().includes(q))
     );
 
     const byId = new Map(sermons.map((s) => [s.id, s]));
@@ -503,7 +504,7 @@ export default function SeriesBrowsePage() {
                             <YtThumb ids={featured.covers} className="h-full w-full object-cover" />
                           </span>
                           <p className="text-sm text-white/70">Latest series</p>
-                          <h2 id="latest-heading" className="mt-2 font-display text-3xl font-medium leading-[1.05] tracking-tight text-balance sm:text-5xl">
+                          <h2 id="latest-heading" className="mt-2 font-display text-2xl font-medium leading-[1.05] tracking-tight text-balance sm:text-4xl">
                             {featured.title}
                           </h2>
                           <p className="mt-4 text-sm text-white/65">
