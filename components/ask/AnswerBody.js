@@ -27,6 +27,9 @@ const tokenize = (text) =>
 function CitationPill({ n, seg, onCite, onHover }) {
   if (!seg?.video_id) return <sup className="text-xs text-brand-gray">[{n}]</sup>;
   const title = cleanTitle(seg.sermon_title);
+  // The library is not all one voice — a pill that doesn't say so invites the
+  // reader to hear Pastor Funlola, a guest or a church member as Rev. Peter.
+  const who = seg.speaker ? `${title} · ${seg.speaker}` : title;
   return (
     <button
       type="button"
@@ -35,8 +38,8 @@ function CitationPill({ n, seg, onCite, onHover }) {
       onMouseLeave={() => onHover?.(null)}
       onFocus={() => onHover?.(n)}
       onBlur={() => onHover?.(null)}
-      title={`${title} · ${fmtTime(seg.start_seconds)}`}
-      aria-label={`Play source ${n}: ${title}, at ${fmtTime(seg.start_seconds)}`}
+      title={`${who} · ${fmtTime(seg.start_seconds)}`}
+      aria-label={`Play source ${n}: ${who}, at ${fmtTime(seg.start_seconds)}`}
       className="relative mx-0.5 inline-flex h-5 min-w-[1.25rem] -translate-y-0.5 items-center justify-center rounded-full bg-brand-navy/10 px-1.5 align-middle text-xs font-bold leading-none text-brand-navy transition-colors before:absolute before:-inset-2.5 before:content-[''] hover:bg-brand-navy hover:text-white focus-visible:bg-brand-navy focus-visible:text-white focus-visible:outline-none"
     >
       {n}

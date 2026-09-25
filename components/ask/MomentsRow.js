@@ -66,6 +66,9 @@ function MomentCard({ n, seg, onCite, highlighted, describe, density }) {
         )}
       </span>
       <span className="mt-2.5 block truncate text-sm font-semibold text-brand-ink">{title}</span>
+      {seg.speaker && (
+        <span className="mt-0.5 block truncate text-xs font-medium text-brand-gray">{seg.speaker}</span>
+      )}
       {seg.text && (
         <span
           className={cn(

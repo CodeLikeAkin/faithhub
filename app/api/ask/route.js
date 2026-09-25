@@ -10,6 +10,8 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { voicePromptSection } from '@/lib/voice';
+import { planAskSearch } from '@/lib/groq';
+import { detectSpeaker, isMultiVoice } from '@/lib/speakers';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -24,6 +26,61 @@ const MAX_MESSAGE_LENGTH = 2000;
 // references (p90 is 52) costs input tokens without improving the answer.
 // Rows are ordered by order_index, so this keeps the earliest-opened ones.
 const MAX_SCRIPTURES_PER_SERMON = 12;
+
+// Fewest teaching segments worth answering from before service housekeeping
+// is allowed to fill the remaining slots (see isServiceNoise).
+const MIN_TEACHING_SEGMENTS = 8;
+
+// Not everything spoken into the microphone is teaching. sermon_segments also
+// holds service housekeeping — meeting times, transport, when to break a fast
+// — and stretches of praying in tongues that the transcript renders as
+// nonsense words. Both match keyword search perfectly well: a measured
+// "praying and fasting in the morning" search came back with break-fast
+// times, bus-stop announcements and three segments of tongues among its 18.
+//
+// These are DE-PRIORITISED, not dropped. A notice often runs straight back
+// into preaching inside the same segment, and a question genuinely about
+// service times deserves an answer — so they only fill slots the teaching
+// left empty (MIN_TEACHING_SEGMENTS), and the prompt is told not to build on
+// them.
+const TONGUES_MARKER_RE = /\bforeign (?:speech|language)\b|\binaudible\b/i;
+// A word repeated three times running, space-separated ("diva diva diva") —
+// how the transcriber renders tongues. Rev. Peter's own repetition for
+// emphasis is punctuated ("Read, read, read"), so it doesn't match, and
+// worship words that genuinely repeat are excused outright.
+const REPEAT_RE = /\b([a-z]{3,})\s+\1\s+\1\b/i;
+const REPEATABLE_WORSHIP =
+  /^(?:holy|hallelujah|halleluyah|alleluia|glory|amen|jesus|lord|god|yes|praise|thank|more|fire|come|now)$/i;
+const LOGISTICS_RES = [
+  /\b(?:bus stop|transportation|information (?:center|centre)|car ?park|ushers?)\b/i,
+  /\b(?:first|second|third) service\b/i,
+  /\b\d{1,2}(?::\d{2})?\s*(?:a\.?m|p\.?m)\b/i,
+  /\bbreak (?:your|the) fast\b/i,
+  /\b(?:offering|tithe|seed) (?:envelope|basket|bag|time|point)\b/i,
+  /\b(?:next week|tomorrow (?:morning|evening)|register|sign up|visit the)\b/i,
+];
+
+function isServiceNoise(text) {
+  const t = text || '';
+  if (TONGUES_MARKER_RE.test(t)) return true;
+  const repeat = t.match(REPEAT_RE);
+  if (repeat && !REPEATABLE_WORSHIP.test(repeat[1])) return true;
+  return LOGISTICS_RES.filter((re) => re.test(t)).length >= 2;
+}
+
+// Who is actually speaking in a segment, for the prompt. The library is not
+// one voice: Pastor Funlola Alabi preaches ~90 of the messages, guest
+// ministers appear, and celebration/panel videos are wall-to-wall church
+// members. The prompt used to call all of it "Rev. Peter's teaching", so a
+// member's birthday tribute came back as something Rev. Peter himself said.
+function speakerLabel(title) {
+  if (isMultiVoice(title)) {
+    return 'UNKNOWN — a celebration/panel video where several people speak in turn; this could be Rev. Peter himself or a church member, and there is no way to tell which';
+  }
+  const { name, isGuest } = detectSpeaker(title);
+  if (!name || name === 'Rev. Peter Alabi') return 'Rev. Peter Alabi';
+  return name + (isGuest ? ' (guest minister)' : '') + ' — NOT Rev. Peter';
+}
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -159,16 +216,35 @@ export async function POST(req) {
       );
     }
 
-    // 1. Embed the question (keyword-only fallback if the embed service is down)
+    // 1. Work out what to actually search for. The question as typed is a
+    //    poor query: gte-small weighs every word, so the words people wrap a
+    //    question in end up steering it. Measured on this corpus, "areas
+    //    where Dad spoke about reading the Bible" returned birthday tributes
+    //    and messages on fatherhood — "Dad" (which is what the church calls
+    //    Rev. Peter) outweighed the subject, and 1 of 18 segments was about
+    //    reading the Bible. "I can't remember which sermon it was but he
+    //    talked about..." dropped the right sermon out of the pool entirely,
+    //    while the same sentence without the preamble put it at #2.
+    //
+    //    The plan also says whether they want to be TAUGHT the subject or to
+    //    LOCATE where it is — two different answers (see RESPONSE SHAPE).
+    //    Groq is a helper here, never the answer: if it fails we search the
+    //    raw question exactly as before.
+    const plan = await planAskSearch(message);
+    const searchText = plan?.search || message;
+    const mode = plan?.mode || 'teaching';
+    if (plan) console.log(`[ask] "${message.slice(0, 60)}" → [${mode}] "${searchText}"`);
+
+    // 2. Embed it (keyword-only fallback if the embed service is down)
     let queryEmbedding = null;
     try {
-      queryEmbedding = await embedText(message);
+      queryEmbedding = await embedText(searchText);
     } catch (embedErr) {
       console.error('[ask] Embed failed:', embedErr.message);
     }
     const embedFailed = !queryEmbedding;
 
-    // 2. Hybrid search across the ENTIRE library. filter_sermon_ids is
+    // 3. Hybrid search across the ENTIRE library. filter_sermon_ids is
     //    omitted (null) — this is a global search by definition, and a filter
     //    listing every sermon in the corpus wouldn't exclude anything, so we
     //    let the RPC skip that clause entirely (see hybrid_search.sql).
@@ -177,7 +253,7 @@ export async function POST(req) {
 
     const { data: hybrid, error: hybridErr } = await supabaseAdmin.rpc('match_segments_hybrid', {
       query_embedding: queryEmbedding, // may be null → keyword-only
-      query_text: message,
+      query_text: searchText,
       match_count: 60,
     });
 
@@ -228,7 +304,26 @@ export async function POST(req) {
         if (r.vec_similarity === undefined) return true; // vector-only fallback, already thresholded
         return r.vec_similarity === 0 || r.vec_similarity >= MIN_VEC_SIMILARITY;
       });
-      relevantSegments = rerankSegments(grounded, 18);
+      // Teaching first: service housekeeping and tongues only backfill an
+      // otherwise thin answer, instead of crowding real teaching out of the
+      // 18 slots. (Celebration and panel videos are NOT held back — Rev.
+      // Peter preaches in those too. Who is speaking is handled by the
+      // SPEAKER line on each segment, not by dropping them.) A locate
+      // question wants breadth of MESSAGES rather than depth in any one, so
+      // it takes fewer segments per sermon.
+      const maxPerSermon = mode === 'locate' ? 2 : 3;
+      const sidelined = (r) => isServiceNoise(r.text);
+      relevantSegments = rerankSegments(grounded.filter((r) => !sidelined(r)), 18, maxPerSermon);
+      if (relevantSegments.length < MIN_TEACHING_SEGMENTS) {
+        const picked = new Set(relevantSegments.map((r) => r.id));
+        relevantSegments = relevantSegments.concat(
+          rerankSegments(
+            grounded.filter((r) => sidelined(r) && !picked.has(r.id)),
+            18 - relevantSegments.length,
+            maxPerSermon
+          )
+        );
+      }
       weakGrounding =
         relevantSegments.length > 0 &&
         !relevantSegments.some(
@@ -239,7 +334,7 @@ export async function POST(req) {
         );
     }
 
-    // 3. Nothing grounded → be honest, never fabricate.
+    // 4. Nothing grounded → be honest, never fabricate.
     if (relevantSegments.length === 0) {
       console.warn(`[ask] No grounded segments (embedFailed=${embedFailed}). Refusing to fabricate.`);
       // embedFailed means the embed service itself is down — a real, transient
@@ -256,7 +351,7 @@ export async function POST(req) {
       );
     }
 
-    // 3b. Real scripture references for the sermons behind these segments, so
+    // 4b. Real scripture references for the sermons behind these segments, so
     // Gemini can cite verses it actually knows exist instead of guessing.
     // `theme` is included as a disambiguating hint when a sermon opened several
     // verses and only one fits a given segment.
@@ -312,7 +407,7 @@ export async function POST(req) {
       }
     }
 
-    // 4. Build the numbered segment list + the map the frontend renders as sources.
+    // 5. Build the numbered segment list + the map the frontend renders as sources.
     //
     // Scriptures are listed ONCE per message, in their own block, rather than
     // re-pasted onto every segment. The 18 segments typically come from only
@@ -335,10 +430,18 @@ export async function POST(req) {
       )
       .join('\n\n');
 
+    // Who said it, on every line. ~90 of the messages in this library are
+    // Pastor Funlola Alabi's, guest ministers appear, and celebration videos
+    // are church members one after another — all of it used to be handed over
+    // as "Rev. Peter's teaching".
+    const speakerBySermon = new Map(
+      relevantSegments.map((seg) => [seg.sermon_id, speakerLabel(seg.sermon_title)])
+    );
+
     const segmentList = relevantSegments
       .map(
         (seg, i) =>
-          `[${i + 1}] (${messageKeyBySermon.get(seg.sermon_id)}) SERMON:${seg.sermon_title}\n"${seg.text}"`
+          `[${i + 1}] (${messageKeyBySermon.get(seg.sermon_id)}) SERMON:${seg.sermon_title}\nSPEAKER:${speakerBySermon.get(seg.sermon_id)}\n"${seg.text}"`
       )
       .join('\n\n');
 
@@ -346,27 +449,89 @@ export async function POST(req) {
       (t || '').length > 300 ? `${t.slice(0, 300).trim()}…` : t || '';
 
     const segmentMap = relevantSegments.reduce((acc, seg, i) => {
+      const { name } = detectSpeaker(seg.sermon_title);
       acc[i + 1] = {
         sermon_id: seg.sermon_id,
         video_id: seg.video_id,
         start_seconds: seg.start_seconds,
         sermon_title: seg.sermon_title,
+        // Only when it ISN'T Rev. Peter — the cards say so under the title.
+        // null for his own messages keeps the streamed header small.
+        speaker: isMultiVoice(seg.sermon_title)
+          ? 'Various speakers'
+          : name && name !== 'Rev. Peter Alabi'
+            ? name
+            : null,
         text: snippet(seg.text),
       };
       return acc;
     }, {});
 
-    // 5. System prompt — tuned for synthesis ACROSS messages.
-    const systemPrompt = `You are a warm, discerning Bible study companion for Heritage of Faith Church. A believer has asked one question, and you are answering it from across the full body of Rev. Peter Ayoalabi's teaching — many different messages at once.
+    // 6. System prompt — tuned for synthesis ACROSS messages.
+    //
+    // Two different questions hide behind one box. "What does he teach about
+    // faith?" wants a lesson. "Which message was that in?" and "where are the
+    // places he covers X?" want to be pointed at the messages — answering
+    // those with a woven essay buries the one thing that was asked for.
+    // planAskSearch tells them apart.
+    const TEACHING_SHAPE = `═══════════════════════════════════════
+RESPONSE SHAPE
+═══════════════════════════════════════
+- Open with a direct, one-sentence answer to the question.
+- Then paragraphs of flowing prose that develop it, drawing threads from the different messages.
+- EXCEPTION — if one or more of the segments has Rev. Peter enumerating points himself
+  (e.g. "number one... number two...", "the first thing is... secondly..."), preserve
+  that structure as a numbered list in his order, each item citing its segment(s),
+  rather than flattening it into prose.
+- Prefer Rev. Peter's own phrasing — quote his exact words when they're memorable.
+- Develop each point you make — name it, then explain or quote what he actually said
+  about it, rather than compressing it to a single clause before moving on.
+- Refer to him as "Rev. Peter". Warm, faith-filled, never academic or robotic.
+- Never say "the transcript says" or "according to the segment" — teach it as living truth.
+- Don't pad with content that isn't in the segments — but don't under-write what is.`;
+
+    const LOCATE_SHAPE = `═══════════════════════════════════════
+RESPONSE SHAPE — THEY ARE LOOKING FOR THE MESSAGES
+═══════════════════════════════════════
+- They want to know WHERE this is in the library, not to be taught it. Point them at the messages.
+- Open with one sentence naming the best match — the message, and what is said there — with its [N].
+- Then a short list, one item per message: name the message, then in a sentence or two what is
+  said there, in his own words where they are memorable, citing its [N]. Merge segments from the
+  same message into one item; never split one message across two items.
+- Order by how well each message actually matches, best first. Three to six messages is plenty —
+  leave out the ones that only brush the subject.
+- Name each message by its SERMON: line, and attach the [N] of a segment that actually came from
+  THAT message. A title from one message with another message's number is the one mistake this
+  answer cannot survive — the reader taps it and lands somewhere else.
+- Don't build a teaching out of them, don't add background, and keep the whole answer under
+  about 250 words. They are going to tap through and watch.
+- You do not know where in a video each moment falls — never guess a timestamp or say "early on".
+  The citation itself takes them to the exact moment.
+- If nothing clearly matches, say that plainly first, then mention at most the closest thing.
+- Refer to him as "Rev. Peter". Warm and direct, never academic.
+- Never say "the transcript says" or "according to the segment".`;
+
+    const systemPrompt = `You are a warm, discerning Bible study companion for Heritage of Faith Church. A believer has asked one question, and you are answering it from across the church's messages — many at once. Most are Rev. Peter Ayoalabi's; some are not, so read the SPEAKER line on every segment.
 
 ═══════════════════════════════════════
 SOURCING — YOUR MOST CRITICAL RULE
 ═══════════════════════════════════════
 - You may ONLY use what is explicitly stated in the transcript segments provided below.
-- The segments come from DIFFERENT sermons. Weave them into ONE coherent answer.
+${mode === 'locate'
+  ? '- The segments come from DIFFERENT sermons. Keep them apart: the point of this answer is which message each thing is in, so never merge two messages into one claim.'
+  : '- The segments come from DIFFERENT sermons. Weave them into ONE coherent answer.'}
 - Never add outside theology, generic Christian advice, or anything from your training data.
 - If the segments only partially cover the question, answer what they do cover and say plainly what isn't addressed.
 - Never invent or assume what Rev. Peter might teach.
+
+═══════════════════════════════════════
+WHO IS SPEAKING — NEVER GET THIS WRONG
+═══════════════════════════════════════
+- Every segment carries a SPEAKER line, and it is not always Rev. Peter. His wife Pastor Funlola Alabi preaches many of these messages, guest ministers preach some, and in celebration or panel videos ordinary church members take the microphone one after another.
+- Say "Rev. Peter" ONLY for segments whose SPEAKER is Rev. Peter Alabi. Name the others as they are given ("Pastor Funlola Alabi teaches...", "a guest minister, Pastor X, said..."). Never put another person's words in Rev. Peter's mouth — not even to make the answer flow.
+- A segment marked SPEAKER:UNKNOWN comes from a video where several people speak in turn — a tribute, a testimony, a panel. It may be Rev. Peter and it may be a church member talking ABOUT him (they call him "Dad" too), and nothing tells you which. Attribute it to the MESSAGE, never to a person: "in ICONIC, someone recalls…", not "Rev. Peter said…" and not "a church member said…". Never present it as his teaching.
+- If the question asks what REV. PETER teaches and the segments are mostly other speakers, say so rather than blurring the two.
+- Some segments are not teaching at all: service housekeeping (meeting times, transport, when to break a fast, what is happening next week) or praying in tongues, which the transcript renders as repeated nonsense words. Never build a point on those and don't cite them.
 
 ═══════════════════════════════════════
 CITATION RULES — MANDATORY
@@ -390,21 +555,7 @@ WEAK GROUNDING — THIS QUESTION
 - Say plainly, in one or two sentences, that Rev. Peter's messages don't clearly address this. Do this FIRST, before anything else.
 - Do not pad the answer with paragraphs stitched from these loosely-related segments just to seem thorough. If one segment is genuinely worth a short mention after the disclaimer, fine — otherwise stop there.
 ` : ''}
-═══════════════════════════════════════
-RESPONSE SHAPE
-═══════════════════════════════════════
-- Open with a direct, one-sentence answer to the question.
-- Then paragraphs of flowing prose that develop it, drawing threads from the different messages.
-- EXCEPTION — if one or more of the segments has Rev. Peter enumerating points himself
-  (e.g. "number one... number two...", "the first thing is... secondly..."), preserve
-  that structure as a numbered list in his order, each item citing its segment(s),
-  rather than flattening it into prose.
-- Prefer Rev. Peter's own phrasing — quote his exact words when they're memorable.
-- Develop each point you make — name it, then explain or quote what he actually said
-  about it, rather than compressing it to a single clause before moving on.
-- Refer to him as "Rev. Peter". Warm, faith-filled, never academic or robotic.
-- Never say "the transcript says" or "according to the segment" — teach it as living truth.
-- Don't pad with content that isn't in the segments — but don't under-write what is.
+${mode === 'locate' ? LOCATE_SHAPE : TEACHING_SHAPE}
 
 ═══════════════════════════════════════
 FOLLOW-UP SUGGESTIONS — STRICT
@@ -433,7 +584,7 @@ QUESTION: ${message}`;
       `~${Math.round(promptChars / 3.8).toLocaleString()} input tokens (${promptChars.toLocaleString()} chars) sent to Gemini`
     );
 
-    // 6. Stream the answer, SEGMENT_MAP header first (same wire format as chat).
+    // 7. Stream the answer, SEGMENT_MAP header first (same wire format as chat).
     const model = genAI.getGenerativeModel({
       // Pinned, NOT the "-latest" alias. At this route's real prompt size
       // (~10k tokens, streamed) that alias 503s roughly three times in four —

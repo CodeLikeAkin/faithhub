@@ -87,6 +87,14 @@ Flow:
 **Rules:**
 - NEVER fetch or send `transcript` (full text) to Gemini
 - Only `sermon_segments` table data goes to Gemini
+- NEVER search the question verbatim. `/api/ask` rewrites it first (Groq `planAskSearch`) — the
+  framing words people wrap a question in ("Dad", "I can't remember which sermon it was but…")
+  otherwise get embedded as the topic and steer the search off it. The same call returns
+  `teaching` or `locate`, which picks the answer shape: a woven lesson, or a short list of the
+  messages it is in. Groq failing just means the raw question is searched, as before.
+- NEVER hand a segment to an LLM without its speaker. ~90 sermons are Pastor Funlola Alabi's or a
+  guest's, and celebration/panel videos are church members (`lib/speakers.js`). They call Rev.
+  Peter "Dad", so an unlabelled tribute comes back as his own teaching.
 - Cap chat history at last 6 messages before sending
 - If `sermon_segments` table is empty (not yet backfilled), falls back to raw `transcript_segments` from sermons table
 
