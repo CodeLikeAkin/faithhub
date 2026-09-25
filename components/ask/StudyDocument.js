@@ -103,8 +103,6 @@ const StudyDocument = forwardRef(function StudyDocument(
           >
             <AnswerBlock
               block={b}
-              index={i}
-              total={blocks.length}
               isLast={i === blocks.length - 1}
               density={density}
               busy={busy}

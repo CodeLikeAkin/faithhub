@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ArrowRight, Maximize2, Plus, X } from "lucide-react";
 import StudyDocument from "@/components/ask/StudyDocument";
 import Composer from "@/components/ask/Composer";
-import { scopePhrase } from "@/components/ask/ScopeChip";
 import { askQuestion, latestStudyFor, retryBlock, scopesFor, useStudies } from "@/lib/studies";
 
 /**
@@ -114,13 +113,12 @@ export default function AskPanel({
         />
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-7 custom-scrollbar">
-          <h2 className="font-display text-2xl font-medium leading-tight text-brand-ink text-balance">
-            {scope.type === "all" ? "Ask anything Rev. Peter has taught" : `Ask anything about ${scopePhrase(scope)}`}
-          </h2>
-          <p className="mt-3 text-sm leading-relaxed text-brand-gray">
-            Every answer is drawn from Rev. Peter&rsquo;s own words
+          {/* No heading here: the panel header already names the scope, and a
+              second "Ask anything about this message" only said it twice. */}
+          <p className="text-sm leading-relaxed text-brand-gray">
+            Every answer comes from Rev. Peter&rsquo;s own words
             {scope.type === "message" ? " in this message" : scope.type === "series" ? " in this series" : ""}, with
-            the moments it came from.{hasPlayer ? " Tap a moment and the video above jumps to it." : ""}
+            the moments it came from.{hasPlayer ? " Tap a moment and the video jumps to it." : ""}
           </p>
           {ready && suggestions.length > 0 && scope.type === "series" && (
             <div className="mt-7">

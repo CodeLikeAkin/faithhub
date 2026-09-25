@@ -354,10 +354,11 @@ export default function LessonPage({ sermonId }) {
                 </p>
               )}
 
-              {pd && !pd.loading && sections.length === 0 && (
+              {pd && !pd.loading && !pd.notes && (
                 <p className="mt-12 rounded-[1.5rem] bg-brand-light px-6 py-5 text-sm leading-relaxed text-brand-gray">
-                  Notes, scriptures and declarations for this message are still being prepared. You can
-                  already ask about it — every answer comes from what was preached.
+                  {sections.length === 0
+                    ? "Notes, scriptures and declarations for this message are still being prepared. You can already ask about it — every answer comes from what was preached."
+                    : "Notes for this message haven’t been written yet. Everything below is drawn from the message itself, and you can ask about any of it."}
                 </p>
               )}
 

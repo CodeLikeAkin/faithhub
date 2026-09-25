@@ -112,6 +112,28 @@ function serviceErrorResponse(message) {
   return NextResponse.json({ error: true, message }, { status: 503 });
 }
 
+// Gemini answers "high demand" with a 503 often enough that a single attempt
+// loses real questions. Retry HERE rather than only in the browser: by this
+// point the segments are already retrieved, so an attempt costs one Gemini
+// call instead of re-running the embed + hybrid search (~8s) from scratch.
+const GEMINI_ATTEMPTS = 3;
+const transientProviderError = (msg) => /\b(429|500|502|503|504)\b/.test(msg || '');
+
+async function sendWithRetry(send) {
+  let lastErr;
+  for (let attempt = 0; attempt < GEMINI_ATTEMPTS; attempt++) {
+    try {
+      return await send();
+    } catch (err) {
+      lastErr = err;
+      if (!transientProviderError(err.message) || attempt === GEMINI_ATTEMPTS - 1) break;
+      // Backoff with jitter — retrying instantly just hits the same busy pool.
+      await new Promise((r) => setTimeout(r, 700 * 2 ** attempt + Math.random() * 400));
+    }
+  }
+  throw lastErr;
+}
+
 export async function POST(req) {
   const rl = await rateLimit(req, { max: 8, windowMs: 60_000, prefix: 'series-chat' });
   if (!rl.allowed) return rateLimitResponse(rl);
@@ -370,8 +392,11 @@ QUESTION: ${message}`;
 
     // 10. Call Gemini with streaming
     const model = genAI.getGenerativeModel({
-      // "-latest" alias — gemini-2.5-flash was retired (404) in mid-2026.
-      model: 'gemini-flash-latest',
+      // Pinned, NOT the "-latest" alias. At this route's real prompt size
+      // (~10k tokens, streamed) that alias 503s roughly three times in four —
+      // it tracks whatever Google has just shipped, and that pool is saturated.
+      // This model answers 4/4 in ~2s. Re-measure before changing it.
+      model: 'gemini-2.5-flash',
       systemInstruction: systemPrompt,
     });
 
@@ -384,9 +409,9 @@ QUESTION: ${message}`;
     // no-segments case.
     let result;
     try {
-      result = await chat.sendMessageStream(userMessageWithContext);
+      result = await sendWithRetry(() => chat.sendMessageStream(userMessageWithContext));
     } catch (genErr) {
-      console.error('[chat] Gemini sendMessageStream failed:', genErr.message);
+      console.error(`[chat] Gemini sendMessageStream failed after ${GEMINI_ATTEMPTS} attempts:`, genErr.message);
       return serviceErrorResponse(
         "The study service is busier than usual right now — please try that question again in a moment."
       );
@@ -404,10 +429,11 @@ QUESTION: ${message}`;
             const content = chunk.text();
             if (content) controller.enqueue(encoder.encode(content));
           }
+          // close() only on the success path — closing an errored controller
+          // throws "Invalid state" and buries the original failure.
+          controller.close();
         } catch (err) {
           controller.error(err);
-        } finally {
-          controller.close();
         }
       },
     });

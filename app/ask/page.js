@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Copy, ListOrdered, Plus } from "lucide-react";
+import { Copy, ListOrdered, Minimize2, Plus } from "lucide-react";
 import ToolShell, { HeaderButton } from "@/components/shell/ToolShell";
 import { deleteStudyWithUndo, useToast } from "@/components/shell/Toast";
 import StudyDocument from "@/components/ask/StudyDocument";
@@ -20,6 +20,7 @@ import {
   useStudies,
 } from "@/lib/studies";
 import { plainText } from "@/lib/ask-format";
+import { seriesName } from "@/lib/titles";
 import { cn } from "@/lib/utils";
 
 /**
@@ -238,8 +239,19 @@ function AskView() {
     }
   };
 
+  // A study begun beside a lesson keeps a way back to it — the counterpart to
+  // the panel's "Open full page". Without it the maximize button is a one-way
+  // door: the browser's Back works, but nothing on screen says so, and one
+  // "New study" in between rewrites that history entry.
+  const origin = study?.context?.sermonId
+    ? { href: `/sermon/${study.context.sermonId}`, label: study.context.sermonTitle || "This message" }
+    : study?.context?.seriesId
+    ? { href: `/series/${study.context.seriesId}`, label: seriesName(study.context.seriesTitle || "This series") }
+    : null;
+
   const actions = study ? (
     <>
+      {origin && <HeaderButton icon={Minimize2} label={`Back to ${origin.label}`} href={origin.href} iconOnly />}
       {study.blocks.length > 1 && (
         <OutlineMenu study={study} activeBlockId={activeBlockId} onJump={jumpTo} />
       )}
@@ -261,6 +273,13 @@ function AskView() {
       kind="ask"
       title={study ? study.title : "New study"}
       titleAs={study ? "h1" : "p"}
+      back={
+        origin ? (
+          <Link href={origin.href} className="hover:text-brand-navy">
+            {origin.label}
+          </Link>
+        ) : null
+      }
       actions={actions}
       activeStudyId={study?.id}
       activeBlockId={activeBlockId}

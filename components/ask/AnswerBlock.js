@@ -14,7 +14,10 @@ import ScriptureMargin, { verseAnchor } from "./ScriptureMargin";
 import FollowUps from "./FollowUps";
 import { SCOPE_ICONS, scopePhrase } from "./ScopeChip";
 
-const STATUS_TEXT = "text-base font-medium text-brand-ink/70 sm:text-lg";
+// The panel is narrow, so its status sits at the same size as the lesson's
+// date line (text-sm); the full page can carry the larger step.
+const STATUS_TEXT = "font-medium text-brand-ink/70";
+const STATUS_SIZE = { page: "text-base sm:text-lg", panel: "text-sm" };
 const RETRY_TEXT = "Still in high demand, trying once more…";
 
 function Dots() {
@@ -31,9 +34,9 @@ function Dots() {
   );
 }
 
-function StatusLine({ children }) {
+function StatusLine({ children, density = "page" }) {
   return (
-    <p role="status" className={cn("mt-8 flex items-center gap-3", STATUS_TEXT)}>
+    <p role="status" className={cn("mt-8 flex items-center gap-3", STATUS_TEXT, STATUS_SIZE[density])}>
       <Dots />
       {children}
     </p>
@@ -63,7 +66,7 @@ function phasesFor(type) {
  * (the moment it was asked), so leaving the page and coming back mid-search
  * picks the phases up where they'd got to instead of restarting them.
  */
-function SearchingStatus({ scope, startedAt, retrying }) {
+function SearchingStatus({ scope, startedAt, retrying, density = "page" }) {
   const type = scope?.type || "all";
   const phases = useMemo(() => phasesFor(type), [type]);
   const stepAt = (ms) => phases.reduce((n, p, i) => (ms >= p.at ? i : n), 0);
@@ -84,7 +87,7 @@ function SearchingStatus({ scope, startedAt, retrying }) {
       <p role="status" className="sr-only">
         {retrying ? RETRY_TEXT : `Searching ${scopePhrase(scope)}…`}
       </p>
-      <p aria-hidden="true" className={cn("flex items-center gap-3", STATUS_TEXT)}>
+      <p aria-hidden="true" className={cn("flex items-center gap-3", STATUS_TEXT, STATUS_SIZE[density])}>
         <Dots />
         <span
           key={retrying ? "retry" : step}
@@ -111,8 +114,6 @@ function SearchingStatus({ scope, startedAt, retrying }) {
  */
 export default function AnswerBlock({
   block,
-  index,
-  total,
   isLast,
   density = "page",
   busy,
@@ -149,8 +150,8 @@ export default function AnswerBlock({
       ? "text-2xl sm:text-3xl"
       : "text-3xl sm:text-4xl"
     : long
-    ? "text-xl"
-    : "text-2xl";
+    ? "text-lg"
+    : "text-xl";
 
   return (
     <article id={`q-${block.id}`} data-block={block.id} className="scroll-mt-4">
@@ -158,14 +159,6 @@ export default function AnswerBlock({
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-brand-gray">
           <ScopeIcon size={14} aria-hidden="true" className="text-brand-navy/60" />
           <span>{scope.type === "all" ? "Across every message" : `In ${displayTitle(scope.label)}`}</span>
-          {total > 1 && (
-            <>
-              <span aria-hidden="true">·</span>
-              <span>
-                Question {index + 1} of {total}
-              </span>
-            </>
-          )}
         </p>
         <h2
           title={block.question.length > 280 ? block.question : undefined}
@@ -187,7 +180,7 @@ export default function AnswerBlock({
       </p>
 
       {block.status === "searching" && (
-        <SearchingStatus scope={scope} startedAt={block.id} retrying={!!block.retrying} />
+        <SearchingStatus scope={scope} startedAt={block.id} retrying={!!block.retrying} density={density} />
       )}
 
       {!isError && !refused && block.status !== "searching" && (
@@ -207,7 +200,7 @@ export default function AnswerBlock({
                 density={density}
               />
             ) : (
-              <StatusLine>Writing the answer…</StatusLine>
+              <StatusLine density={density}>Writing the answer…</StatusLine>
             )}
           </div>
           {scriptures.length > 0 && (

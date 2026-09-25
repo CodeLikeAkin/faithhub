@@ -48,7 +48,7 @@ Contains the **Groq** client and four exported functions:
 - Originally used for keyword-based Supabase filtering
 - Now supplementary — primary retrieval uses embeddings via `match_declarations()` RPC
 
-**Do not add Gemini logic here.** Gemini is called inline in `app/api/series-chat/route.js` and `app/api/ask/route.js` (model: `gemini-flash-latest` — `gemini-2.5-flash` was retired in mid-2026).
+**Do not add Gemini logic here.** Gemini is called inline in `app/api/series-chat/route.js` and `app/api/ask/route.js` (model: `gemini-2.5-flash`, deliberately **pinned**). Both routes retry the Gemini call itself (3 attempts, backoff) before returning 503, because the retrieval is already paid for by that point. Do **not** move these back to the `gemini-flash-latest` alias: measured 2026-09-25, that alias 503s ~3 times in 4 at this app's real prompt size (~10k tokens, streamed), while the pinned model answered 4/4 in ~2s.
 
 ---
 

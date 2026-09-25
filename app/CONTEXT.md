@@ -81,7 +81,7 @@ Flow:
 2. Embed `message` via Supabase Edge Function
 3. Call `match_segments()` RPC → top 15 relevant transcript segments
 4. Build lean context from those 15 segments only
-5. Stream Gemini (`gemini-flash-latest`) response with `[N]` citations
+5. Stream Gemini (`gemini-2.5-flash`, pinned — not the `-latest` alias) response with `[N]` citations
 6. Return streamed `text/plain` response
 
 **Rules:**

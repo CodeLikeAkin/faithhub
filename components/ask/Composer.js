@@ -36,8 +36,10 @@ export default function Composer({
   minLength = 1,
 }) {
   const [text, setText] = useState("");
+  const [wrapped, setWrapped] = useState(false);
   const innerRef = useRef(null);
   const ref = externalRef || innerRef;
+  const oneLine = useRef(0);
   const keyboardInset = useKeyboardInset();
   const hero = variant === "hero";
 
@@ -51,9 +53,15 @@ export default function Composer({
     if (!ta) return;
     const max = hero ? 200 : 120;
     ta.style.height = "auto";
-    if (text) ta.style.height = Math.min(ta.scrollHeight, max) + "px";
-    ta.style.overflowY = text && ta.scrollHeight > max ? "auto" : "hidden";
-  }, [text, hero, ref]);
+    const natural = ta.scrollHeight;
+    if (!text) oneLine.current = natural; // the empty field IS one line
+    else ta.style.height = Math.min(natural, max) + "px";
+    ta.style.overflowY = text && natural > max ? "auto" : "hidden";
+    // Sticky until the field is cleared. Un-wrapping on the way back down
+    // would widen the field, let the text fit one line again, and re-narrow
+    // it — a question sitting on the boundary would flicker between layouts.
+    setWrapped((w) => (!text ? false : w || (!!oneLine.current && natural > oneLine.current)));
+  }, [text, hero, wrapped, ref]);
 
   useEffect(() => {
     if (autoFocus) ref.current?.focus({ preventScroll: true });
@@ -90,7 +98,9 @@ export default function Composer({
         "min-w-0 flex-1 resize-none bg-transparent text-brand-ink placeholder:text-brand-gray/70 focus:outline-none",
         hero
           ? "block w-full px-2 py-1.5 text-lg leading-relaxed sm:text-xl max-h-[200px]"
-          : "py-2 text-base leading-relaxed max-h-[120px]"
+          : "py-2 text-base leading-relaxed max-h-[120px]",
+        // Wrapped: take the whole first row, controls fall beneath.
+        !hero && wrapped && "order-1 basis-full px-1.5"
       )}
     />
   );
@@ -102,7 +112,8 @@ export default function Composer({
       aria-label={busy ? "Working…" : submitLabel}
       className={cn(
         "grid flex-shrink-0 place-items-center rounded-full bg-brand-navy text-white transition-[transform,background-color,opacity] hover:bg-brand-deep active:scale-[0.96] disabled:opacity-35",
-        hero ? "h-12 w-12" : "h-10 w-10"
+        hero ? "h-12 w-12" : "h-10 w-10",
+        !hero && wrapped && "order-3"
       )}
     >
       {busy ? (
@@ -161,8 +172,19 @@ export default function Composer({
       }}
     >
       <form onSubmit={onFormSubmit} className={cn("mx-auto", width === "page" ? "max-w-3xl" : "max-w-none")}>
-        <div className="flex items-end gap-1.5 rounded-[1.4rem] border border-brand-navy/15 bg-white p-1.5 shadow-[0_10px_30px_-18px_rgba(23,58,104,0.35)] transition-colors focus-within:border-brand-navy/40">
-          <div className="flex h-10 items-center">{chip}</div>
+        {/* One row while the question fits on a line. Once it wraps, the
+            field takes the whole first row and the controls drop beneath —
+            side by side, the chip and send button squeeze a panel-width
+            field down to a couple of words per line. Done with flex order
+            rather than two branches: swapping branches would remount the
+            textarea, losing its measured height and the caret mid-sentence. */}
+        <div
+          className={cn(
+            "flex gap-1.5 rounded-[1.4rem] border border-brand-navy/15 bg-white p-1.5 shadow-[0_10px_30px_-18px_rgba(23,58,104,0.35)] transition-colors focus-within:border-brand-navy/40",
+            wrapped ? "flex-wrap items-center" : "items-end"
+          )}
+        >
+          <div className={cn("flex h-10 items-center", wrapped && "order-2 mr-auto")}>{chip}</div>
           {field}
           {send}
         </div>

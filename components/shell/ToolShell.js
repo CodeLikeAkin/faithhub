@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { useMediaQuery, PANEL_DOCKED_QUERY } from "@/lib/useMediaQuery";
 import { cn } from "@/lib/utils";
@@ -289,20 +290,26 @@ export default function ToolShell({
 }
 
 /** A pill button for the shell header's action slot. */
-export function HeaderButton({ icon: Icon, label, className, labelClassName, ...rest }) {
+/**
+ * `href` makes it a link instead of a button; `iconOnly` drops the visible
+ * text (the label still names it for screen readers and the tooltip).
+ */
+export function HeaderButton({ icon: Icon, label, className, labelClassName, href, iconOnly = false, ...rest }) {
+  const Tag = href ? Link : "button";
   return (
-    <button
-      type="button"
+    <Tag
+      {...(href ? { href } : { type: "button" })}
       aria-label={label}
       title={label}
       className={cn(
         "inline-flex h-10 flex-shrink-0 items-center gap-1.5 rounded-full border border-brand-navy/15 bg-white px-3 text-sm font-medium text-brand-navy transition-colors hover:bg-brand-sky focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy sm:h-9",
+        iconOnly && "w-10 justify-center px-0 sm:w-9",
         className
       )}
       {...rest}
     >
       {Icon && <Icon size={16} aria-hidden="true" />}
-      <span className={cn("hidden sm:inline", labelClassName)}>{label}</span>
-    </button>
+      {!iconOnly && <span className={cn("hidden sm:inline", labelClassName)}>{label}</span>}
+    </Tag>
   );
 }
