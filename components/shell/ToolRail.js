@@ -7,6 +7,7 @@ import {
   BookMarked,
   BookOpen,
   Flame,
+  MessageSquareHeart,
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
@@ -226,22 +227,41 @@ export default function ToolRail({
             <BookMarked size={18} aria-hidden="true" />
           </button>
         )}
+        <Link
+          href="/about#feedback"
+          onClick={onNavigate}
+          aria-label="About & feedback"
+          title="About & feedback"
+          className="mt-auto grid h-10 w-10 place-items-center rounded-xl text-brand-gray transition-colors hover:bg-white hover:text-brand-navy"
+        >
+          <MessageSquareHeart size={18} aria-hidden="true" />
+        </Link>
         {onToggleCollapse && (
           <button
             type="button"
             onClick={onToggleCollapse}
             aria-label="Expand sidebar"
             title="Expand sidebar"
-            className="mt-auto mb-4 grid h-10 w-10 place-items-center rounded-xl text-brand-gray transition-colors hover:bg-white hover:text-brand-navy"
+            className="mb-4 grid h-10 w-10 place-items-center rounded-xl text-brand-gray transition-colors hover:bg-white hover:text-brand-navy"
           >
             <PanelLeftOpen size={18} aria-hidden="true" />
           </button>
         )}
       </div>
 
-      <p className={cn("flex-shrink-0 border-t border-brand-navy/10 px-5 py-3 text-xs leading-relaxed text-brand-gray", SHOW_BLOCK[mode])}>
-        Answers are grounded in HOF recorded messages. Studies stay on this device.
-      </p>
+      <div className={cn("flex-shrink-0 border-t border-brand-navy/10 px-5 py-3", SHOW_BLOCK[mode])}>
+        <p className="text-xs leading-relaxed text-brand-gray">
+          Answers are grounded in HOF recorded messages. Studies stay on this device.
+        </p>
+        <Link
+          href="/about#feedback"
+          onClick={onNavigate}
+          className="-mx-2 mt-2 flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-bold text-brand-navy transition-colors hover:bg-white"
+        >
+          <MessageSquareHeart size={14} aria-hidden="true" className="flex-shrink-0" />
+          About &amp; feedback
+        </Link>
+      </div>
     </div>
   );
 }

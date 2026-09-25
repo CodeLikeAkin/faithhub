@@ -188,6 +188,9 @@ export default function Home() {
             <Link href="/vision" className="py-1.5 hover:text-brand-navy transition-colors">
               Vision
             </Link>
+            <Link href="/about" className="py-1.5 hover:text-brand-navy transition-colors">
+              About
+            </Link>
             <a
               href="https://hofng.org"
               target="_blank"
