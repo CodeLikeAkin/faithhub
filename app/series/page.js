@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ChevronDown, Search, X } from "lucide-react";
 import ToolShell from "@/components/shell/ToolShell";
-import { DotGrid, Rings } from "@/components/Decor";
+import { DotGrid } from "@/components/Decor";
 import YtThumb from "@/components/YtThumb";
 import { supabase } from "@/lib/supabase";
 import { cleanTitle, parseSermonDate, partTitle, seriesName } from "@/lib/titles";
@@ -370,7 +370,7 @@ export default function SeriesBrowsePage() {
         <header className="mx-auto flex max-w-[1400px] flex-col gap-6 px-4 pt-10 sm:px-8 sm:pt-14 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h1 className="font-display text-5xl font-medium tracking-tight text-brand-ink sm:text-6xl">Series Study</h1>
-            <p className="mt-3 text-lg text-brand-gray">
+            <p className="mt-3 text-base text-brand-gray">
               {series?.length
                 ? `${series.length} series · ${totalMessages} messages, each one a course to study and ask about.`
                 : "Rev. Peter’s teaching, series by series."}
@@ -480,71 +480,102 @@ export default function SeriesBrowsePage() {
                     <div className="mx-auto mt-10 max-w-[1400px] px-2 sm:px-8">
                       <section
                         aria-labelledby="latest-heading"
+                        // The hero is the same white card as the grid below it, only
+                        // bigger. The dark slab it replaced was the one dark block on a
+                        // light page, and the cover art it blurred behind the title
+                        // tinted the whole thing a different colour for every series.
+                        //
                         // minmax(0, …) on every track: a bare 1fr / implicit auto track won't
                         // shrink below its content's min-content, and the part titles are
                         // long no-wrap strings — they blew the columns out past the card
                         // (clipped titles, a wrapped button, a cropped cover on phones).
-                        className="relative grid grid-cols-[minmax(0,1fr)] overflow-hidden rounded-[1.75rem] bg-brand-deep text-white sm:rounded-[2.5rem] lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]"
+                        // Two columns only from 1120px, not at lg. Between 1024 and 1120
+                        // the panel is narrow enough that it out-grows the cover's 16:9
+                        // by ~100px a side; stacking there gives a full-width picture
+                        // instead. 1120 keeps a landscape iPad (1180) side by side.
+                        className="grid grid-cols-[minmax(0,1fr)] overflow-hidden rounded-[1.75rem] border border-brand-navy/12 bg-white shadow-[0_30px_60px_-45px_rgba(16,42,78,0.5)] sm:rounded-[2rem] min-[1120px]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]"
                       >
-                        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-                          {/* Blurred past legibility on purpose: the cover art carries
-                              its own lettering, which fought the title when it sat
-                              sharp behind it. The readable copy is framed below. */}
-                          <YtThumb
-                            ids={featured.covers}
-                            className="absolute inset-0 h-full w-full scale-125 object-cover opacity-30 blur-2xl"
-                          />
-                          <div className="absolute inset-0 bg-brand-deep/60" />
-                          <div className="absolute -left-40 -top-40 h-[28rem] w-[28rem] rounded-full bg-brand-navy/80 blur-3xl" />
-                          <DotGrid dark className="inset-0 [mask-image:radial-gradient(ellipse_at_top_left,black,transparent_55%)]" />
-                          <Rings className="absolute -bottom-56 -right-56 h-[36rem] w-[36rem] text-white/[0.06]" />
-                        </div>
-                        <div className="relative min-w-0 px-4 py-6 sm:px-12 sm:py-12">
-                          <span className="mb-6 block aspect-video overflow-hidden rounded-2xl bg-brand-deep shadow-[0_25px_50px_-20px_rgba(0,0,0,0.6)] ring-1 ring-white/15 sm:max-w-md">
-                            <YtThumb ids={featured.covers} className="h-full w-full object-cover" />
+                        {/* Full-bleed: the cover runs to the card's edges, no inset frame
+                            eating into the picture.
+                            `aspect-video` stays on at every width, so this cell's
+                            min-content height is its own 16:9 and the row can never be
+                            shorter than the picture wants to be. Without it the panel
+                            alone set the height and the box drifted to ~1.2:1 whenever
+                            the card was narrow (sidebar open), which is what put black
+                            bars top and bottom: hqdefault is a 4:3 image with the
+                            letterbox baked in, and object-cover only trims those bars
+                            away when the box it fills is 16:9. The quality ladder below
+                            asks for genuinely 16:9 sizes so there is no letterbox to
+                            trim in the first place.
+                            The cell behind it is brand-sky, not white: when the panel
+                            beside it happens to be taller (narrow card, wrapped buttons)
+                            the leftover reads as a tinted mat rather than a gap in the
+                            card. At the widths where the panel fits, no mat is visible
+                            at all and the picture is edge to edge. */}
+                        <div className="flex items-center justify-center bg-brand-sky">
+                          <span className="relative block aspect-video w-full overflow-hidden bg-brand-deep">
+                            {/* Shows through only when no part has a live thumbnail. */}
+                            <DotGrid dark className="inset-0" />
+                            <YtThumb
+                              ids={featured.covers}
+                              quality={["maxresdefault", "hq720", "mqdefault"]}
+                              className="relative h-full w-full object-cover"
+                            />
                           </span>
-                          <p className="text-sm text-white/70">Latest series</p>
-                          <h2 id="latest-heading" className="mt-2 font-display text-2xl font-medium leading-[1.05] tracking-tight text-balance sm:text-4xl">
+                        </div>
+
+                        <div className="flex min-w-0 flex-col justify-center px-5 py-6 sm:px-8 sm:py-6">
+                          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-navy/60">Latest series</p>
+                          <h2
+                            id="latest-heading"
+                            className="mt-2 font-display text-2xl font-medium leading-[1.1] tracking-tight text-brand-ink text-balance sm:text-3xl xl:text-4xl"
+                          >
                             {featured.title}
                           </h2>
-                          <p className="mt-4 text-sm text-white/65">
-                            {featured.parts} parts{featured.range && ` · ${featured.range}`}
+                          <p className="mt-2.5 text-sm text-brand-gray">
+                            {featured.parts} {featured.parts === 1 ? "part" : "parts"}
+                            {featured.range && ` · ${featured.range}`}
                           </p>
-                          <div className="mt-8 flex flex-wrap gap-3">
+
+                          {/* One line per part once the panel sits beside the cover: its
+                              height is what decides how much tinted mat opens up around
+                              the picture, so a row that wrapped to two lines would push
+                              them apart. While the card is stacked the cover is its own
+                              full-width 16:9 block above, so titles wrap in full. */}
+                          <ol className="mt-4 border-t border-brand-navy/10">
+                            {featured.partList.slice(0, 4).map((p) => (
+                              <li key={p.id || p.n} className="border-b border-brand-navy/10">
+                                <Link
+                                  href={`/sermon/${p.id}`}
+                                  className="flex items-center gap-3 py-1.5 transition-colors hover:text-brand-navy"
+                                >
+                                  <span className="w-5 flex-shrink-0 text-xs font-bold tabular-nums text-brand-navy/50">{p.n}</span>
+                                  <span className="min-w-0 text-sm leading-snug text-brand-ink min-[1120px]:truncate">{p.title}</span>
+                                </Link>
+                              </li>
+                            ))}
+                          </ol>
+
+                          {/* nowrap + tight padding: these two wrapping onto separate
+                              lines is what pushes the panel past the cover's height and
+                              opens the mat beside it. */}
+                          <div className="mt-5 flex flex-wrap items-center gap-2.5">
                             {featured.partList[0]?.id && (
                               <Link
                                 href={`/sermon/${featured.partList[0].id}`}
-                                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-bold text-brand-navy transition-colors hover:bg-brand-sky sm:text-base"
+                                className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-brand-navy px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-deep"
                               >
                                 Start with Part 1 <ArrowRight size={16} aria-hidden="true" />
                               </Link>
                             )}
                             <Link
                               href={`/series/${featured.id}`}
-                              className="inline-flex items-center gap-2 rounded-full border border-white/40 px-6 py-3.5 text-sm font-bold text-white transition-colors hover:bg-white/10 sm:text-base"
+                              className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-brand-navy/25 px-5 py-3 text-sm font-bold text-brand-navy transition-colors hover:bg-brand-sky"
                             >
-                              Open the series
+                              All {featured.parts} parts
                             </Link>
                           </div>
                         </div>
-                        <ol className="relative min-w-0 border-t border-white/10 px-4 py-4 sm:px-8 lg:border-l lg:border-t-0 lg:py-10">
-                          {featured.partList.slice(0, 6).map((p) => (
-                            <li key={p.id || p.n}>
-                              <Link
-                                href={`/sermon/${p.id}`}
-                                className="flex items-center gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-white/[0.07]"
-                              >
-                                <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-full border border-white/25 text-sm font-bold tabular-nums">
-                                  {p.n}
-                                </span>
-                                <span className="min-w-0 truncate text-sm text-white/85">{p.title}</span>
-                              </Link>
-                            </li>
-                          ))}
-                          {featured.parts > 6 && (
-                            <li className="px-2 pt-2 text-sm text-white/60">+ {featured.parts - 6} more parts</li>
-                          )}
-                        </ol>
                       </section>
                     </div>
                   )}
