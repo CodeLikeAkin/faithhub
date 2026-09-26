@@ -127,6 +127,29 @@ a, button {
   }
 }
 
+/* Loading status text: a soft light passes across the words on a loop. Only
+   under no-preference; reduced motion keeps the plain text colour. */
+@keyframes fh-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fh-shimmer {
+    background-image: linear-gradient(
+      100deg,
+      rgba(23, 35, 59, 0.6) 35%,
+      rgba(23, 35, 59, 1) 50%,
+      rgba(23, 35, 59, 0.6) 65%
+    );
+    background-size: 250% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: fh-shimmer 2.2s linear infinite;
+  }
+}
+
 .hide-series-nav header {
   display: none !important;
 }

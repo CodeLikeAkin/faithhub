@@ -52,11 +52,11 @@ function phasesFor(type) {
   const all = type === "all";
   const closing = all ? 11800 : 8800;
   return [
-    { at: 0, text: `Searching ${scopePhrase({ type })}…` },
-    { at: 2800, text: "Reading through Rev. Peter’s teaching…" },
-    { at: 5800, text: "Finding the moments that speak to this…" },
-    ...(all ? [{ at: 8800, text: "Checking the scriptures he opened…" }] : []),
-    { at: closing, text: "Putting your answer together…" },
+    { at: 0, text: all ? "Searching messages…" : `Searching ${scopePhrase({ type })}…` },
+    { at: 2800, text: "Reading through the teaching…" },
+    { at: 5800, text: "Finding moments…" },
+    ...(all ? [{ at: 8800, text: "Checking scriptures…" }] : []),
+    { at: closing, text: "Putting it together…" },
     { at: 18000, text: "Still working, this one is taking a little longer…" },
   ];
 }
@@ -89,11 +89,10 @@ function SearchingStatus({ scope, startedAt, retrying, density = "page" }) {
       </p>
       <p aria-hidden="true" className={cn("flex items-center gap-3", STATUS_TEXT, STATUS_SIZE[density])}>
         <Dots />
-        <span
-          key={retrying ? "retry" : step}
-          className="motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-500"
-        >
-          {text}
+        {/* Each step cross-fades in; the shimmer sweeps on the inner span so
+            the two animations don't fight over one element. */}
+        <span key={retrying ? "retry" : step} className="motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
+          <span className="fh-shimmer">{text}</span>
         </span>
       </p>
       {/* The answer's own shape, faint — where the words will land. */}
