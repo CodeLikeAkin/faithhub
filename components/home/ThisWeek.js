@@ -20,17 +20,25 @@ const fmtRange = (start, end) => {
   return s === e ? s : `${s} – ${e}`;
 };
 
-/** The newest service — by the date in its title (sermon_date is the upload date and lags). */
+/**
+ * The most recently posted message — the newest upload (`sermon_date` is the
+ * YouTube upload date). We used to sort this window by the preach date parsed
+ * from the title, but during multi-day events the church uploads sessions out
+ * of preach order across weeks, and some guest titles carry no date at all —
+ * so a title with no parseable date fell back to its (later) upload date and
+ * leapfrogged everything. "Latest message" means the newest video posted, so
+ * order by upload date and take the top one. The date LINE still prefers the
+ * true preach date from the title, falling back to the upload date.
+ */
 async function fetchLatestMessage() {
   const { data, error } = await supabase
     .from("sermons")
     .select("id, title, sermon_date, youtube_video_id, summary")
     .order("sermon_date", { ascending: false })
-    .limit(12);
+    .limit(1);
   if (error || !data?.length) return null;
-  const dated = data.map((s) => ({ ...s, date: parseSermonDate(s.title) || (s.sermon_date ? new Date(s.sermon_date) : null) }));
-  dated.sort((a, b) => (b.date?.getTime() || 0) - (a.date?.getTime() || 0));
-  return dated[0];
+  const s = data[0];
+  return { ...s, date: parseSermonDate(s.title) || (s.sermon_date ? new Date(s.sermon_date) : null) };
 }
 
 async function fetchCurrentSeries() {
@@ -92,7 +100,7 @@ export default function ThisWeek() {
               className="group flex flex-col overflow-hidden rounded-[1.75rem] border border-brand-navy/10 bg-white transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-brand-navy/25 hover:shadow-[0_30px_50px_-35px_rgba(23,58,104,0.5)]"
             >
               <span className="relative block aspect-video bg-brand-sky">
-                <YtThumb ids={latest.youtube_video_id} className="h-full w-full object-cover" />
+                <YtThumb ids={latest.youtube_video_id} quality={["maxresdefault", "hq720", "mqdefault"]} className="h-full w-full object-cover" />
                 <span className="absolute inset-0 grid place-items-center bg-brand-deep/0 transition-colors group-hover:bg-brand-deep/20">
                   <span className="grid h-14 w-14 place-items-center rounded-full bg-white text-brand-navy shadow-xl">
                     <Play size={20} fill="currentColor" className="translate-x-0.5" aria-hidden="true" />
@@ -147,7 +155,7 @@ export default function ThisWeek() {
               className="group flex flex-col overflow-hidden rounded-[1.75rem] border border-brand-navy/10 bg-white transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-brand-navy/25 hover:shadow-[0_30px_50px_-35px_rgba(23,58,104,0.5)]"
             >
               <span className="relative block aspect-video bg-brand-sky">
-                <YtThumb ids={series.covers} className="h-full w-full object-cover" />
+                <YtThumb ids={series.covers} quality={["maxresdefault", "hq720", "mqdefault"]} className="h-full w-full object-cover" />
               </span>
               <span className="flex flex-1 flex-col p-5">
                 <span className="text-sm text-brand-gray">Current series</span>
