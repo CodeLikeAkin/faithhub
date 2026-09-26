@@ -33,7 +33,7 @@ export default function ThemeChips({ active, className }) {
                 href={`/declarations/${slug}`}
                 aria-current={current ? "page" : undefined}
                 className={cn(
-                  "inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-full px-4 text-sm font-medium transition-colors",
+                  "inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-full px-4 text-sm font-medium transition active:scale-[0.97]",
                   current
                     ? "bg-brand-navy text-white"
                     : "border border-brand-navy/15 text-brand-ink/80 hover:bg-brand-sky hover:text-brand-navy"

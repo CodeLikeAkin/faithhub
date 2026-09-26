@@ -64,6 +64,11 @@ function useRailPref(kind) {
 
 const RAIL_WIDTH = { expanded: "w-[248px]", collapsed: "w-[72px]", auto: "w-[72px] 2xl:w-[248px]" };
 
+// Progressive resistance past a boundary (Apple's rubber-banding) — used so the
+// bottom sheet gives a little when dragged *up* past its open position instead
+// of stopping dead. Returns the damped offset for a raw overshoot.
+const rubberband = (overshoot, dim, c = 0.55) => (overshoot * dim * c) / (dim + c * Math.abs(overshoot));
+
 export default function ToolShell({
   kind = "ask",
   title,
@@ -93,6 +98,7 @@ export default function ToolShell({
   const menuButtonRef = useRef(null);
   const drawerCloseRef = useRef(null);
   const sheetRef = useRef(null);
+  const sheetDragRef = useRef(null); // live { startY, lastY, lastT, vy, height } while dragging the sheet
 
   const mode = pref === "open" ? "expanded" : pref === "closed" ? "collapsed" : kind === "lesson" ? "auto" : "expanded";
 
@@ -156,6 +162,58 @@ export default function ToolShell({
     if (sheetOpen) sheetRef.current?.focus({ preventScroll: true });
   }, [sheetOpen]);
 
+  // Drag-to-dismiss for the bottom sheet (below xl only — the docked column
+  // never moves). The grabber tracks the finger 1:1 via inline transform with
+  // the CSS transition switched off; on release we clear the inline styles and
+  // hand the settle back to the class-based transition (translate-y-0 / -full),
+  // dismissing on a downward flick or a drag past ~35% of the sheet's height.
+  const onSheetGrab = (e) => {
+    const el = sheetRef.current;
+    if (!sheetOpen || !el) return;
+    sheetDragRef.current = {
+      startY: e.clientY,
+      lastY: e.clientY,
+      lastT: e.timeStamp,
+      vy: 0,
+      height: el.getBoundingClientRect().height,
+    };
+    el.style.transition = "none";
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* capture unavailable — drag still tracks */
+    }
+  };
+
+  const onSheetDrag = (e) => {
+    const d = sheetDragRef.current;
+    const el = sheetRef.current;
+    if (!d || !el) return;
+    let dy = e.clientY - d.startY;
+    if (dy < 0) dy = -rubberband(-dy, d.height); // resist dragging up past open
+    el.style.transform = `translateY(${dy}px)`;
+    const dt = e.timeStamp - d.lastT;
+    if (dt > 0) d.vy = ((e.clientY - d.lastY) / dt) * 1000; // px/s
+    d.lastY = e.clientY;
+    d.lastT = e.timeStamp;
+  };
+
+  const onSheetRelease = (e) => {
+    const d = sheetDragRef.current;
+    const el = sheetRef.current;
+    sheetDragRef.current = null;
+    if (!d || !el) return;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      /* already released */
+    }
+    el.style.transition = ""; // re-enable the class transition for the settle
+    el.style.transform = ""; // fall back to the class (translate-y-0 / -full)
+    const dy = e.clientY - d.startY;
+    if (dy > d.height * 0.35 || d.vy > 600) onPanelOpenChange?.(false);
+  };
+
   // A page-level full-screen overlay (Speak mode) covers the whole shell.
   const inertProps = overlayOpen || coveredByOverlay ? { inert: "" } : {};
 
@@ -192,7 +250,7 @@ export default function ToolShell({
             onClick={() => setRailOpen(true)}
             aria-label="Open menu"
             aria-expanded={railOpen}
-            className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-full text-brand-navy transition-colors hover:bg-brand-sky lg:hidden"
+            className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-full text-brand-navy transition hover:bg-brand-sky active:scale-95 lg:hidden"
           >
             <Menu size={20} aria-hidden="true" />
           </button>
@@ -238,6 +296,18 @@ export default function ToolShell({
               panelVisibleDocked ? "xl:flex" : "xl:hidden"
             )}
           >
+            {/* Grabber — drag down to dismiss (below xl only; the docked column
+                doesn't move). aria-hidden: Escape and the scrim already close it. */}
+            <div
+              aria-hidden="true"
+              onPointerDown={onSheetGrab}
+              onPointerMove={onSheetDrag}
+              onPointerUp={onSheetRelease}
+              onPointerCancel={onSheetRelease}
+              className="flex flex-shrink-0 touch-none cursor-grab items-center justify-center py-2.5 active:cursor-grabbing xl:hidden"
+            >
+              <span className="h-1 w-9 rounded-full bg-brand-navy/20" />
+            </div>
             {panel}
           </aside>
         </>
@@ -267,7 +337,7 @@ export default function ToolShell({
           type="button"
           onClick={() => setRailOpen(false)}
           aria-label="Close menu"
-          className="absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full text-brand-gray transition-colors hover:bg-white hover:text-brand-navy"
+          className="absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full text-brand-gray transition hover:bg-white hover:text-brand-navy active:scale-95"
           style={{ marginTop: "env(safe-area-inset-top)" }}
         >
           <X size={20} aria-hidden="true" />
@@ -302,7 +372,7 @@ export function HeaderButton({ icon: Icon, label, className, labelClassName, hre
       aria-label={label}
       title={label}
       className={cn(
-        "inline-flex h-10 flex-shrink-0 items-center gap-1.5 rounded-full border border-brand-navy/15 bg-white px-3 text-sm font-medium text-brand-navy transition-colors hover:bg-brand-sky focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy sm:h-9",
+        "inline-flex h-10 flex-shrink-0 items-center gap-1.5 rounded-full border border-brand-navy/15 bg-white px-3 text-sm font-medium text-brand-navy transition hover:bg-brand-sky active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy sm:h-9",
         iconOnly && "w-10 justify-center px-0 sm:w-9",
         className
       )}

@@ -11,6 +11,7 @@ import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { voicePromptSection } from '@/lib/voice';
 import { planAskSearch } from '@/lib/groq';
+import { cleanTitle } from '@/lib/titles';
 import { detectSpeaker, isMultiVoice } from '@/lib/speakers';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
@@ -418,8 +419,14 @@ export async function POST(req) {
     const messageKeyBySermon = new Map();
     sermonIds.forEach((id, i) => messageKeyBySermon.set(id, `M${i + 1}`));
 
+    // Titles handed to the model are CLEANED (house style, channel tag and
+    // "Part N -" prefix stripped) so when it names a message in prose it uses
+    // "Day 26 · Morning Session", never the raw upload tag "HOFCHURCHNG | DAY 26
+    // - MORNING SESSION | 40 DAYS…". Speaker detection below still reads the RAW
+    // seg.sermon_title (detectSpeaker/isMultiVoice parse the full string), and
+    // SEGMENT_MAP keeps the raw title too — the UI cleans it there itself.
     const titleBySermon = new Map(
-      relevantSegments.map((seg) => [seg.sermon_id, seg.sermon_title])
+      relevantSegments.map((seg) => [seg.sermon_id, cleanTitle(seg.sermon_title)])
     );
 
     const scriptureBlock = [...scripturesBySermon.entries()]
@@ -441,7 +448,7 @@ export async function POST(req) {
     const segmentList = relevantSegments
       .map(
         (seg, i) =>
-          `[${i + 1}] (${messageKeyBySermon.get(seg.sermon_id)}) SERMON:${seg.sermon_title}\nSPEAKER:${speakerBySermon.get(seg.sermon_id)}\n"${seg.text}"`
+          `[${i + 1}] (${messageKeyBySermon.get(seg.sermon_id)}) SERMON:${titleBySermon.get(seg.sermon_id)}\nSPEAKER:${speakerBySermon.get(seg.sermon_id)}\n"${seg.text}"`
       )
       .join('\n\n');
 
@@ -479,6 +486,12 @@ RESPONSE SHAPE
 ═══════════════════════════════════════
 - Open with a direct, one-sentence answer to the question.
 - Then paragraphs of flowing prose that develop it, drawing threads from the different messages.
+- LEAD WITH THE TEACHING, NOT THE SOURCE. Do not open sentences by naming the message
+  ("In [message], Rev. Peter states…", "From [message], he teaches…"). State what he
+  teaches as living truth and let the [N] citation carry the source — the reader already
+  sees the message name on the citation itself. Name a specific message inside a sentence
+  only when the message itself is the point (e.g. a whole message given to this subject),
+  and then only by its clean SERMON: title, never a raw upload tag.
 - EXCEPTION — if one or more of the segments has Rev. Peter enumerating points himself
   (e.g. "number one... number two...", "the first thing is... secondly..."), preserve
   that structure as a numbered list in his order, each item citing its segment(s),

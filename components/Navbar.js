@@ -123,7 +123,7 @@ export default function Navbar() {
             }}
             aria-label={searchOpen ? "Close search" : "Search"}
             aria-expanded={searchOpen}
-            className="hidden md:flex w-9 h-9 items-center justify-center rounded-full text-brand-navy hover:bg-brand-sky transition-colors"
+            className="hidden md:flex w-9 h-9 items-center justify-center rounded-full text-brand-navy hover:bg-brand-sky transition active:scale-95"
           >
             {searchOpen ? <X className="w-4 h-4" /> : <Search className="w-4 h-4" />}
           </button>
@@ -136,7 +136,7 @@ export default function Navbar() {
             }}
             aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
             aria-expanded={isOpen}
-            className="md:hidden w-9 h-9 -mr-1 flex items-center justify-center rounded-full text-brand-navy hover:bg-brand-sky transition-colors"
+            className="md:hidden w-9 h-9 -mr-1 flex items-center justify-center rounded-full text-brand-navy hover:bg-brand-sky transition active:scale-95"
           >
             {isOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
@@ -176,7 +176,7 @@ export default function Navbar() {
             <button
               type="submit"
               aria-label="Ask"
-              className="inline-flex h-11 flex-shrink-0 items-center gap-2 rounded-full bg-brand-navy px-4 text-sm font-bold text-white transition-colors hover:bg-brand-deep sm:px-5"
+              className="inline-flex h-11 flex-shrink-0 items-center gap-2 rounded-full bg-brand-navy px-4 text-sm font-bold text-white transition hover:bg-brand-deep active:scale-[0.97] sm:px-5"
             >
               <span className="hidden sm:inline">Ask</span>
               <Search size={16} aria-hidden="true" className="sm:hidden" />

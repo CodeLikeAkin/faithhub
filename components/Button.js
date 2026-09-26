@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const base =
-  "inline-flex items-center gap-2 font-bold rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2";
+  "inline-flex items-center gap-2 font-bold rounded-full transition duration-150 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2";
 
 const variants = {
   // white fill / navy text — for use on dark or photo backgrounds

@@ -325,7 +325,10 @@ function AskView() {
         </div>
       )}
 
-      <VideoModal seg={watching} onClose={() => setWatching(null)} />
+      {/* Ask is a read-along document — a citation opens as the corner
+          mini-player so it doesn't take over the page you're reading. Expand
+          is one tap away. */}
+      <VideoModal seg={watching} onClose={() => setWatching(null)} initialMinimized />
     </ToolShell>
   );
 }

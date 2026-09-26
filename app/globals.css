@@ -108,6 +108,25 @@ a, button {
   -webkit-tap-highlight-color: transparent;
 }
 
+/*
+  Honour the OS "reduce motion" setting everywhere. We keep opacity/colour
+  feedback (comprehension aids) but collapse durations so slides, springs and
+  parallax become near-instant instead of vestibular movement. Complements the
+  per-component `motion-reduce:` / `motion-safe:` variants already in the JSX
+  (e.g. the Ask sheet, menu drawer and navbar transitions, which aren't
+  otherwise gated).
+*/
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 .hide-series-nav header {
   display: none !important;
 }
