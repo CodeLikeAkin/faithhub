@@ -34,8 +34,9 @@ const fmtDay = (d) => (d ? d.toLocaleDateString("en-US", { month: "short", day: 
 
 /**
  * The cover runs the full width of the card — no inset frame eating into the
- * picture — with the words small underneath. The fixed title height keeps the
- * grid's rows aligned whether a title wraps to one line or two.
+ * picture — with the words small underneath. The date leads so that a title of
+ * one line leaves its spare room at the foot of the card rather than as a gap
+ * between the two lines; the blank range keeps titles on a shared baseline.
  */
 function SeriesCover({ s, className }) {
   return (
@@ -59,7 +60,8 @@ function SeriesCover({ s, className }) {
         </span>
       </span>
       <span className="block px-2.5 pb-2.5 pt-2">
-        <span className="line-clamp-2 h-[2.75rem] hyphens-auto break-words font-display text-sm font-medium leading-snug text-brand-ink sm:h-12 sm:text-base">
+        <span className="block text-xs text-brand-gray">{s.range || " "}</span>
+        <span className="mt-0.5 line-clamp-2 hyphens-auto break-words font-display text-sm font-medium leading-snug text-brand-ink sm:text-base">
           {s.title}
         </span>
         <span className="mt-0.5 block text-xs text-brand-gray">{s.range || " "}</span>
@@ -69,6 +71,10 @@ function SeriesCover({ s, className }) {
 }
 
 function GuestCard({ g, className }) {
+  // The date line already carries the year, so drop it from the end of the title.
+  const year = g.date ? String(g.date.getUTCFullYear()) : "";
+  const full = cleanTitle(g.title);
+  const title = year && full.endsWith(` ${year}`) ? full.slice(0, -(year.length + 1)).trim() || full : full;
   return (
     <Link
       href={`/sermon/${g.id}`}
@@ -89,7 +95,7 @@ function GuestCard({ g, className }) {
       </span>
       <span className="block px-2.5 pb-2.5 pt-2">
         <span className="block truncate font-display text-sm font-medium leading-tight text-brand-ink sm:text-base">{g.speaker}</span>
-        <span className="mt-0.5 line-clamp-2 text-xs text-brand-gray">{cleanTitle(g.title)}</span>
+        <span className="mt-0.5 line-clamp-2 text-xs text-brand-gray">{title}</span>
         {g.date && <span className="mt-0.5 block text-xs text-brand-gray">{fmtDay(g.date)}</span>}
       </span>
     </Link>
