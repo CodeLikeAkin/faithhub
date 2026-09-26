@@ -130,3 +130,198 @@ a, button {
 .hide-series-nav header {
   display: none !important;
 }
+
+/*
+  Splash screen: components/splash/SplashScreen.js (markup + the <head> script
+  that decides whether it plays). Pure CSS so it runs from the first paint,
+  before any JS loads. `both` fill modes hold each piece hidden until its turn.
+
+  Timeline (s):  ring draws 0.05-0.80 · "Heritage" writes 0.25-1.05 ·
+                 OF FAITH 0.85-1.30 · rule + tagline 1.00-1.71 · fade out 2.00-2.40
+*/
+.fh-splash {
+  /* brand-navy. The ring "cover" stroke is painted in this, so they must match. */
+  --fh-splash-bg: #173a68;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  background: var(--fh-splash-bg);
+  color: #fff;
+  touch-action: none;
+  overscroll-behavior: contain;
+  animation: fh-splash-out 0.4s cubic-bezier(0.4, 0, 0.2, 1) 2s both;
+}
+
+/* Soft vignette for depth. It sits over everything, so the cover and the
+   background it hides against stay the same colour. */
+.fh-splash::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 46%, transparent 52%, rgba(6, 18, 38, 0.3) 100%);
+}
+
+html[data-fh-splash="off"] .fh-splash {
+  display: none;
+}
+
+/* Tap / key to skip: a separately named animation so it restarts from now. */
+html[data-fh-splash="skip"] .fh-splash {
+  animation: fh-splash-skip 0.28s ease-out both;
+}
+
+.fh-splash__inner {
+  position: relative;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateY(-2vh);
+  animation: fh-splash-lift 0.4s cubic-bezier(0.4, 0, 1, 1) 2s both;
+}
+
+.fh-splash__logo {
+  position: relative;
+  width: clamp(190px, 56vw, 290px);
+  aspect-ratio: 208 / 146;
+}
+
+.fh-splash__layer {
+  position: absolute;
+  inset: 0;
+}
+
+.fh-splash__logo svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 1. The ring draws itself: the cover arc is pulled back clockwise. */
+.fh-splash__cover {
+  fill: none;
+  stroke: var(--fh-splash-bg);
+  stroke-width: 10;
+  stroke-dasharray: 353 353; /* ≥ the arc length, 352.17 (logo-paths.js) */
+  animation: fh-splash-draw 0.75s cubic-bezier(0.65, 0, 0.35, 1) 0.05s both;
+}
+
+/* 2. "Heritage" writes in behind a soft, slanted edge. The mask is 3x the logo
+   wide; 78% → 6% walks its fade edge from just off the left to past the right. */
+.fh-splash__script {
+  -webkit-mask-image: linear-gradient(100deg, #000 40%, transparent 47%);
+  mask-image: linear-gradient(100deg, #000 40%, transparent 47%);
+  -webkit-mask-size: 300% 100%;
+  mask-size: 300% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  animation: fh-splash-write 0.8s cubic-bezier(0.45, 0.05, 0.3, 1) 0.25s both;
+}
+
+/* 3. "OF FAITH" settles in. The origin is its own centre inside the logo box. */
+.fh-splash__sub {
+  transform-origin: 50% 73%;
+  animation: fh-splash-settle 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) 0.85s both;
+}
+
+/* 4. A hairline, then the vision statement word by word. */
+.fh-splash__rule {
+  display: block;
+  width: 36px;
+  height: 1px;
+  margin-top: clamp(22px, 4vh, 32px);
+  background: rgba(255, 255, 255, 0.4);
+  animation: fh-splash-rule 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 1s both;
+}
+
+.fh-splash__tag {
+  margin: 14px 0 0;
+  font-family: var(--font-newsreader), Georgia, "Times New Roman", serif;
+  font-size: clamp(1.25rem, 4.6vw, 1.5rem);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  text-align: center;
+  color: #fff;
+}
+
+.fh-splash__tag span {
+  display: inline-block;
+  animation: fh-splash-word 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 1.05s both;
+}
+
+.fh-splash__tag span:nth-child(2) {
+  animation-delay: 1.13s;
+}
+
+.fh-splash__tag span:nth-child(3) {
+  animation-delay: 1.21s;
+}
+
+@keyframes fh-splash-draw {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -353; }
+}
+
+@keyframes fh-splash-write {
+  from { -webkit-mask-position: 78% 0; mask-position: 78% 0; }
+  to { -webkit-mask-position: 6% 0; mask-position: 6% 0; }
+}
+
+@keyframes fh-splash-settle {
+  from { opacity: 0; transform: translateY(5px) scale(0.96); filter: blur(3px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes fh-splash-rule {
+  from { opacity: 0; transform: scaleX(0); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes fh-splash-word {
+  from { opacity: 0; transform: translateY(0.4em); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes fh-splash-lift {
+  to { transform: translateY(calc(-2vh - 10px)) scale(1.03); }
+}
+
+@keyframes fh-splash-out {
+  to { opacity: 0; visibility: hidden; }
+}
+
+@keyframes fh-splash-skip {
+  to { opacity: 0; visibility: hidden; }
+}
+
+/* Reduced motion: no drawing, writing or rising. Show the finished lockup,
+   then a short fade. !important + a class selector is needed to beat the
+   global `*` reduced-motion rule above, which would otherwise snap it away. */
+@media (prefers-reduced-motion: reduce) {
+  .fh-splash__cover {
+    display: none;
+  }
+
+  .fh-splash__inner,
+  .fh-splash__script,
+  .fh-splash__sub,
+  .fh-splash__rule,
+  .fh-splash__tag span {
+    animation: none !important;
+  }
+
+  .fh-splash {
+    animation-duration: 0.35s !important;
+    animation-delay: 1.1s !important;
+  }
+
+  html[data-fh-splash="skip"] .fh-splash {
+    animation-duration: 0.2s !important;
+    animation-delay: 0s !important;
+  }
+}

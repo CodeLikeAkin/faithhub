@@ -2,6 +2,7 @@ import './globals.css'
 import { Roboto, Newsreader } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import Navbar from '@/components/Navbar'
+import SplashScreen, { SPLASH_SCRIPT } from '@/components/splash/SplashScreen'
 
 const roboto = Roboto({
   subsets: ['latin'],
@@ -29,8 +30,15 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className="scroll-smooth">
+    // suppressHydrationWarning: SPLASH_SCRIPT sets data-fh-splash on <html>
+    // before React hydrates, which React would otherwise flag as a mismatch.
+    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
+      <head>
+        {/* Must run before the body paints, so a repeat visit never flashes the splash. */}
+        <script dangerouslySetInnerHTML={{ __html: SPLASH_SCRIPT }} />
+      </head>
       <body className={`${roboto.variable} ${newsreader.variable} font-sans antialiased`}>
+        <SplashScreen />
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-white focus:text-brand-navy focus:font-bold focus:text-sm focus:rounded-full focus:border focus:border-brand-navy focus:shadow-lg"
