@@ -4,18 +4,27 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, Search } from "lucide-react";
+import { Menu, X, Search, Home as HomeIcon, Compass } from "lucide-react";
 import Button from "@/components/Button";
+import ToolRail from "@/components/shell/ToolRail";
+import { deleteStudyWithUndo, useToast } from "@/components/shell/Toast";
 
 const TOOL_ROUTES = ["/ask", "/declarations", "/series", "/sermon", "/word", "/admin"];
 
-const navLinks = [
+// Desktop pill only — unchanged.
+const desktopNavLinks = [
   { name: "Home", href: "/" },
   { name: "Ask", href: "/ask" },
   { name: "Series Study", href: "/series" },
   { name: "The Word", href: "/word" },
   { name: "Vision", href: "/vision" },
 ];
+
+// Mobile menu only: Home and Vision bracket the same tool list ToolShell's
+// rail already shows, so Ask/Series/Declarations/Word aren't a second,
+// differently-designed nav on marketing pages.
+const HOME_LINK = { name: "Home", href: "/", icon: HomeIcon, match: (p) => p === "/" };
+const VISION_LINK = { name: "Vision", href: "/vision", icon: Compass, match: (p) => p.startsWith("/vision") };
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,10 +34,37 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const searchInputRef = useRef(null);
+  const menuButtonRef = useRef(null);
+  const drawerCloseRef = useRef(null);
+  const [railToast, showRailToast] = useToast();
+  const onDeleteStudy = (id) => deleteStudyWithUndo(id, showRailToast);
 
   useEffect(() => {
     if (searchOpen) searchInputRef.current?.focus();
   }, [searchOpen]);
+
+  // The mobile drawer is full-height, like ToolShell's — lock scroll and
+  // close on Escape while it's open.
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e) => {
+      if (e.key === "Escape") setIsOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [isOpen]);
+
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (isOpen) drawerCloseRef.current?.focus();
+    else if (wasOpen.current) menuButtonRef.current?.focus();
+    wasOpen.current = isOpen;
+  }, [isOpen]);
 
   const submitSearch = (e) => {
     e.preventDefault();
@@ -86,7 +122,7 @@ export default function Navbar() {
 
           <div className="hidden md:flex items-center gap-4">
             {/* No "Home" here — the logo beside it already goes home. The mobile menu keeps it. */}
-            {navLinks.filter((link) => link.href !== "/").map((link) => (
+            {desktopNavLinks.filter((link) => link.href !== "/").map((link) => (
               <Link
                 key={link.name}
                 href={link.href}
@@ -112,10 +148,7 @@ export default function Navbar() {
             Declare the Word
           </Button>
 
-          {/* Quick ask — expands into an inline search below the pill.
-              Desktop only: on mobile the pill has no room for a third icon
-              next to the hamburger, so search moves into the mobile panel
-              below instead. */}
+          {/* Quick ask — expands into an inline search below the pill. */}
           <button
             onClick={() => {
               setSearchOpen((o) => !o);
@@ -123,13 +156,14 @@ export default function Navbar() {
             }}
             aria-label={searchOpen ? "Close search" : "Search"}
             aria-expanded={searchOpen}
-            className="hidden md:flex w-9 h-9 items-center justify-center rounded-full text-brand-navy hover:bg-brand-sky transition active:scale-95"
+            className="flex w-9 h-9 items-center justify-center rounded-full text-brand-navy hover:bg-brand-sky transition active:scale-95"
           >
             {searchOpen ? <X className="w-4 h-4" /> : <Search className="w-4 h-4" />}
           </button>
 
           {/* Mobile menu button — lives inside the pill on small screens */}
           <button
+            ref={menuButtonRef}
             onClick={() => {
               setIsOpen(!isOpen);
               setSearchOpen(false);
@@ -185,44 +219,49 @@ export default function Navbar() {
         </div>
       )}
 
-      {/* Mobile panel */}
-      {isOpen && (
-        <div className="md:hidden relative z-[41] mx-auto max-w-6xl mt-2 bg-white rounded-3xl border border-brand-navy/10 shadow-xl p-3">
-          <button
-            type="button"
-            onClick={() => {
-              setIsOpen(false);
-              setSearchOpen(true);
-            }}
-            className="flex w-full items-center gap-3 px-4 py-3.5 rounded-2xl text-base font-medium text-brand-ink hover:bg-brand-sky"
-          >
-            <Search size={18} aria-hidden="true" className="flex-shrink-0 text-brand-navy" />
-            Search
-          </button>
-          <div className="my-1 border-t border-brand-navy/10" />
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              href={link.href}
-              onClick={() => setIsOpen(false)}
-              className="block px-4 py-3.5 rounded-2xl text-base font-medium text-brand-ink hover:bg-brand-sky"
-            >
-              {link.name}
-            </Link>
-          ))}
-          <div className="mt-1 pt-3 border-t border-brand-navy/10">
+      {/* Mobile drawer — the same rail Ask/Series/Declarations/Word use,
+          with Home and Vision bracketing the tool list, so there's one
+          mobile nav pattern across the whole app instead of two. */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu"
+        {...(!isOpen ? { inert: "", "aria-hidden": true } : {})}
+        className={`fixed inset-y-0 left-0 z-50 w-[min(20rem,86vw)] bg-brand-sky shadow-2xl transition-transform duration-300 md:hidden ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+        style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <button
+          ref={drawerCloseRef}
+          type="button"
+          onClick={() => setIsOpen(false)}
+          aria-label="Close menu"
+          className="absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full text-brand-gray transition hover:bg-white hover:text-brand-navy active:scale-95"
+          style={{ marginTop: "env(safe-area-inset-top)" }}
+        >
+          <X size={20} aria-hidden="true" />
+        </button>
+        <ToolRail
+          mode="expanded"
+          onNavigate={() => setIsOpen(false)}
+          onDeleteStudy={onDeleteStudy}
+          leadingLinks={[HOME_LINK]}
+          trailingLinks={[VISION_LINK]}
+          footerCta={
             <Button
               href="/declarations"
               variant="dark"
               size="lg"
               onClick={() => setIsOpen(false)}
-              className="w-full justify-center"
+              className="mt-3 w-full justify-center"
             >
               Declare the Word
             </Button>
-          </div>
-        </div>
-      )}
+          }
+        />
+      </div>
+      {railToast}
     </header>
   );
 }

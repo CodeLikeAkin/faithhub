@@ -62,10 +62,16 @@ export default function ToolRail({
   onJumpToBlock,
   onDeleteStudy,
   onOpenStudy,
+  // Links shown before/after the core tools — lets a page outside the tool
+  // shell (Navbar's mobile drawer) reuse this rail with Home/Vision added.
+  leadingLinks = [],
+  trailingLinks = [],
+  footerCta = null,
 }) {
   const pathname = usePathname() || "";
   const { studies } = useStudies();
   const recent = byRecent(studies);
+  const navLinks = [...leadingLinks, ...TOOLS, ...trailingLinks];
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -98,7 +104,7 @@ export default function ToolRail({
 
       <nav aria-label="Tools" className="flex-shrink-0 px-3">
         <ul className="space-y-0.5">
-          {TOOLS.map(({ name, href, icon: Icon, match }) => {
+          {navLinks.map(({ name, href, icon: Icon, match }) => {
             const active = match(pathname);
             return (
               <li key={href}>
@@ -261,6 +267,7 @@ export default function ToolRail({
           <MessageSquareHeart size={14} aria-hidden="true" className="flex-shrink-0" />
           About &amp; feedback
         </Link>
+        {footerCta}
       </div>
     </div>
   );
