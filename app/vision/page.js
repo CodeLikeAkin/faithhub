@@ -1,3 +1,4 @@
+import ToolShell from "@/components/shell/ToolShell";
 import VisionContent from "./VisionContent";
 
 export const metadata = {
@@ -7,5 +8,9 @@ export const metadata = {
 };
 
 export default function VisionPage() {
-  return <VisionContent />;
+  return (
+    <ToolShell kind="vision" title="Vision">
+      <VisionContent />
+    </ToolShell>
+  );
 }
