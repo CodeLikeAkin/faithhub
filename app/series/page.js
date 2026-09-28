@@ -11,6 +11,7 @@ import { cleanTitle, parseSermonDate, partTitle, seriesName } from "@/lib/titles
 import { detectSpeaker } from "@/lib/speakers";
 import { clientIdHeader } from "@/lib/client-id";
 import { cn } from "@/lib/utils";
+import Masthead from "@/components/shell/Masthead";
 
 /**
  * /series — the catalog: the latest series featured, then a row per year of
@@ -375,16 +376,16 @@ export default function SeriesBrowsePage() {
   return (
     <ToolShell kind="series" title="Series Study" titleAs="p">
       <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
-        <header className="mx-auto flex max-w-[1400px] flex-col gap-6 px-4 pt-10 sm:px-8 sm:pt-14 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h1 className="font-display text-5xl font-medium tracking-tight text-brand-ink sm:text-6xl">Series Study</h1>
-            <p className="mt-3 text-base text-brand-gray">
-              {series?.length
-                ? `${series.length} series · ${totalMessages} messages, each one a course to study and ask about.`
-                : "Rev. Peter’s teaching, series by series."}
-            </p>
-          </div>
-          <div className="relative w-full lg:w-96">
+        <Masthead
+          className="mx-auto max-w-[1400px] px-3 pt-3 sm:px-8 sm:pt-8"
+          title="Series Study"
+          description={
+            series?.length
+              ? `${series.length} series · ${totalMessages} messages, each one a course to study and ask about.`
+              : "Rev. Peter’s teaching, series by series."
+          }
+        >
+          <div className="relative mt-6 w-full max-w-xl">
             <Search size={18} aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-brand-gray" />
             <input
               type="search"
@@ -392,7 +393,7 @@ export default function SeriesBrowsePage() {
               onChange={(e) => updateQuery(e.target.value)}
               placeholder="Search every series and message"
               aria-label="Search every series and message"
-              className="h-12 w-full rounded-full border border-brand-navy/15 bg-white pl-11 pr-11 text-base text-brand-ink placeholder:text-brand-gray/70 focus:border-brand-navy/40 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+              className="h-12 w-full rounded-full border border-white bg-white pl-11 pr-11 text-base text-brand-ink shadow-[0_18px_40px_-20px_rgba(0,0,0,0.6)] placeholder:text-brand-gray/80 focus:outline-none focus:ring-4 focus:ring-white/25 [&::-webkit-search-cancel-button]:hidden"
             />
             {query && (
               <button
@@ -405,7 +406,7 @@ export default function SeriesBrowsePage() {
               </button>
             )}
           </div>
-        </header>
+        </Masthead>
 
         {series === null && (
           <div aria-hidden="true" className="mx-auto mt-10 max-w-[1400px] px-2 sm:px-8">

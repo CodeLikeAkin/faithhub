@@ -138,6 +138,17 @@ a, button {
   animation-delay: calc(var(--i, 0) * 45ms);
 }
 
+/* The same rise for a list whose items can't carry their own class (e.g. a
+   component rendering its own <li>): children stagger in by position. */
+.fh-stagger > * { animation: fh-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.fh-stagger > :nth-child(2) { animation-delay: 45ms; }
+.fh-stagger > :nth-child(3) { animation-delay: 90ms; }
+.fh-stagger > :nth-child(4) { animation-delay: 135ms; }
+.fh-stagger > :nth-child(5) { animation-delay: 180ms; }
+.fh-stagger > :nth-child(6) { animation-delay: 225ms; }
+.fh-stagger > :nth-child(7) { animation-delay: 270ms; }
+.fh-stagger > :nth-child(n + 8) { animation-delay: 315ms; }
+
 /* The home banner photo eases back from a slight zoom as the page opens. */
 @keyframes fh-settle {
   from { transform: scale(1.08); }

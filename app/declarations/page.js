@@ -2,19 +2,20 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowRight, Bookmark, Flame, Play, RotateCcw, Volume2 } from "lucide-react";
 import ToolShell from "@/components/shell/ToolShell";
 import { copyText, useToast } from "@/components/shell/Toast";
 import Composer from "@/components/ask/Composer";
 import Button from "@/components/Button";
 import VideoModal from "@/components/VideoModal";
-import { Rings } from "@/components/Decor";
+import Masthead from "@/components/shell/Masthead";
 import DeclarationLine from "@/components/declarations/DeclarationLine";
 import SpeakMode from "@/components/declarations/SpeakMode";
 import {
   THEMES,
   fetchThemeCount,
+  fetchThemePage,
+  themeBySlug,
   fetchTodaysDeclaration,
   normalizeDeclaration,
   streakLabel,
@@ -31,7 +32,10 @@ import { cn } from "@/lib/utils";
 /**
  * Declarations — a library of Rev. Peter's declarations to speak.
  *
- *   /declarations                     today's declaration, "What are you facing?", themes
+ *   /declarations                     "What are you facing?" + today's declaration (navy
+ *                                     masthead), theme chips with that theme's newest
+ *                                     declarations in place, My declarations
+ *   /declarations?theme=<slug>        …with that theme chosen
  *   /declarations?facing=<text>       …with declarations for that situation
  *   /declarations?speak=today|mine    …opened straight into Speak mode
  *   /declarations/[theme]             every declaration on one theme
@@ -69,6 +73,26 @@ export default function DeclarationsPage() {
   const saved = useSavedDeclarations();
   const streak = useStreak();
   const resultsRef = useRef(null);
+  const [theme, setTheme] = useState(THEMES[0].slug);
+  const [themeItems, setThemeItems] = useState(null); // null = loading
+  const themeInfo = themeBySlug(theme) || THEMES[0];
+
+  // The chosen theme's newest declarations (a topic_tags filter), shown in place.
+  useEffect(() => {
+    let live = true;
+    setThemeItems(null);
+    fetchThemePage(theme, 0, 8)
+      .then((items) => live && setThemeItems(items))
+      .catch(() => live && setThemeItems([]));
+    return () => {
+      live = false;
+    };
+  }, [theme]);
+
+  const pickTheme = (slug) => {
+    setTheme(slug);
+    setParams({ theme: slug === THEMES[0].slug ? null : slug });
+  };
 
   useEffect(() => {
     document.title = "Declarations · FaithHub";
@@ -123,11 +147,12 @@ export default function DeclarationsPage() {
       today: today && { title: "Today’s declaration", items: [today] },
       mine: saved.length > 0 && { title: "My declarations", items: saved },
       facing: facing?.items?.length > 0 && { title: `For: ${facing.query}`, items: facing.items },
+      theme: themeItems?.length > 0 && { title: themeInfo.name, items: themeItems },
     };
     const set = sets[key];
     if (!set) return;
     setSpeak({ key, ...set });
-    if (key !== "facing") setParams({ speak: key });
+    if (key === "today" || key === "mine") setParams({ speak: key });
   };
 
   const closeSpeak = () => {
@@ -139,6 +164,8 @@ export default function DeclarationsPage() {
   const handledParams = useRef({ facing: false, speak: false });
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const t = themeBySlug(params.get("theme"));
+    if (t) setTheme(t.slug);
     const q = params.get("facing");
     if (q && !handledParams.current.facing) {
       handledParams.current.facing = true;
@@ -178,21 +205,73 @@ export default function DeclarationsPage() {
       }
     >
       <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
-        <div className="mx-auto w-full max-w-5xl px-4 pb-28 sm:px-8">
-          {today === null && (
-            <h1 className="pt-12 font-display text-5xl font-medium tracking-tight text-brand-ink">Declarations</h1>
-          )}
-
-          {/* Speak Life — shown first so user can ask before seeing today's declaration */}
-          <section aria-labelledby="facing-heading" className="pt-10 flex flex-col items-center text-center">
-            <h2 id="facing-heading" className="font-display text-5xl font-medium tracking-tight text-brand-ink sm:text-6xl">
-              Speak Life
-            </h2>
-            <p className="mt-2 max-w-2xl text-base text-brand-gray">
-              Say it plainly. You&rsquo;ll get declarations from Rev. Peter&rsquo;s messages that speak to it, and
-              a short word for you.
-            </p>
-            <div className="mt-6 w-full">
+        <div className="mx-auto w-full max-w-5xl px-3 pb-28 pt-3 sm:px-8 sm:pt-8">
+          <Masthead
+            eyebrow="Declarations"
+            title="Speak Life"
+            description="Say it plainly. You’ll get declarations from Rev. Peter’s messages that speak to it, and a short word for you."
+            aside={
+              today !== null && (
+                <section aria-labelledby="today-heading" className="rounded-2xl border border-white/15 bg-white/[0.08] p-5 sm:p-6">
+                  <h2 id="today-heading" className="text-xs font-bold uppercase tracking-[0.18em] text-white/60">
+                    Today&rsquo;s declaration
+                  </h2>
+                  {today === undefined ? (
+                    <div aria-hidden="true" className="mt-4 space-y-3">
+                      <div className="h-6 w-11/12 rounded-full bg-white/10 motion-safe:animate-pulse" />
+                      <div className="h-6 w-2/3 rounded-full bg-white/10 motion-safe:animate-pulse" />
+                    </div>
+                  ) : (
+                    <>
+                      <blockquote
+                        className={cn(
+                          "mt-3 font-display font-normal leading-snug tracking-tight text-balance",
+                          todayLong ? "text-lg sm:text-xl" : "text-xl sm:text-2xl"
+                        )}
+                      >
+                        &ldquo;{today.declaration_text}&rdquo;
+                      </blockquote>
+                      {today.sermon_title && (
+                        <p className="mt-3 text-sm text-white/60">
+                          From <span className="font-semibold text-white/85">{cleanTitle(today.sermon_title)}</span>
+                        </p>
+                      )}
+                      <div className="mt-4 flex flex-wrap items-center gap-2">
+                        <Button variant="light" size="sm" icon={false} className="py-2.5" onClick={() => openSpeak("today")}>
+                          <Volume2 className="h-4 w-4" aria-hidden="true" />
+                          Speak it
+                        </Button>
+                        {todayParsed && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            icon={false}
+                            className="py-2.5"
+                            onClick={() => setWatching({ ...todayParsed, sermon_title: today.sermon_title })}
+                          >
+                            <Play className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
+                            Watch
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          icon={false}
+                          className="py-2.5"
+                          onClick={() => toggleSaved(today)}
+                          aria-pressed={todaySaved}
+                        >
+                          <Bookmark className="h-3.5 w-3.5" fill={todaySaved ? "currentColor" : "none"} aria-hidden="true" />
+                          {todaySaved ? "Saved" : "Save"}
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </section>
+              )
+            }
+          >
+            <div className="mt-6 text-left">
               <Composer
                 variant="hero"
                 showScope={false}
@@ -206,8 +285,9 @@ export default function DeclarationsPage() {
                 minLength={3}
               />
             </div>
+          </Masthead>
 
-            <div ref={resultsRef} className="w-full scroll-mt-6 text-left">
+          <div ref={resultsRef} className="w-full scroll-mt-6 text-left">
               {facing?.status === "loading" && (
                 <div className="mt-8" role="status">
                   <p className="text-sm font-medium text-brand-gray">Finding declarations for you…</p>
@@ -276,151 +356,126 @@ export default function DeclarationsPage() {
                 </div>
               )}
             </div>
-          </section>
+          {/* Themes — a tag filter, not a search (CLAUDE.md rule 2). The chip
+              row stays pinned while the list below it scrolls. */}
+          <div className="sticky top-0 z-10 -mx-3 mt-8 bg-white/95 px-3 py-3 backdrop-blur sm:-mx-8 sm:px-8">
+            <div role="group" aria-label="Themes" className="fh-no-scrollbar flex snap-x gap-2 overflow-x-auto">
+              {THEMES.map((t) => {
+                const on = t.slug === theme;
+                return (
+                  <button
+                    key={t.slug}
+                    type="button"
+                    onClick={(e) => {
+                      pickTheme(t.slug);
+                      e.currentTarget.scrollIntoView({ inline: "nearest", block: "nearest", behavior: "smooth" });
+                    }}
+                    aria-pressed={on}
+                    className={cn(
+                      "inline-flex h-10 flex-shrink-0 snap-start items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors active:scale-95",
+                      on
+                        ? "border-brand-navy bg-brand-navy text-white"
+                        : "border-brand-navy/15 bg-white text-brand-ink hover:border-brand-navy/50"
+                    )}
+                  >
+                    {t.name}
+                    {counts[t.slug] != null && (
+                      <span className={cn("text-xs font-normal tabular-nums", on ? "text-white/70" : "text-brand-gray")}>
+                        {counts[t.slug].toLocaleString()}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-          {/* Today's declaration — shown below the ask prompt */}
-          {today !== null && (
+          <div className="mt-3 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_17rem]">
             <section
-              aria-labelledby="today-heading"
-              className="relative mt-10 overflow-hidden rounded-[1.5rem] bg-black px-6 pb-10 pt-11 text-white sm:rounded-[2rem] sm:px-12 sm:pb-14 sm:pt-16 lg:px-16"
+              aria-labelledby="theme-heading"
+              className="fh-rise rounded-[1.75rem] border border-brand-navy/10 bg-white p-5 sm:p-7"
             >
-              {/* Brush edges only (top/bottom slices of the art) so the card can be short without cropping them away */}
-              <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 aspect-[1717/80] min-h-6">
-                <Image
-                  src="/declaration-bg-wide.webp"
-                  alt=""
-                  fill
-                  sizes="(min-width: 1024px) 960px, 100vw"
-                  className="object-cover object-top"
-                />
+              <div className="flex flex-wrap items-end justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-sm text-brand-gray">{themeInfo.sub}</p>
+                  <h2 id="theme-heading" className="mt-1 font-display text-4xl font-medium tracking-tight text-brand-ink">
+                    {themeInfo.name}
+                  </h2>
+                  {counts[theme] != null && (
+                    <p className="mt-1 text-sm text-brand-gray">{counts[theme].toLocaleString()} declarations from the messages</p>
+                  )}
+                </div>
+                <Button
+                  variant="dark"
+                  size="sm"
+                  icon={false}
+                  onClick={() => openSpeak("theme")}
+                  disabled={!themeItems?.length}
+                  className="py-2.5 disabled:pointer-events-none disabled:opacity-50"
+                >
+                  <Volume2 className="h-4 w-4" aria-hidden="true" />
+                  Speak these
+                </Button>
               </div>
-              <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 aspect-[1717/80] min-h-6">
-                <Image
-                  src="/declaration-bg-wide.webp"
-                  alt=""
-                  fill
-                  sizes="(min-width: 1024px) 960px, 100vw"
-                  className="object-cover object-bottom"
-                />
-              </div>
-              <div className="relative mx-auto max-w-4xl text-center">
-                <h2 id="today-heading" className="text-sm text-white/70">
-                  Today&rsquo;s declaration
-                </h2>
-                {today === undefined ? (
-                  <div aria-hidden="true" className="mt-4 space-y-3">
-                    <div className="mx-auto h-7 w-11/12 rounded-2xl bg-white/10 motion-safe:animate-pulse" />
-                    <div className="mx-auto h-7 w-2/3 rounded-2xl bg-white/10 motion-safe:animate-pulse" />
-                  </div>
-                ) : (
-                  <>
-                    <blockquote
-                      className={cn(
-                        "mt-3 font-display font-normal leading-[1.2] tracking-tight text-balance",
-                        todayLong ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl"
-                      )}
-                    >
-                      &ldquo;{today.declaration_text}&rdquo;
-                    </blockquote>
-                    <div className="mt-4 flex flex-col items-center gap-4">
-                      {today.sermon_title && (
-                        <p className="min-w-0 text-sm text-white/60">
-                          From <span className="font-semibold text-white/85">{cleanTitle(today.sermon_title)}</span>
-                        </p>
-                      )}
-                      <div className="flex flex-wrap items-center justify-center gap-2">
-                        {todayParsed && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            icon={false}
-                            className="py-2.5"
-                            onClick={() => setWatching({ ...todayParsed, sermon_title: today.sermon_title })}
-                          >
-                            <Play className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
-                            Watch
-                          </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          icon={false}
-                          className="py-2.5"
-                          onClick={() => toggleSaved(today)}
-                          aria-pressed={todaySaved}
-                        >
-                          <Bookmark className="h-3.5 w-3.5" fill={todaySaved ? "currentColor" : "none"} aria-hidden="true" />
-                          {todaySaved ? "Saved" : "Save"}
-                        </Button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </section>
-          )}
 
-          {/* My declarations + streak */}
-          <section
-            aria-labelledby="mine-heading"
-            className="mt-8 flex flex-col gap-5 rounded-[1.5rem] border border-brand-navy/10 bg-brand-sky/50 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"
-          >
-            <div className="min-w-0">
-              <h2 id="mine-heading" className="font-display text-2xl font-medium text-brand-ink">
-                My declarations
-              </h2>
-              <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-brand-gray">
-                <span>
+              {themeItems === null ? (
+                <div aria-hidden="true" className="mt-6 space-y-5">
+                  {[92, 76, 88, 70].map((w) => (
+                    <div key={w} className="h-6 rounded-full bg-brand-sky motion-safe:animate-pulse" style={{ width: `${w}%` }} />
+                  ))}
+                </div>
+              ) : themeItems.length ? (
+                <ol key={theme} className="fh-stagger mt-4 divide-y divide-brand-navy/10 border-t border-brand-navy/10">
+                  {themeItems.map((d, i) => (
+                    <DeclarationLine key={d.id || i} declaration={d} index={i} onWatch={setWatching} onCopy={copy} />
+                  ))}
+                </ol>
+              ) : (
+                <p className="mt-6 text-base text-brand-gray">These declarations couldn&rsquo;t load just now. Try again in a moment.</p>
+              )}
+
+              <Link
+                href={`/declarations/${theme}`}
+                className="group mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-navy"
+              >
+                {counts[theme] != null ? `See all ${counts[theme].toLocaleString()} on ${themeInfo.name}` : `See all on ${themeInfo.name}`}
+                <ArrowRight size={14} aria-hidden="true" className="transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            </section>
+
+            {/* My declarations + streak */}
+            <section
+              aria-labelledby="mine-heading"
+              className="fh-rise flex flex-col gap-4 rounded-[1.75rem] border border-brand-navy/10 bg-brand-sky/50 p-5 sm:p-6"
+              style={{ "--i": 1 }}
+            >
+              <div className="min-w-0">
+                <h2 id="mine-heading" className="font-display text-2xl font-medium text-brand-ink">
+                  My declarations
+                </h2>
+                <p className="mt-2 text-sm text-brand-gray">
                   {saved.length
                     ? `${saved.length} saved to speak each day`
                     : "Tap the bookmark on any declaration to keep it here"}
-                </span>
-                <span className="inline-flex items-center gap-1.5 font-medium text-brand-navy">
+                </p>
+                <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-brand-navy">
                   <Flame size={14} aria-hidden="true" />
                   {streakLabel(streak)}
-                </span>
-              </p>
-            </div>
-            <div className="flex flex-shrink-0 flex-wrap gap-2">
-              {saved.length > 0 && (
-                <Button variant="dark" size="sm" icon={false} onClick={() => openSpeak("mine")} className="py-2.5">
-                  <Volume2 className="h-4 w-4" aria-hidden="true" />
-                  Speak them
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {saved.length > 0 && (
+                  <Button variant="dark" size="sm" icon={false} onClick={() => openSpeak("mine")} className="py-2.5">
+                    <Volume2 className="h-4 w-4" aria-hidden="true" />
+                    Speak them
+                  </Button>
+                )}
+                <Button href="/declarations/mine" variant="quiet" size="sm" className="py-2.5">
+                  {saved.length ? "Open" : "See how it works"}
                 </Button>
-              )}
-              <Button href="/declarations/mine" variant="quiet" size="sm" className="py-2.5">
-                {saved.length ? "Open" : "See how it works"}
-              </Button>
-            </div>
-          </section>
-
-          {/* Themes */}
-          <section aria-labelledby="themes-heading" className="pt-16">
-            <h2 id="themes-heading" className="font-display text-3xl font-medium tracking-tight text-brand-ink sm:text-4xl">
-              Themes
-            </h2>
-            <p className="mt-2 text-base text-brand-gray">Every declaration Rev. Peter has given, gathered by what it speaks to.</p>
-            <ul className="mt-7 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
-              {THEMES.map((t) => (
-                <li key={t.slug}>
-                  <Link
-                    href={`/declarations/${t.slug}`}
-                    className="group relative flex h-full min-h-[9.5rem] flex-col justify-between overflow-hidden rounded-[1.5rem] border border-brand-navy/10 bg-white p-5 transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-brand-navy/25 hover:shadow-[0_24px_50px_-30px_rgba(23,58,104,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy"
-                  >
-                    <Rings className="pointer-events-none absolute -bottom-16 -right-16 h-40 w-40 text-brand-navy/[0.06] transition-colors group-hover:text-brand-navy/[0.12]" />
-                    <span className="relative font-display text-2xl font-medium text-brand-ink">{t.name}</span>
-                    <span className="relative mt-4 block">
-                      <span className="block text-sm leading-snug text-brand-gray">{t.sub}</span>
-                      <span className="mt-2 flex items-center gap-1 text-xs font-semibold text-brand-navy">
-                        {counts[t.slug] != null ? `${counts[t.slug].toLocaleString()} declarations` : "Open"}
-                        <ArrowRight size={12} aria-hidden="true" className="transition-transform group-hover:translate-x-0.5" />
-                      </span>
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
+              </div>
+            </section>
+          </div>
         </div>
       </div>
 
