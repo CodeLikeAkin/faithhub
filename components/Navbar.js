@@ -9,7 +9,8 @@ import Button from "@/components/Button";
 import ToolRail from "@/components/shell/ToolRail";
 import { deleteStudyWithUndo, useToast } from "@/components/shell/Toast";
 
-const TOOL_ROUTES = ["/ask", "/declarations", "/series", "/sermon", "/word", "/admin"];
+// Every route that renders inside ToolShell (its rail replaces this bar).
+const TOOL_ROUTES = ["/", "/ask", "/declarations", "/series", "/sermon", "/word", "/admin"];
 
 // Desktop pill only — unchanged.
 const desktopNavLinks = [
