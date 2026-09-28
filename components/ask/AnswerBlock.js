@@ -6,13 +6,12 @@ import { extractScriptures, plainText } from "@/lib/ask-format";
 import { SCOPE_ALL } from "@/lib/studies";
 import { STARTER_QUESTIONS } from "@/lib/ask-examples";
 import { scrollToElement } from "@/lib/scroll";
-import { displayTitle } from "@/lib/titles";
 import { cn } from "@/lib/utils";
 import AnswerBody from "./AnswerBody";
 import MomentsRow from "./MomentsRow";
 import ScriptureMargin, { verseAnchor } from "./ScriptureMargin";
 import FollowUps from "./FollowUps";
-import { SCOPE_ICONS, scopePhrase } from "./ScopeChip";
+import { scopePhrase } from "./ScopeChip";
 
 // The panel is narrow, so its status sits at the same size as the lesson's
 // date line (text-sm); the full page can carry the larger step.
@@ -128,7 +127,6 @@ export default function AnswerBlock({
 
   const page = density === "page";
   const scope = block.scope || SCOPE_ALL;
-  const ScopeIcon = SCOPE_ICONS[scope.type] || Globe;
   const isError = block.status === "error";
   const hasSources = Object.keys(block.segmentMap || {}).length > 0;
   // A stream with no sources is the route's honest "nothing found" answer.
@@ -146,23 +144,19 @@ export default function AnswerBlock({
   const long = block.question.length > 110;
   const headingSize = page
     ? long
-      ? "text-2xl sm:text-3xl"
-      : "text-3xl sm:text-4xl"
+      ? "text-xl sm:text-2xl"
+      : "text-2xl sm:text-3xl"
     : long
-    ? "text-lg"
-    : "text-xl";
+    ? "text-base"
+    : "text-lg";
 
   return (
     <article id={`q-${block.id}`} data-block={block.id} className="scroll-mt-4">
       <header>
-        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-brand-gray">
-          <ScopeIcon size={14} aria-hidden="true" className="text-brand-navy/60" />
-          <span>{scope.type === "all" ? "Across every message" : `In ${displayTitle(scope.label)}`}</span>
-        </p>
         <h2
           title={block.question.length > 280 ? block.question : undefined}
           className={cn(
-            "mt-3 font-display font-medium leading-[1.12] tracking-tight text-brand-ink text-balance",
+            "font-display font-medium leading-[1.12] tracking-tight text-brand-ink text-balance",
             headingSize,
             // A pasted essay shouldn't become a page-long heading.
             block.question.length > 280 && "line-clamp-4"
