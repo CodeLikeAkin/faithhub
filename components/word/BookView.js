@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { bookFromSlug, passageLabel, sectionFor } from "@/lib/canon";
 import { loadBookRows, loadBookStats, useLoad } from "@/lib/word-data";
 import { cleanTitle, parseSermonDate } from "@/lib/titles";
@@ -15,13 +15,6 @@ const sermonDate = (s) => {
   return d ? d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) : "";
 };
 
-export function AllBooksLink() {
-  return (
-    <Link href="/word" className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-navy hover:underline xl:hidden">
-      <ArrowLeft size={14} aria-hidden="true" /> All books
-    </Link>
-  );
-}
 
 /**
  * The chapters of a book as a tappable grid — every chapter number visible, so
@@ -120,8 +113,7 @@ export default function BookView({ slug }) {
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-24 pt-8 sm:px-8 sm:pt-12">
-      <AllBooksLink />
-      <header className="mt-4 xl:mt-0">
+      <header>
         <p className="text-sm text-brand-gray">{sectionFor(book)?.name}</p>
         <h1 className="mt-1 font-display text-5xl font-medium tracking-tight text-brand-ink sm:text-6xl">{book.name}</h1>
         <p className="mt-3 text-sm text-brand-gray">

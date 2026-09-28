@@ -33,22 +33,23 @@ const fmtRange = (start, end) => {
 
 const fmtDay = (d) => (d ? d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) : "");
 
-/**
- * The cover runs the full width of the card — no inset frame eating into the
- * picture — with the words small underneath. The date leads so that a title of
- * one line leaves its spare room at the foot of the card rather than as a gap
- * between the two lines.
- */
+const fmtMonth = (d) => (d ? d.toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" }) : "");
+
+// Shared by the series and guest cards: the art stands on its own (rounded,
+// no frame around the card), a small dark tag sits on the picture, and the
+// words run underneath — bold title, then a grey line.
+const cardLink =
+  "group flex min-w-0 flex-col rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy focus-visible:ring-offset-4";
+const cardArt = "relative block aspect-video w-full flex-shrink-0 overflow-hidden rounded-xl";
+const cardTag = "absolute bottom-2 right-2 rounded-lg bg-black/60 px-2 py-1 text-xs font-semibold text-white backdrop-blur-sm";
+const cardTitle =
+  "mt-2.5 line-clamp-2 hyphens-auto break-words text-sm font-semibold leading-snug text-brand-ink transition-colors group-hover:text-brand-navy sm:text-base";
+const cardMeta = "mt-1 flex min-w-0 items-baseline justify-between gap-2 text-xs text-brand-gray sm:text-sm";
+
 function SeriesCover({ s, className }) {
   return (
-    <Link
-      href={`/series/${s.id}`}
-      className={cn(
-        "group flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-inset ring-brand-navy/10 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_30px_50px_-30px_rgba(16,42,78,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy",
-        className
-      )}
-    >
-      <span className="relative block aspect-video w-full flex-shrink-0 overflow-hidden bg-brand-deep">
+    <Link href={`/series/${s.id}`} className={cn(cardLink, className)}>
+      <span className={cn(cardArt, "bg-brand-deep")}>
         {/* Shows through only when no part has a live thumbnail. */}
         <DotGrid dark className="inset-0" />
         <YtThumb
@@ -56,16 +57,16 @@ function SeriesCover({ s, className }) {
           quality="mqdefault"
           className="relative h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <span className="absolute bottom-1.5 right-1.5 rounded-md bg-brand-ink/80 px-1.5 py-0.5 text-xs font-semibold text-white">
+        <span className={cardTag}>
           {s.parts} {s.parts === 1 ? "part" : "parts"}
         </span>
       </span>
-      <span className="block px-2.5 pb-2.5 pt-2">
-        <span className="block text-xs text-brand-gray">{s.range || " "}</span>
-        <span className="mt-0.5 line-clamp-2 hyphens-auto break-words font-display text-sm font-medium leading-snug text-brand-ink sm:text-base">
-          {s.title}
+      <span className={cardTitle}>{s.title}</span>
+      {s.range && (
+        <span className={cardMeta}>
+          <span className="truncate">{s.range}</span>
         </span>
-      </span>
+      )}
     </Link>
   );
 }
@@ -79,14 +80,8 @@ function GuestCard({ g, className }) {
   while (isDash(words[words.length - 1])) words.pop();
   const title = words.join(" ") || full;
   return (
-    <Link
-      href={`/sermon/${g.id}`}
-      className={cn(
-        "group flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-inset ring-brand-navy/10 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_30px_50px_-30px_rgba(16,42,78,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy",
-        className
-      )}
-    >
-      <span className="relative block aspect-video w-full flex-shrink-0 overflow-hidden bg-brand-sky">
+    <Link href={`/sermon/${g.id}`} className={cn(cardLink, className)}>
+      <span className={cn(cardArt, "bg-brand-sky")}>
         {g.youtube_video_id && (
           <img
             src={`https://img.youtube.com/vi/${g.youtube_video_id}/mqdefault.jpg`}
@@ -96,10 +91,10 @@ function GuestCard({ g, className }) {
           />
         )}
       </span>
-      <span className="block px-2.5 pb-2.5 pt-2">
-        <span className="block text-xs text-brand-gray">{g.date ? fmtDay(g.date) : " "}</span>
-        <span className="mt-0.5 block truncate font-display text-sm font-medium leading-tight text-brand-ink sm:text-base">{g.speaker}</span>
-        <span className="mt-0.5 line-clamp-2 text-xs text-brand-gray">{title}</span>
+      <span className={cardTitle}>{title}</span>
+      <span className={cardMeta}>
+        <span className="truncate">{g.speaker}</span>
+        {g.date && <span className="flex-shrink-0">{fmtMonth(g.date)}</span>}
       </span>
     </Link>
   );
@@ -445,7 +440,7 @@ export default function SeriesBrowsePage() {
             {results.series.length > 0 && (
               <>
                 <h2 className="mt-8 font-display text-2xl font-medium text-brand-ink">Series</h2>
-                <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
+                <ul className="mt-4 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-5">
                   {results.series.map((s) => (
                     <li key={s.id}>
                       <SeriesCover s={s} />
@@ -600,7 +595,7 @@ export default function SeriesBrowsePage() {
                         </div>
                         <YearFilterSelect value={filterYear} onChange={(e) => setFilterYear(e.target.value)} years={years} />
                       </div>
-                      <ul className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+                      <ul className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4 xl:grid-cols-5">
                         {series.map((s) => (
                           <li key={s.id}>
                             <SeriesCover s={s} />
@@ -617,7 +612,7 @@ export default function SeriesBrowsePage() {
                         <p className="mt-1 text-sm text-brand-gray">
                           {guests.length} messages from ministers who visited Heritage of Faith
                         </p>
-                        <ul className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+                        <ul className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4 xl:grid-cols-5">
                           {guests.map((g) => (
                             <li key={g.id}>
                               <GuestCard g={g} />
@@ -657,7 +652,7 @@ export default function SeriesBrowsePage() {
                             </div>
                             <YearFilterSelect value={filterYear} onChange={(e) => setFilterYear(e.target.value)} years={years} />
                           </div>
-                          <ul className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+                          <ul className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4 xl:grid-cols-5">
                             {filteredSeriesForYear.map((s) => (
                               <li key={s.id}>
                                 <SeriesCover s={s} />
@@ -678,7 +673,7 @@ export default function SeriesBrowsePage() {
                           <p className="mt-1 text-sm text-brand-gray">
                             {filteredGuestsForYear.length} guest {filteredGuestsForYear.length === 1 ? "message" : "messages"} in {filterYear}
                           </p>
-                          <ul className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+                          <ul className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4 xl:grid-cols-5">
                             {filteredGuestsForYear.map((g) => (
                               <li key={g.id}>
                                 <GuestCard g={g} />

@@ -10,7 +10,6 @@ import { loadBookRows, loadChapterText, useLoad } from "@/lib/word-data";
 import { cleanTitle, parseSermonDate } from "@/lib/titles";
 import { fmtTime } from "@/lib/ask-format";
 import { scrollToElement } from "@/lib/scroll";
-import { AllBooksLink } from "./BookView";
 
 const MESSAGES_PER_PASSAGE = 5;
 const MAX_VERSES = 8; // a long range shows its opening verses
@@ -196,8 +195,7 @@ export default function ChapterView({ slug, chapter }) {
 
   return (
     <div className="mx-auto max-w-3xl px-4 pb-24 pt-8 sm:px-8 sm:pt-12">
-      <AllBooksLink />
-      <header className="mt-4 flex flex-wrap items-end justify-between gap-4 xl:mt-0">
+      <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <Link href={`/word/${book.slug}`} className="text-sm font-semibold text-brand-navy hover:underline">
             {book.name}

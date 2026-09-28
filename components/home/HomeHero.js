@@ -3,29 +3,20 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ArrowRight, ArrowUp, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 const greeting = (h) => (h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening");
 
 /**
  * Home's welcome: the church photo as a banner inside the app frame. Text
  * sits on the left over the congregation so Rev. Peter, standing on the
- * right of the photo, stays in view; the ask box goes straight to Ask.
+ * right of the photo, stays in view.
  */
 export default function HomeHero() {
-  const router = useRouter();
-  const [q, setQ] = useState("");
   // Greeting and date depend on the reader's clock, so they fill in after
   // hydration rather than being guessed on the server.
   const [now, setNow] = useState(null);
   useEffect(() => setNow(new Date()), []);
-
-  const submit = (e) => {
-    e.preventDefault();
-    const text = q.trim();
-    router.push(text ? `/ask?q=${encodeURIComponent(text)}` : "/ask?new=1");
-  };
 
   return (
     <section className="fh-rise relative isolate flex min-h-[29rem] flex-col justify-end overflow-hidden rounded-[1.75rem] bg-brand-deep text-white sm:min-h-[23rem]">
@@ -59,26 +50,6 @@ export default function HomeHero() {
         <p className="mt-3 max-w-md text-base leading-relaxed text-white/80">
           Years of HOF&apos;s messages, made searchable. Speak God&apos;s Word. Study any series in depth.
         </p>
-        <form
-          onSubmit={submit}
-          className="mt-5 flex max-w-md items-center gap-2 rounded-full bg-white py-1.5 pl-4 pr-1.5 text-brand-navy shadow-[0_20px_44px_-18px_rgba(0,0,0,0.65)] transition-shadow focus-within:shadow-[0_0_0_4px_rgba(255,255,255,0.28),0_20px_44px_-18px_rgba(0,0,0,0.65)]"
-        >
-          <Sparkles size={18} aria-hidden="true" className="flex-shrink-0" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Ask anything Rev. Peter has taught"
-            aria-label="Ask anything Rev. Peter has taught"
-            className="min-w-0 flex-1 bg-transparent text-base text-brand-ink outline-none placeholder:text-brand-gray/80"
-          />
-          <button
-            type="submit"
-            aria-label="Ask"
-            className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full bg-brand-navy text-white transition hover:bg-brand-deep active:scale-95"
-          >
-            <ArrowUp size={18} aria-hidden="true" />
-          </button>
-        </form>
       </div>
 
       <div className="mx-3 mb-4 mt-1 flex items-center justify-between gap-3 rounded-full sm:mx-4 sm:mb-4 sm:mt-2 sm:border sm:border-white/20 sm:bg-white/[0.14] sm:py-1.5 sm:pl-5 sm:pr-1.5 sm:backdrop-blur-md">
