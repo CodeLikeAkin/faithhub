@@ -262,7 +262,7 @@ export default function VideoModal({ seg, onClose, initialMinimized = false }) {
             // the mini-player). Once dragged, left/top take over entirely.
             `fixed z-50 w-56 sm:w-72 ${
               docked
-                ? "right-4 bottom-[calc(9.75rem+env(safe-area-inset-bottom))] sm:bottom-[calc(1rem+env(safe-area-inset-bottom))]"
+                ? "right-4 bottom-[calc(14rem+env(safe-area-inset-bottom))] sm:bottom-[calc(5rem+env(safe-area-inset-bottom))] lg:bottom-[calc(1rem+env(safe-area-inset-bottom))]"
                 : ""
             }`
           : "fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"

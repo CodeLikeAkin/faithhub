@@ -6,7 +6,9 @@ import { usePathname } from "next/navigation";
 import {
   BookMarked,
   BookOpen,
+  Compass,
   Flame,
+  Home,
   MessageSquareHeart,
   PanelLeftClose,
   PanelLeftOpen,
@@ -20,16 +22,25 @@ import { displayTitle } from "@/lib/titles";
 import { byRecent, useStudies } from "@/lib/studies";
 import { cn } from "@/lib/utils";
 
-const TOOLS = [
-  { name: "Ask the Word", href: "/ask", icon: Sparkles, match: (p) => p === "/ask" },
+/** Every section of the app, in rail order. The phone tab bar uses the same list. */
+export const TOOLS = [
+  { name: "Home", short: "Home", href: "/", icon: Home, match: (p) => p === "/" },
+  { name: "Ask the Word", short: "Ask", href: "/ask", icon: Sparkles, match: (p) => p === "/ask" },
   {
     name: "Series Study",
+    short: "Series",
     href: "/series",
     icon: BookOpen,
     match: (p) => p === "/series" || p.startsWith("/series/") || p.startsWith("/sermon/"),
   },
-  { name: "Declarations", href: "/declarations", icon: Flame, match: (p) => p.startsWith("/declarations") },
-  { name: "The Word", href: "/word", icon: ScrollText, match: (p) => p.startsWith("/word") },
+  { name: "Declarations", short: "Declare", href: "/declarations", icon: Flame, match: (p) => p.startsWith("/declarations") },
+  { name: "The Word", short: "Word", href: "/word", icon: ScrollText, match: (p) => p.startsWith("/word") },
+];
+
+/** The two pages about FaithHub itself; they sit at the foot of the rail. */
+const ABOUT_LINKS = [
+  { name: "Vision", href: "/vision", icon: Compass, match: (p) => p.startsWith("/vision") },
+  { name: "About & feedback", href: "/about", icon: MessageSquareHeart, match: (p) => p.startsWith("/about") },
 ];
 
 // Class sets per rail mode. Written out in full (not assembled from
@@ -37,21 +48,44 @@ const TOOLS = [
 //   expanded  — labels + studies
 //   collapsed — icon strip
 //   auto      — icon strip below 2xl, expanded from 2xl (lesson pages)
-const SHOW_BLOCK = { expanded: "block", collapsed: "hidden", auto: "hidden 2xl:block" };
 const SHOW_FLEX = { expanded: "flex", collapsed: "hidden", auto: "hidden 2xl:flex" };
+const SHOW_BLOCK = { expanded: "block", collapsed: "hidden", auto: "hidden 2xl:block" };
 const ONLY_COLLAPSED_FLEX = { expanded: "hidden", collapsed: "flex", auto: "flex 2xl:hidden" };
 // The icons sit at the same left position whichever way the rail is showing —
-// they never jump. Each tool label lives to their right and fades + collapses
-// to zero width in sync with the panel, so collapse/expand reads as one motion.
+// they never jump. Each label lives to their right and fades + collapses to
+// zero width in sync with the rail, so collapse/expand reads as one motion.
 const LABEL = {
   expanded: "max-w-[10rem] opacity-100",
   collapsed: "max-w-0 opacity-0",
   auto: "max-w-0 opacity-0 2xl:max-w-[10rem] 2xl:opacity-100",
 };
 
+function RailLink({ link, mode, pathname, onNavigate }) {
+  const { name, href, icon: Icon, match } = link;
+  const active = match(pathname);
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      aria-current={active ? "page" : undefined}
+      title={name}
+      className={cn(
+        "flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors",
+        active ? "bg-white/[0.14] text-white" : "text-white/70 hover:bg-white/10 hover:text-white"
+      )}
+    >
+      <Icon size={18} aria-hidden="true" className="flex-shrink-0" />
+      <span className={cn("overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-200 ease-out", LABEL[mode])}>
+        {name}
+      </span>
+    </Link>
+  );
+}
+
 /**
- * The tool pages' left rail: logo, links between tools, and the user's saved
- * studies. The active study unfolds into its question outline.
+ * The app's left rail, in the house navy: logo, every section, the reader's
+ * saved studies (the active one unfolds into its question outline), and the
+ * Vision / About pages at its foot.
  */
 export default function ToolRail({
   mode = "expanded",
@@ -62,23 +96,26 @@ export default function ToolRail({
   onJumpToBlock,
   onDeleteStudy,
   onOpenStudy,
-  // Links shown before/after the core tools — lets a page outside the tool
-  // shell (Navbar's mobile drawer) reuse this rail with Home/Vision added.
-  leadingLinks = [],
+  // Extra links after the tools — lets a page outside the tool shell reuse
+  // this rail — and an optional call to action under the footer links.
   trailingLinks = [],
   footerCta = null,
 }) {
   const pathname = usePathname() || "";
   const { studies } = useStudies();
   const recent = byRecent(studies);
-  const navLinks = [...leadingLinks, ...TOOLS, ...trailingLinks];
+  const navLinks = [...TOOLS, ...trailingLinks];
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-col text-white">
       <div className="flex h-16 flex-shrink-0 items-center gap-2 pl-5 pr-3">
-        <Link href="/" onClick={onNavigate} className="flex min-w-0 items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy">
+        <Link
+          href="/"
+          onClick={onNavigate}
+          className="flex min-w-0 items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        >
           <Image
-            src="/hofng-logo.png"
+            src="/hofng-logo-white.png"
             alt="Heritage of Faith — Home"
             width={208}
             height={146}
@@ -93,7 +130,7 @@ export default function ToolRail({
             aria-label="Collapse sidebar"
             title="Collapse sidebar"
             className={cn(
-              "ml-auto h-9 w-9 flex-shrink-0 place-items-center rounded-lg text-brand-gray transition-colors hover:bg-white hover:text-brand-navy",
+              "ml-auto h-9 w-9 flex-shrink-0 place-items-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white",
               { expanded: "grid", collapsed: "hidden", auto: "hidden 2xl:grid" }[mode]
             )}
           >
@@ -102,45 +139,26 @@ export default function ToolRail({
         )}
       </div>
 
-      <nav aria-label="Tools" className="flex-shrink-0 px-3">
+      <nav aria-label="Sections" className="flex-shrink-0 px-3">
         <ul className="space-y-0.5">
-          {navLinks.map(({ name, href, icon: Icon, match }) => {
-            const active = match(pathname);
-            return (
-              <li key={href}>
-                <Link
-                  href={href}
-                  onClick={onNavigate}
-                  aria-current={active ? "page" : undefined}
-                  title={name}
-                  className={cn(
-                    "flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors",
-                    active
-                      ? "bg-white text-brand-navy shadow-sm ring-1 ring-brand-navy/10"
-                      : "text-brand-ink/75 hover:bg-white/70 hover:text-brand-navy"
-                  )}
-                >
-                  <Icon size={18} aria-hidden="true" className="flex-shrink-0" />
-                  <span className={cn("overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-200 ease-out", LABEL[mode])}>
-                    {name}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
+          {navLinks.map((link) => (
+            <li key={link.href}>
+              <RailLink link={link} mode={mode} pathname={pathname} onNavigate={onNavigate} />
+            </li>
+          ))}
         </ul>
       </nav>
 
       {/* Studies — expanded rail */}
       <div className={cn("mt-7 min-h-0 flex-1 flex-col", SHOW_FLEX[mode])}>
         <div className="flex items-center justify-between px-5">
-          <h2 className="text-sm font-bold text-brand-ink">Your studies</h2>
+          <h2 className="text-xs font-bold uppercase tracking-[0.12em] text-white/55">Your studies</h2>
           <Link
             href="/ask?new=1"
             onClick={onNavigate}
             aria-label="New study"
             title="New study"
-            className="grid h-8 w-8 place-items-center rounded-lg text-brand-navy transition-colors hover:bg-white"
+            className="grid h-8 w-8 place-items-center rounded-lg text-white/80 transition-colors hover:bg-white/10 hover:text-white"
           >
             <Plus size={17} aria-hidden="true" />
           </Link>
@@ -162,11 +180,11 @@ export default function ToolRail({
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "block rounded-xl py-2 pl-3 pr-9 transition-colors",
-                      active ? "bg-white shadow-sm ring-1 ring-brand-navy/10" : "hover:bg-white/70"
+                      active ? "bg-white/[0.14]" : "hover:bg-white/10"
                     )}
                   >
-                    <span className="block truncate text-sm font-medium text-brand-ink">{s.title}</span>
-                    <span className="block truncate text-xs text-brand-gray">
+                    <span className="block truncate text-sm font-medium text-white">{s.title}</span>
+                    <span className="block truncate text-xs text-white/55">
                       {displayTitle(s.context?.seriesTitle || s.context?.sermonTitle) || "Everything"} · {fmtDate(s.updatedAt)}
                     </span>
                   </Link>
@@ -174,7 +192,7 @@ export default function ToolRail({
                     type="button"
                     onClick={() => onDeleteStudy(s.id)}
                     aria-label={`Delete study: ${s.title}`}
-                    className="absolute right-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-brand-gray/70 opacity-0 transition-opacity hover:bg-white hover:text-brand-navy focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+                    className="absolute right-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-white/60 opacity-0 transition-opacity hover:bg-white/10 hover:text-white focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
                   >
                     <Trash2 size={14} aria-hidden="true" />
                   </button>
@@ -182,7 +200,7 @@ export default function ToolRail({
 
                 {/* The open study's outline — every question is a jump link. */}
                 {active && onJumpToBlock && s.blocks.length > 1 && (
-                  <ol aria-label="Questions in this study" className="mb-2 ml-4 mt-1.5 border-l border-brand-navy/15 pl-2">
+                  <ol aria-label="Questions in this study" className="mb-2 ml-4 mt-1.5 border-l border-white/20 pl-2">
                     {s.blocks.map((b, i) => {
                       const current = String(b.id) === String(activeBlockId);
                       return (
@@ -196,10 +214,10 @@ export default function ToolRail({
                             aria-current={current ? "location" : undefined}
                             className={cn(
                               "flex w-full items-baseline gap-2 rounded-lg px-2 py-1.5 text-left text-sm leading-snug transition-colors",
-                              current ? "font-medium text-brand-navy" : "text-brand-ink/70 hover:text-brand-navy"
+                              current ? "font-medium text-white" : "text-white/70 hover:text-white"
                             )}
                           >
-                            <span className={cn("flex-shrink-0 text-xs font-bold tabular-nums", current ? "text-brand-navy" : "text-brand-gray")}>
+                            <span className={cn("flex-shrink-0 text-xs font-bold tabular-nums", current ? "text-white" : "text-white/50")}>
                               {i + 1}
                             </span>
                             <span className="line-clamp-2">{b.question}</span>
@@ -213,9 +231,7 @@ export default function ToolRail({
             );
           })}
           {!recent.length && (
-            <li className="px-3 py-1 text-sm leading-relaxed text-brand-gray">
-              Questions you ask are kept here, on this device.
-            </li>
+            <li className="px-3 py-1 text-sm leading-relaxed text-white/60">Questions you ask are kept here, on this device.</li>
           )}
         </ul>
       </div>
@@ -228,45 +244,38 @@ export default function ToolRail({
             onClick={onToggleCollapse}
             aria-label="Show your studies"
             title="Your studies"
-            className="grid h-10 w-10 place-items-center rounded-xl text-brand-ink/75 transition-colors hover:bg-white hover:text-brand-navy"
+            className="grid h-10 w-10 place-items-center rounded-xl text-white/70 transition-colors hover:bg-white/10 hover:text-white"
           >
             <BookMarked size={18} aria-hidden="true" />
           </button>
         )}
-        <Link
-          href="/about#feedback"
-          onClick={onNavigate}
-          aria-label="About & feedback"
-          title="About & feedback"
-          className="mt-auto grid h-10 w-10 place-items-center rounded-xl text-brand-gray transition-colors hover:bg-white hover:text-brand-navy"
-        >
-          <MessageSquareHeart size={18} aria-hidden="true" />
-        </Link>
-        {onToggleCollapse && (
-          <button
-            type="button"
-            onClick={onToggleCollapse}
-            aria-label="Expand sidebar"
-            title="Expand sidebar"
-            className="mb-4 grid h-10 w-10 place-items-center rounded-xl text-brand-gray transition-colors hover:bg-white hover:text-brand-navy"
-          >
-            <PanelLeftOpen size={18} aria-hidden="true" />
-          </button>
-        )}
       </div>
 
-      <div className={cn("flex-shrink-0 border-t border-brand-navy/10 px-5 py-3", SHOW_BLOCK[mode])}>
-        <p className="text-xs leading-relaxed text-brand-gray">
+      {/* Foot: Vision and About, in both modes; expand control on the icon strip */}
+      <div className="flex-shrink-0 border-t border-white/10 px-3 py-3">
+        <ul className="space-y-0.5">
+          {ABOUT_LINKS.map((link) => (
+            <li key={link.href}>
+              <RailLink link={link} mode={mode} pathname={pathname} onNavigate={onNavigate} />
+            </li>
+          ))}
+          {onToggleCollapse && (
+            <li className={ONLY_COLLAPSED_FLEX[mode]}>
+              <button
+                type="button"
+                onClick={onToggleCollapse}
+                aria-label="Expand sidebar"
+                title="Expand sidebar"
+                className="flex h-10 items-center gap-3 rounded-xl px-3 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                <PanelLeftOpen size={18} aria-hidden="true" />
+              </button>
+            </li>
+          )}
+        </ul>
+        <p className={cn("px-3 pt-2 text-xs leading-relaxed text-white/45", SHOW_BLOCK[mode])}>
           Answers are grounded in HOF recorded messages. Studies stay on this device.
         </p>
-        <Link
-          href="/about#feedback"
-          onClick={onNavigate}
-          className="-mx-2 mt-2 flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-bold text-brand-navy transition-colors hover:bg-white"
-        >
-          <MessageSquareHeart size={14} aria-hidden="true" className="flex-shrink-0" />
-          About &amp; feedback
-        </Link>
         {footerCta}
       </div>
     </div>

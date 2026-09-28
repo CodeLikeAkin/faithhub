@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, Search, Home as HomeIcon, Compass } from "lucide-react";
+import { Menu, X, Search } from "lucide-react";
 import Button from "@/components/Button";
 import ToolRail from "@/components/shell/ToolRail";
 import { deleteStudyWithUndo, useToast } from "@/components/shell/Toast";
@@ -19,12 +19,6 @@ const desktopNavLinks = [
   { name: "The Word", href: "/word" },
   { name: "Vision", href: "/vision" },
 ];
-
-// Mobile menu only: Home and Vision bracket the same tool list ToolShell's
-// rail already shows, so Ask/Series/Declarations/Word aren't a second,
-// differently-designed nav on marketing pages.
-const HOME_LINK = { name: "Home", href: "/", icon: HomeIcon, match: (p) => p === "/" };
-const VISION_LINK = { name: "Vision", href: "/vision", icon: Compass, match: (p) => p.startsWith("/vision") };
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -219,15 +213,15 @@ export default function Navbar() {
         </div>
       )}
 
-      {/* Mobile drawer — the same rail Ask/Series/Declarations/Word use,
-          with Home and Vision bracketing the tool list, so there's one
-          mobile nav pattern across the whole app instead of two. */}
+      {/* Mobile drawer — the same navy rail every shell page uses (it already
+          lists Home and ends with Vision / About), so there is one mobile nav
+          pattern across the whole app instead of two. */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Menu"
         {...(!isOpen ? { inert: "", "aria-hidden": true } : {})}
-        className={`fixed inset-y-0 left-0 z-50 w-[min(20rem,86vw)] bg-brand-sky shadow-2xl transition-transform duration-300 md:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 w-[min(20rem,86vw)] bg-brand-navy shadow-2xl transition-transform duration-300 md:hidden ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
@@ -237,7 +231,7 @@ export default function Navbar() {
           type="button"
           onClick={() => setIsOpen(false)}
           aria-label="Close menu"
-          className="absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full text-brand-gray transition hover:bg-white hover:text-brand-navy active:scale-95"
+          className="absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white active:scale-95"
           style={{ marginTop: "env(safe-area-inset-top)" }}
         >
           <X size={20} aria-hidden="true" />
@@ -246,12 +240,10 @@ export default function Navbar() {
           mode="expanded"
           onNavigate={() => setIsOpen(false)}
           onDeleteStudy={onDeleteStudy}
-          leadingLinks={[HOME_LINK]}
-          trailingLinks={[VISION_LINK]}
           footerCta={
             <Button
               href="/declarations"
-              variant="dark"
+              variant="light"
               size="lg"
               onClick={() => setIsOpen(false)}
               className="mt-3 w-full justify-center"
