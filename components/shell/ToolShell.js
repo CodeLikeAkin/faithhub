@@ -307,33 +307,38 @@ export default function ToolShell({
           {children}
         </main>
 
-        {/* Phone and small-tablet sections — the rail's job below lg */}
+        {/* Phone and small-tablet sections — the rail's job below lg. The row
+            of icons is centered and no wider than it needs to be (not
+            stretched edge to edge), so it reads as one clustered control
+            sitting in the middle of the bar rather than a full-bleed strip. */}
         <nav
           aria-label="Sections"
-          className="flex flex-shrink-0 justify-around bg-brand-navy px-1 pt-1.5 lg:hidden"
+          className="flex flex-shrink-0 justify-center bg-brand-navy px-1 pt-1.5 lg:hidden"
           style={{ paddingBottom: "max(0.375rem, env(safe-area-inset-bottom))" }}
         >
-          {TOOLS.map(({ short, href, icon: Icon, match }) => {
-            const active = match(pathname);
-            return (
-              <Link
-                key={href}
-                href={href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl py-1.5 text-xs font-medium transition-colors active:scale-95",
-                  active ? "text-white" : "text-white/60 hover:text-white"
-                )}
-              >
-                <span
-                  aria-hidden="true"
-                  className={cn("h-0.5 w-7 rounded-full bg-white transition-opacity", active ? "opacity-100" : "opacity-0")}
-                />
-                <Icon size={21} aria-hidden="true" />
-                {short}
-              </Link>
-            );
-          })}
+          <div className="flex w-full max-w-xs justify-between gap-1">
+            {TOOLS.map(({ short, href, icon: Icon, match }) => {
+              const active = match(pathname);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "flex min-w-0 flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-xs font-medium transition-colors active:scale-95",
+                    active ? "text-white" : "text-white/60 hover:text-white"
+                  )}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={cn("h-0.5 w-7 rounded-full bg-white transition-opacity", active ? "opacity-100" : "opacity-0")}
+                  />
+                  <Icon size={21} aria-hidden="true" />
+                  {short}
+                </Link>
+              );
+            })}
+          </div>
         </nav>
       </div>
 
@@ -408,6 +413,11 @@ export default function ToolShell({
         </button>
         <ToolRail
           mode="expanded"
+          // The phone tab bar right below already covers Home/Ask/Series/
+          // Declare/Word one tap away — repeating them at the top of this
+          // drawer was pure duplication. It opens straight into what the tab
+          // bar can't hold: studies, Vision, About.
+          hideTools
           onNavigate={() => setRailOpen(false)}
           activeStudyId={activeStudyId}
           activeBlockId={activeBlockId}

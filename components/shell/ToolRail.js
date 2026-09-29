@@ -100,6 +100,10 @@ export default function ToolRail({
   // this rail — and an optional call to action under the footer links.
   trailingLinks = [],
   footerCta = null,
+  // Skips the Home/Ask/Series/Declare/Word list. Used only by the mobile
+  // "More" drawer, where the phone tab bar right below already gives one-tap
+  // access to every tool — repeating them here was pure duplication.
+  hideTools = false,
 }) {
   const pathname = usePathname() || "";
   const { studies } = useStudies();
@@ -139,15 +143,17 @@ export default function ToolRail({
         )}
       </div>
 
-      <nav aria-label="Sections" className="flex-shrink-0 px-3">
-        <ul className="space-y-0.5">
-          {navLinks.map((link) => (
-            <li key={link.href}>
-              <RailLink link={link} mode={mode} pathname={pathname} onNavigate={onNavigate} />
-            </li>
-          ))}
-        </ul>
-      </nav>
+      {!hideTools && (
+        <nav aria-label="Sections" className="flex-shrink-0 px-3">
+          <ul className="space-y-0.5">
+            {navLinks.map((link) => (
+              <li key={link.href}>
+                <RailLink link={link} mode={mode} pathname={pathname} onNavigate={onNavigate} />
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
 
       {/* Studies — expanded rail */}
       <div className={cn("mt-7 min-h-0 flex-1 flex-col", SHOW_FLEX[mode])}>
