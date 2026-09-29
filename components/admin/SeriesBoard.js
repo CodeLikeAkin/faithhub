@@ -56,6 +56,7 @@ function SeriesCard({ s }) {
             </div>
           </div>
           <div className="mt-4 flex flex-wrap gap-1.5">
+            {s.unpublished > 0 && <Chip tone="warn">{s.unpublished} waiting to publish</Chip>}
             {!s.has_summary && <Chip tone="outline">Summary not written yet</Chip>}
             {s.dead_videos > 0 && <Chip tone="bad">{s.dead_videos} video{s.dead_videos === 1 ? "" : "s"} won&apos;t play</Chip>}
             {s.parts < 2 && <Chip tone="warn">Fewer than 2 messages</Chip>}

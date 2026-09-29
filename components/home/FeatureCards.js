@@ -50,12 +50,20 @@ export default function FeatureCards() {
     Promise.all(themes.map((t) => fetchThemeCount(t.slug).then((n) => [t.slug, n]))).then(
       (pairs) => live && setCounts(Object.fromEntries(pairs))
     );
+    // Counts only published parts; a series with none published yet is skipped.
     supabase
       .from("series")
-      .select("id, title, series_sermons ( part_number )")
+      .select("id, title, series_sermons ( part_number, sermons ( published ) )")
       .order("start_date", { ascending: false, nullsFirst: false })
-      .limit(3)
-      .then(({ data }) => live && setSeries(data || []));
+      .limit(6)
+      .then(({ data }) => {
+        if (!live) return;
+        const shown = (data || [])
+          .map((s) => ({ ...s, series_sermons: (s.series_sermons || []).filter((p) => p.sermons?.published) }))
+          .filter((s) => s.series_sermons.length)
+          .slice(0, 3);
+        setSeries(shown);
+      });
     return () => {
       live = false;
     };

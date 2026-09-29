@@ -20,12 +20,13 @@ export async function GET(req) {
     ]);
     if (error) throw error;
 
-    // Titles for jobs whose sermon row exists; payload carries the preview title otherwise.
+    // Titles (and publish state) for jobs whose sermon row exists; payload
+    // carries the preview title otherwise.
     const ids = [...new Set((jobs || []).map((j) => j.sermon_id).filter(Boolean))];
-    const titles = new Map();
+    const sermons = new Map();
     if (ids.length) {
-      const { data } = await db.from('sermons').select('id, title').in('id', ids);
-      for (const s of data || []) titles.set(s.id, s.title);
+      const { data } = await db.from('sermons').select('id, title, published').in('id', ids);
+      for (const s of data || []) sermons.set(s.id, s);
     }
 
     // Progress lines only for jobs someone would open: running, queued, the latest few finished.
@@ -42,7 +43,10 @@ export async function GET(req) {
     }
 
     return ok({
-      jobs: (jobs || []).map((j) => ({ ...j, title: titles.get(j.sermon_id) || j.payload?.title || null })),
+      jobs: (jobs || []).map((j) => {
+        const s = sermons.get(j.sermon_id);
+        return { ...j, title: s?.title || j.payload?.title || null, published: s ? s.published : null };
+      }),
       events,
       worker: worker || null,
       now: new Date().toISOString(),

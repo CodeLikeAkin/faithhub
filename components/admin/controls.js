@@ -48,9 +48,10 @@ export const Btn = forwardRef(function Btn(
 
 /**
  * Two-step button for anything that changes the live site: the first click
- * asks, the second does it. Resets itself after a few seconds.
+ * asks, the second does it. Resets itself after a few seconds. `onDark` is for
+ * navy surfaces (e.g. a sticky action bar): the question and buttons go light.
  */
-export function ConfirmBtn({ onConfirm, question = "Are you sure?", confirmLabel = "Yes", variant = "dangerSoft", size = "sm", children, busy, ...rest }) {
+export function ConfirmBtn({ onConfirm, question = "Are you sure?", confirmLabel = "Yes", variant = "dangerSoft", size = "sm", onDark = false, children, busy, ...rest }) {
   const [asking, setAsking] = useState(false);
   const timer = useRef(null);
   useEffect(() => () => clearTimeout(timer.current), []);
@@ -74,10 +75,11 @@ export function ConfirmBtn({ onConfirm, question = "Are you sure?", confirmLabel
   }
   return (
     <span className="inline-flex flex-wrap items-center gap-2" role="group" aria-label={question}>
-      <span className="text-sm font-medium text-brand-ink">{question}</span>
+      <span className={cn("text-sm font-medium", onDark ? "text-white" : "text-brand-ink")}>{question}</span>
       <Btn
         variant={variant === "dangerSoft" ? "danger" : "primary"}
         size="sm"
+        className={onDark && variant !== "dangerSoft" ? "bg-white text-brand-navy shadow-none hover:bg-brand-sky focus-visible:ring-white" : undefined}
         onClick={() => {
           setAsking(false);
           onConfirm();
@@ -85,7 +87,12 @@ export function ConfirmBtn({ onConfirm, question = "Are you sure?", confirmLabel
       >
         {confirmLabel}
       </Btn>
-      <Btn variant="ghost" size="sm" onClick={() => setAsking(false)}>
+      <Btn
+        variant="ghost"
+        size="sm"
+        className={onDark ? "text-white hover:bg-white/10 focus-visible:ring-white" : undefined}
+        onClick={() => setAsking(false)}
+      >
         Cancel
       </Btn>
     </span>

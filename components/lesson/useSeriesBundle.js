@@ -139,7 +139,7 @@ export function useSeriesBundle(entry, { withSeriesExtras = false, withSummary =
         const { data } = await supabase
           .from("series")
           .select(
-            `*, series_sermons ( part_number, sermons ( id, title, sermon_date, youtube_video_id, youtube_url, summary, service_type ) )`
+            `*, series_sermons ( part_number, sermons ( id, title, sermon_date, youtube_video_id, youtube_url, summary, service_type, published ) )`
           )
           .eq("id", seriesId)
           .single();
@@ -149,10 +149,18 @@ export function useSeriesBundle(entry, { withSeriesExtras = false, withSummary =
           return;
         }
 
-        setSeries({ ...data, title: displayTitle(data.title) });
+        // Parts not yet published stay out of the outline, except the message
+        // actually opened (a direct link, e.g. from an Ask citation, still works).
         const sorted = data.series_sermons
+          .filter((ss) => ss.sermons && (ss.sermons.published || ss.sermons.id === entrySermonId))
           .sort((a, b) => a.part_number - b.part_number)
           .map((ss) => ({ ...ss.sermons, part_number: ss.part_number }));
+        if (!sorted.length) {
+          setNotFound(true);
+          return;
+        }
+
+        setSeries({ ...data, title: displayTitle(data.title) });
         setParts(sorted);
 
         if (entrySermonId) loadPartData(entrySermonId);
@@ -213,6 +221,9 @@ export function useSeriesBundle(entry, { withSeriesExtras = false, withSummary =
       if (Array.isArray(series.suggested_questions)) setSummarySuggestions(series.suggested_questions);
       return;
     }
+    // The stored summary is shared by every visitor, so write it from published parts only.
+    const shared = parts.filter((s) => s.published !== false);
+    if (!shared.length) return;
     let cancelled = false;
     (async () => {
       setSummaryLoading(true);
@@ -223,8 +234,8 @@ export function useSeriesBundle(entry, { withSeriesExtras = false, withSummary =
           body: JSON.stringify({
             seriesId: series.id,
             title: series.title,
-            sermonTitles: parts.map((s) => s.title),
-            sermonIds: parts.map((s) => s.id),
+            sermonTitles: shared.map((s) => s.title),
+            sermonIds: shared.map((s) => s.id),
           }),
         });
         const data = await res.json();

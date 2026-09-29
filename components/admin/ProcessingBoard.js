@@ -108,7 +108,15 @@ function JobRow({ job, events, now, onAction, busyId }) {
         <div className="min-w-0 flex-1 space-y-3">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="line-clamp-2 font-semibold leading-snug text-brand-ink">{title}</p>
+              <p className="line-clamp-2 font-semibold leading-snug text-brand-ink">
+                {job.sermon_id ? (
+                  <Link href={`/admin/messages/${job.sermon_id}`} className="hover:text-brand-navy hover:underline focus-visible:underline focus-visible:outline-none">
+                    {title}
+                  </Link>
+                ) : (
+                  title
+                )}
+              </p>
               <p className="mt-1 flex items-center gap-2 text-sm text-slate-500">
                 <StatusBadge tone={s.tone} className="h-4 w-4 [&_svg]:h-2.5 [&_svg]:w-2.5" />
                 <span className="font-semibold text-brand-ink">{s.label}</span>
@@ -137,6 +145,15 @@ function JobRow({ job, events, now, onAction, busyId }) {
               Declarations and notes come from the careful pass.{" "}
               <Link href="/admin/careful-pass" className="font-semibold text-brand-navy underline underline-offset-2">
                 Open Careful pass
+              </Link>
+            </p>
+          )}
+          {job.status === "done" && job.published === false && job.sermon_id && (
+            <p className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+              <Chip tone="warn">Waiting to publish</Chip>
+              Visitors can&apos;t browse it yet.
+              <Link href={`/admin/messages/${job.sermon_id}`} className="font-semibold text-brand-navy underline underline-offset-2">
+                Open it to publish
               </Link>
             </p>
           )}

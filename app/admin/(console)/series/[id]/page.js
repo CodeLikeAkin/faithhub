@@ -19,7 +19,7 @@ export default async function SeriesDetailPage({ params }) {
     db.from("series").select("id, title, study_summary, start_date, end_date").eq("id", params.id).maybeSingle(),
     db
       .from("series_sermons")
-      .select("part_number, sermons ( id, title, youtube_video_id, sermon_date, video_status )")
+      .select("part_number, sermons ( id, title, youtube_video_id, sermon_date, video_status, published )")
       .eq("series_id", params.id),
   ]);
   if (!series) notFound();
@@ -32,6 +32,7 @@ export default async function SeriesDetailPage({ params }) {
       youtube_video_id: l.sermons.youtube_video_id,
       sermon_date: l.sermons.sermon_date,
       video_status: l.sermons.video_status,
+      published: l.sermons.published,
       part_number: l.part_number,
     }));
 

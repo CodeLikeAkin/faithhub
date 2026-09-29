@@ -9,9 +9,10 @@ import { Notice } from "@/components/admin/controls";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Careful pass - FaithHub Admin" };
 
-export default async function CarefulPassPage() {
+export default async function CarefulPassPage({ searchParams }) {
   requireAdminPage();
-  const { data, error } = await adminDb().rpc("admin_careful_pass");
+  const library = searchParams?.scope === "library";
+  const { data, error } = await adminDb().rpc("admin_careful_pass", { p_library: library });
 
   return (
     <PageFrame>
@@ -20,11 +21,11 @@ export default async function CarefulPassPage() {
         description="Declarations and study notes are written by Claude to your extraction standard, not by the automatic pipeline. These messages are waiting for that pass."
       />
       {isMissingSetup(error) ? (
-        <SetupNeeded file="admin_stage2.sql" />
+        <SetupNeeded file="admin_stage3.sql" />
       ) : error ? (
         <Notice tone="error">Couldn&apos;t load the list. Reload in a minute.</Notice>
       ) : (
-        <CarefulPass rows={data || []} />
+        <CarefulPass key={library ? "library" : "catalog"} rows={data || []} library={library} />
       )}
     </PageFrame>
   );

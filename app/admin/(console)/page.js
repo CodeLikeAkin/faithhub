@@ -58,7 +58,14 @@ function attentionItems(d) {
   const c = d.coverage;
   const items = [];
   if (c.dead_videos_in_catalog > 0)
-    items.push({ tone: "critical", n: c.dead_videos_in_catalog, text: "catalog messages have a video that won't play", href: "/admin/series" });
+    items.push({
+      tone: "critical",
+      n: c.dead_videos_in_catalog,
+      text: "catalog messages have a video that won't play",
+      href: "/admin/messages?filter=catalog&missing=video",
+    });
+  if (c.unpublished > 0)
+    items.push({ tone: "warning", n: c.unpublished, text: "new messages are waiting for you to publish them", href: "/admin/messages?filter=unpublished" });
   if (d.worker.state !== "online")
     items.push({ tone: "warning", text: "The processing computer isn't connected, so new links can't be processed yet", href: "/admin/processing" });
   if (c.catalog_no_declarations > 0)
@@ -66,7 +73,12 @@ function attentionItems(d) {
   if (c.catalog_no_notes > 0)
     items.push({ tone: "warning", n: c.catalog_no_notes, text: "catalog messages are waiting for study notes", href: "/admin/careful-pass" });
   if (c.catalog_no_scriptures > 0)
-    items.push({ tone: "warning", n: c.catalog_no_scriptures, text: "catalog messages have no scripture list" });
+    items.push({
+      tone: "warning",
+      n: c.catalog_no_scriptures,
+      text: "catalog messages have no scripture list",
+      href: "/admin/messages?filter=catalog&missing=scriptures",
+    });
   if (c.videos_unchecked + d.unknownVideos > 0)
     items.push({ tone: "neutral", n: c.videos_unchecked + d.unknownVideos, text: "videos haven't been checked to see if they play", href: "#video-health" });
   return items;

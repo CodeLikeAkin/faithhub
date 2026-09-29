@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { Rings } from "@/components/Decor";
 import { fmt, rise } from "@/components/admin/ui";
 import { cn } from "@/lib/utils";
@@ -21,24 +23,31 @@ const SCOPES = [
 ];
 
 const inAll = (rows, unit) => (typeof rows === "number" ? `${fmt(rows)} ${unit} in all.` : null);
+const noneNeeded = (n) => (n > 0 ? `${fmt(n)} checked as needing none.` : "Not every message has Greek or Hebrew to explain.");
+const join = (...parts) => parts.filter(Boolean).join(" ");
+
+// "N missing" opens exactly those messages on the Messages page.
+const missingHref = (filter, piece) => `/admin/messages?filter=${filter}&missing=${piece}`;
 
 function catalogView({ coverage: c, segmentGaps, extractions: x }) {
   const n = c.catalog_sermons;
   const rows = x?.rows.catalog;
+  const href = (piece) => missingHref("catalog", piece);
   return {
     total: n,
     ringLabel: "of catalog pieces in place",
-    description: `The ${fmt(n)} messages visitors can browse, and which study pieces each one has.`,
+    description: `The ${fmt(n)} published messages visitors can browse, and which study pieces each one has.`,
     pieces: [
-      { label: "Transcript", have: x ? n - x.catalogNoTranscript : null },
-      { label: "Searchable in Ask the Word", have: typeof segmentGaps === "number" ? n - segmentGaps : null },
-      { label: "Scripture list", have: n - c.catalog_no_scriptures, note: inAll(rows?.scriptures, "verse references") },
-      { label: "Declarations", have: n - c.catalog_no_declarations, note: inAll(rows?.declarations, "declarations") },
-      { label: "Study notes", have: n - c.catalog_no_notes },
+      { label: "Transcript", have: x ? n - x.catalogNoTranscript : null, href: href("transcript") },
+      { label: "Searchable in Ask the Word", have: typeof segmentGaps === "number" ? n - segmentGaps : null, href: href("search") },
+      { label: "Scripture list", have: n - c.catalog_no_scriptures, note: inAll(rows?.scriptures, "verse references"), href: href("scriptures") },
+      { label: "Declarations", have: n - c.catalog_no_declarations, note: inAll(rows?.declarations, "declarations"), href: href("declarations") },
+      { label: "Study notes", have: n - c.catalog_no_notes, href: href("notes") },
       {
         label: "Word studies",
         have: n - c.catalog_no_word_studies,
-        note: [inAll(rows?.words, "word studies"), "Not every message has Greek or Hebrew to explain."].filter(Boolean).join(" "),
+        note: join(inAll(rows?.words, "word studies"), noneNeeded(c.catalog_word_studies_none || 0)),
+        href: href("words"),
       },
     ],
   };
@@ -47,20 +56,28 @@ function catalogView({ coverage: c, segmentGaps, extractions: x }) {
 function libraryView({ coverage: c, extractions: x, declarationsTotal }) {
   const n = c.sermons_total;
   const have = x.library;
+  const href = (piece) => missingHref("all", piece);
   return {
     total: n,
     ringLabel: "of library pieces in place",
-    description: `All ${fmt(n)} messages, including the ${fmt(n - c.catalog_sermons)} outside a series that visitors don't browse.`,
+    description: `All ${fmt(n)} messages, including the ${fmt(n - c.catalog_sermons)} outside the public catalog.`,
     pieces: [
-      { label: "Transcript", have: have.transcript, note: "Nothing else can be made without one." },
-      { label: "Searchable in Ask the Word", have: have.search },
-      { label: "Scripture list", have: have.scriptures, note: inAll(x.rows.library.scriptures, "verse references") },
-      { label: "Declarations", have: have.declarations, note: inAll(declarationsTotal, "declarations") },
-      { label: "Study notes", have: have.notes, note: "Only written for messages in a series." },
+      { label: "Transcript", have: have.transcript, note: "Nothing else can be made without one.", href: href("transcript") },
+      { label: "Searchable in Ask the Word", have: have.search, href: href("search") },
+      { label: "Scripture list", have: have.scriptures, note: inAll(x.rows.library.scriptures, "verse references"), href: href("scriptures") },
+      { label: "Declarations", have: have.declarations, note: inAll(declarationsTotal, "declarations"), href: href("declarations") },
+      {
+        label: "Study notes",
+        have: have.seriesWithNotes,
+        total: have.seriesMessages,
+        note: `Only written for messages in a series, so this counts the ${fmt(have.seriesMessages)} that are.`,
+        href: href("notes"),
+      },
       {
         label: "Word studies",
-        have: have.words,
-        note: [inAll(x.rows.library.words, "word studies"), "Not every message has Greek or Hebrew to explain."].filter(Boolean).join(" "),
+        have: have.words + have.wordsNone,
+        note: join(inAll(x.rows.library.words, "word studies"), noneNeeded(have.wordsNone)),
+        href: href("words"),
       },
     ],
   };
@@ -96,7 +113,7 @@ function Ring({ share, label }) {
   );
 }
 
-function Meter({ label, have, total, note, order }) {
+function Meter({ label, have, total, note, href, order }) {
   const unknown = typeof have !== "number";
   const share = unknown || !total ? 0 : have / total;
   const missing = unknown ? null : total - have;
@@ -124,7 +141,18 @@ function Meter({ label, have, total, note, order }) {
       </div>
       {(note || (missing > 0)) && (
         <p className="mt-1.5 text-xs text-brand-mist/90">
-          {missing > 0 && <span className="font-semibold text-white">{fmt(missing)} missing. </span>}
+          {missing > 0 &&
+            (href ? (
+              <Link
+                href={href}
+                className="group mr-1 inline-flex items-center gap-1 font-semibold text-white underline decoration-white/30 underline-offset-2 transition-colors hover:decoration-white focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                {fmt(missing)} missing
+                <ArrowRight size={12} aria-hidden="true" className="transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            ) : (
+              <span className="font-semibold text-white">{fmt(missing)} missing. </span>
+            ))}
           {note}
         </p>
       )}
@@ -165,9 +193,11 @@ export default function ReadinessCard({ coverage, segmentGaps, extractions, decl
       ? libraryView({ coverage, extractions, declarationsTotal })
       : catalogView({ coverage, segmentGaps, extractions });
 
-  const n = view.total;
-  const known = view.pieces.filter((p) => typeof p.have === "number");
-  const share = known.length && n ? known.reduce((s, p) => s + p.have, 0) / (known.length * n) : 0;
+  // A piece may count against its own total (study notes: series messages only).
+  const pieces = view.pieces.map((p) => ({ ...p, total: p.total ?? view.total }));
+  const known = pieces.filter((p) => typeof p.have === "number" && p.total > 0);
+  const wanted = known.reduce((s, p) => s + p.total, 0);
+  const share = wanted ? known.reduce((s, p) => s + p.have, 0) / wanted : 0;
 
   const r = rise(order);
   return (
@@ -198,8 +228,8 @@ export default function ReadinessCard({ coverage, segmentGaps, extractions, decl
         <div key={scope} className="mt-8 flex flex-col items-center gap-8 md:flex-row md:items-center md:gap-10">
           <Ring share={share} label={view.ringLabel} />
           <ul className="w-full flex-1 space-y-5">
-            {view.pieces.map((p, i) => (
-              <Meter key={p.label} {...p} total={n} order={i} />
+            {pieces.map((p, i) => (
+              <Meter key={p.label} {...p} order={i} />
             ))}
           </ul>
         </div>

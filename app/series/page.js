@@ -175,14 +175,15 @@ function YearFilterSelect({ value, onChange, years }) {
   );
 }
 
-// Every sermon, for the guest-speaker row. Paged: one select stops at
-// PostgREST's 1,000 rows, and the corpus is heading past that.
+// Every published sermon, for the guest-speaker row. Paged: one select stops
+// at PostgREST's 1,000 rows, and the corpus is heading past that.
 async function fetchAllSermons() {
   const all = [];
   for (let from = 0; ; from += 1000) {
     const { data, error } = await supabase
       .from("sermons")
       .select("id, title, sermon_date, youtube_video_id")
+      .eq("published", true)
       .order("id")
       .range(from, from + 999);
     if (error) return { data: all, error };
@@ -210,7 +211,7 @@ export default function SeriesBrowsePage() {
       const [seriesRes, sermonsRes] = await Promise.all([
         supabase
           .from("series")
-          .select("id, title, start_date, end_date, series_sermons ( part_number, sermons ( id, title, youtube_video_id ) )")
+          .select("id, title, start_date, end_date, series_sermons ( part_number, sermons ( id, title, youtube_video_id, published ) )")
           .order("start_date", { ascending: false, nullsFirst: false }),
         fetchAllSermons(),
       ]);
@@ -221,9 +222,13 @@ export default function SeriesBrowsePage() {
         setSeries([]);
         return;
       }
+      // Only published parts are listed; a series with none published yet stays hidden.
+      const visible = (seriesRes.data || [])
+        .map((s) => ({ ...s, series_sermons: (s.series_sermons || []).filter((p) => p.sermons?.published) }))
+        .filter((s) => s.series_sermons.length);
       setSeries(
-        (seriesRes.data || []).map((s) => {
-          const parts = [...(s.series_sermons || [])].sort((a, b) => a.part_number - b.part_number);
+        visible.map((s) => {
+          const parts = [...s.series_sermons].sort((a, b) => a.part_number - b.part_number);
           return {
             id: s.id,
             title: seriesName(s.title),

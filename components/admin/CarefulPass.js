@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Check, ClipboardCopy, Feather } from "lucide-react";
 import YtThumb from "@/components/YtThumb";
 import { Btn, Chip, Notice, TextArea } from "@/components/admin/controls";
 import { fmtDate } from "@/lib/admin-format";
+import { isDeadVideo } from "@/lib/admin-titles";
 import { cn } from "@/lib/utils";
 
 const BATCH_HINT = 12;
@@ -52,7 +54,11 @@ function Row({ r, checked, onToggle }) {
         <YtThumb ids={r.youtube_video_id} quality="mqdefault" className="h-full w-full object-cover" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 font-semibold leading-snug text-brand-ink">{r.title}</p>
+        <p className="line-clamp-2 font-semibold leading-snug text-brand-ink">
+          <Link href={`/admin/messages/${r.id}`} className="hover:text-brand-navy hover:underline focus-visible:underline focus-visible:outline-none">
+            {r.title}
+          </Link>
+        </p>
         <p className="mt-1 text-sm text-slate-500">
           {r.series_title ? `${r.series_title}${r.part_number ? `, part ${r.part_number}` : ""}` : "Not in a series"}
           {r.sermon_date ? `, uploaded ${fmtDate(r.sermon_date)}` : ""}
@@ -60,6 +66,8 @@ function Row({ r, checked, onToggle }) {
         <div className="mt-2 flex flex-wrap gap-1.5">
           {r.needs_declarations && <Chip tone="warn">Needs declarations</Chip>}
           {r.needs_notes && <Chip tone="warn">Needs study notes</Chip>}
+          {r.published === false && <Chip tone="outline">Not published yet</Chip>}
+          {isDeadVideo(r.video_status) && <Chip tone="bad">Video won&apos;t play</Chip>}
           {disabled && <Chip tone="bad">No transcript yet, process it first</Chip>}
         </div>
       </div>
@@ -67,11 +75,93 @@ function Row({ r, checked, onToggle }) {
   );
 }
 
-export default function CarefulPass({ rows }) {
-  const catalog = useMemo(() => rows.filter((r) => r.in_catalog), [rows]);
-  const others = useMemo(() => rows.filter((r) => !r.in_catalog), [rows]);
+const SHOW = 30;
+
+function Section({ title, note, list, id, picked, setPicked, toggle }) {
+  const [shown, setShown] = useState(SHOW);
+  if (!list.length) return null;
+  const ready = list.filter((r) => r.has_transcript);
+  const left = ready.filter((r) => !picked.has(r.id));
+  const visible = list.slice(0, shown);
+
+  // Big lists are done a batch at a time, so offer the next batch, not "all",
+  // and open the list far enough to show every message it ticks.
+  const pickNext = () => {
+    const batch = left.slice(0, BATCH_HINT);
+    if (!batch.length) return;
+    setPicked((p) => new Set([...p, ...batch.map((r) => r.id)]));
+    setShown((s) => Math.max(s, list.indexOf(batch[batch.length - 1]) + 1));
+  };
+  const pickAll = () => setPicked((p) => new Set([...p, ...ready.map((r) => r.id)]));
+  const clear = () => setPicked((p) => new Set([...p].filter((x) => !list.some((r) => r.id === x))));
+
+  return (
+    <section aria-labelledby={id} className="overflow-hidden rounded-3xl border border-brand-navy/[0.07] bg-white shadow-[0_1px_2px_rgba(16,42,78,0.04)]">
+      <header className="flex flex-wrap items-start justify-between gap-2 px-5 pt-5 sm:px-6">
+        <div>
+          <h2 id={id} className="text-lg font-bold text-brand-ink">
+            {title} <span className="font-normal text-slate-500">({list.length})</span>
+          </h2>
+          {note && <p className="mt-1 text-sm text-slate-500">{note}</p>}
+        </div>
+        <div className="flex gap-1">
+          {ready.length > BATCH_HINT ? (
+            <Btn variant="ghost" size="sm" disabled={!left.length} onClick={pickNext}>
+              Select next {Math.min(BATCH_HINT, left.length) || BATCH_HINT}
+            </Btn>
+          ) : (
+            <Btn variant="ghost" size="sm" disabled={!left.length} onClick={pickAll}>
+              Select all
+            </Btn>
+          )}
+          <Btn variant="ghost" size="sm" onClick={clear}>
+            Clear
+          </Btn>
+        </div>
+      </header>
+      <ul className="mt-2 divide-y divide-slate-100">
+        {visible.map((r) => (
+          <Row key={r.id} r={r} checked={picked.has(r.id)} onToggle={() => toggle(r.id)} />
+        ))}
+      </ul>
+      {list.length > visible.length && (
+        <div className="border-t border-slate-100 p-4 text-center">
+          <Btn variant="secondary" size="sm" onClick={() => setShown((s) => s + SHOW)}>
+            Show {Math.min(SHOW, list.length - visible.length)} more
+          </Btn>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ScopeSwitch({ library }) {
+  const item = (on) =>
+    cn(
+      "flex-shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy",
+      on ? "bg-brand-navy text-white" : "text-slate-600 hover:bg-brand-sky hover:text-brand-navy"
+    );
+  return (
+    <nav aria-label="Which messages" className="flex gap-1 overflow-x-auto rounded-full bg-white p-1 ring-1 ring-brand-navy/[0.07] sm:w-fit">
+      <Link href="/admin/careful-pass" aria-current={!library ? "page" : undefined} className={item(!library)}>
+        Series and new messages
+      </Link>
+      <Link href="/admin/careful-pass?scope=library" aria-current={library ? "page" : undefined} className={item(library)}>
+        Whole library
+      </Link>
+    </nav>
+  );
+}
+
+export default function CarefulPass({ rows, library = false }) {
+  // New messages first: they are hidden until published, so they wait on this pass.
+  const waiting = useMemo(() => rows.filter((r) => r.published === false), [rows]);
+  const live = useMemo(() => rows.filter((r) => r.published !== false), [rows]);
+  const catalog = useMemo(() => live.filter((r) => r.in_catalog), [live]);
+  const others = useMemo(() => live.filter((r) => !r.in_catalog && r.added_here), [live]);
+  const rest = useMemo(() => live.filter((r) => !r.in_catalog && !r.added_here), [live]);
   const [picked, setPicked] = useState(
-    () => new Set(catalog.filter((r) => r.has_transcript).slice(0, BATCH_HINT).map((r) => r.id))
+    () => new Set([...waiting, ...catalog].filter((r) => r.has_transcript).slice(0, BATCH_HINT).map((r) => r.id))
   );
   const [copied, setCopied] = useState(false);
   const [showText, setShowText] = useState(false);
@@ -98,47 +188,48 @@ export default function CarefulPass({ rows }) {
 
   if (!rows.length) {
     return (
-      <div className="rounded-3xl bg-white p-10 text-center ring-1 ring-brand-navy/[0.07]">
-        <Feather size={22} aria-hidden="true" className="mx-auto text-brand-navy" />
-        <p className="mt-3 text-lg font-bold text-brand-ink">Nothing waiting</p>
-        <p className="mt-1 text-slate-500">Every catalog message has its declarations and study notes.</p>
+      <div className="space-y-6">
+        <ScopeSwitch library={library} />
+        <div className="rounded-3xl bg-white p-10 text-center ring-1 ring-brand-navy/[0.07]">
+          <Feather size={22} aria-hidden="true" className="mx-auto text-brand-navy" />
+          <p className="mt-3 text-lg font-bold text-brand-ink">Nothing waiting</p>
+          <p className="mt-1 text-slate-500">
+            {library
+              ? "Every message has its declarations, and every series message its study notes."
+              : "Every catalog message has its declarations and study notes."}
+          </p>
+        </div>
       </div>
     );
   }
 
-  const section = (title, list, id) =>
-    list.length > 0 && (
-      <section aria-labelledby={id} className="overflow-hidden rounded-3xl border border-brand-navy/[0.07] bg-white shadow-[0_1px_2px_rgba(16,42,78,0.04)]">
-        <header className="flex flex-wrap items-center justify-between gap-2 px-5 pt-5 sm:px-6">
-          <h2 id={id} className="text-lg font-bold text-brand-ink">
-            {title} <span className="font-normal text-slate-500">({list.length})</span>
-          </h2>
-          <div className="flex gap-1">
-            <Btn
-              variant="ghost"
-              size="sm"
-              onClick={() => setPicked((p) => new Set([...p, ...list.filter((r) => r.has_transcript).map((r) => r.id)]))}
-            >
-              Select all
-            </Btn>
-            <Btn variant="ghost" size="sm" onClick={() => setPicked((p) => new Set([...p].filter((x) => !list.some((r) => r.id === x))))}>
-              Clear
-            </Btn>
-          </div>
-        </header>
-        <ul className="mt-2 divide-y divide-slate-100">
-          {list.map((r) => (
-            <Row key={r.id} r={r} checked={picked.has(r.id)} onToggle={() => toggle(r.id)} />
-          ))}
-        </ul>
-      </section>
-    );
+  const sectionProps = { picked, setPicked, toggle };
 
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
       <div className="space-y-6 xl:col-span-2">
-        {section("In the public catalog", catalog, "cp-catalog")}
-        {section("Added from this page, outside the catalog", others, "cp-other")}
+        <ScopeSwitch library={library} />
+        <Section title="New, waiting to publish" note="Do these first: they go live once you publish them." list={waiting} id="cp-new" {...sectionProps} />
+        <Section title="In the public catalog" list={catalog} id="cp-catalog" {...sectionProps} />
+        <Section title="Added from this page, outside the catalog" list={others} id="cp-other" {...sectionProps} />
+        {library && (
+          <Section
+            title="Rest of the library"
+            note="Messages in no series. They only need declarations; study notes are for series messages."
+            list={rest}
+            id="cp-rest"
+            {...sectionProps}
+          />
+        )}
+        {!library && (
+          <p className="text-sm text-slate-500">
+            Messages outside a series that were never added from this page are on the{" "}
+            <Link href="/admin/careful-pass?scope=library" className="font-semibold text-brand-navy underline underline-offset-2">
+              whole library
+            </Link>{" "}
+            list.
+          </p>
+        )}
       </div>
 
       <aside className="xl:col-span-1">

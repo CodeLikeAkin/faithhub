@@ -28,12 +28,14 @@ const fmtRange = (start, end) => {
  * so a title with no parseable date fell back to its (later) upload date and
  * leapfrogged everything. "Latest message" means the newest video posted, so
  * order by upload date and take the top one. The date LINE still prefers the
- * true preach date from the title, falling back to the upload date.
+ * true preach date from the title, falling back to the upload date. Only
+ * published messages count: new ones wait for the admin's Publish.
  */
 async function fetchLatestMessage() {
   const { data, error } = await supabase
     .from("sermons")
     .select("id, title, sermon_date, youtube_video_id, summary")
+    .eq("published", true)
     .order("sermon_date", { ascending: false })
     .limit(1);
   if (error || !data?.length) return null;
@@ -42,14 +44,19 @@ async function fetchLatestMessage() {
 }
 
 async function fetchCurrentSeries() {
+  // A few, not one: a brand-new series whose parts aren't published yet is skipped.
   const { data, error } = await supabase
     .from("series")
-    .select("id, title, start_date, end_date, series_sermons ( part_number, sermons ( id, youtube_video_id ) )")
+    .select("id, title, start_date, end_date, series_sermons ( part_number, sermons ( id, youtube_video_id, published ) )")
     .order("start_date", { ascending: false, nullsFirst: false })
-    .limit(1);
+    .limit(5);
   if (error || !data?.length) return null;
-  const s = data[0];
-  const parts = [...(s.series_sermons || [])].sort((a, b) => a.part_number - b.part_number);
+  const withParts = data
+    .map((s) => ({ ...s, series_sermons: (s.series_sermons || []).filter((p) => p.sermons?.published) }))
+    .filter((s) => s.series_sermons.length);
+  if (!withParts.length) return null;
+  const s = withParts[0];
+  const parts = [...s.series_sermons].sort((a, b) => a.part_number - b.part_number);
   return {
     id: s.id,
     title: seriesName(s.title),

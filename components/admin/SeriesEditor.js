@@ -385,10 +385,15 @@ export default function SeriesEditor({ series, parts, pieces }) {
                   <YtThumb ids={p.youtube_video_id} quality="mqdefault" className="h-full w-full object-cover" />
                 </div>
                 <div className="min-w-0">
-                  <p className="line-clamp-2 font-semibold leading-snug text-brand-ink">{p.title}</p>
+                  <p className="line-clamp-2 font-semibold leading-snug text-brand-ink">
+                    <a href={`/admin/messages/${p.sermon_id}`} className="hover:text-brand-navy hover:underline focus-visible:underline focus-visible:outline-none">
+                      {p.title}
+                    </a>
+                  </p>
                   <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
                     {fmtDate(p.sermon_date)}
                     {moved && <span className="font-semibold text-brand-navy">Was part {p.part_number}</span>}
+                    {p.published === false && <span className="font-semibold text-[#7a4f00]">Waiting to publish</span>}
                     {dead && (
                       <span className="inline-flex items-center gap-1.5 font-medium text-[#912018]">
                         <StatusBadge tone="critical" className="h-4 w-4 [&_svg]:h-2.5 [&_svg]:w-2.5" /> Video won&apos;t play

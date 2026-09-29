@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { ChevronDown, Eye, History, Pencil, PlayCircle, Save, Search } from "lucide-react";
+import { Check, ChevronDown, Eye, History, Pencil, PlayCircle, Save, Search } from "lucide-react";
 import YtThumb from "@/components/YtThumb";
 import { Btn, Chip, ConfirmBtn, Field, Input, Notice, TextArea } from "@/components/admin/controls";
 import { THEMES } from "@/lib/declarations";
@@ -82,9 +82,17 @@ function SermonPicker({ sermon, onPick }) {
             {sermon.sermon_date ? `, uploaded ${fmtDate(sermon.sermon_date)}` : ""}
           </p>
         </div>
-        <Btn variant="secondary" size="sm" icon={Search} onClick={() => setOpen(true)}>
-          Choose another
-        </Btn>
+        <div className="flex flex-shrink-0 flex-wrap gap-2">
+          <a
+            href={`/admin/messages/${sermon.id}`}
+            className="inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-semibold text-brand-navy transition-colors hover:bg-brand-sky focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy"
+          >
+            Message page
+          </a>
+          <Btn variant="secondary" size="sm" icon={Search} onClick={() => setOpen(true)}>
+            Choose another
+          </Btn>
+        </div>
       </div>
     );
   }
@@ -400,26 +408,69 @@ function WordRow({ w, onSaved, onDeleted }) {
 
 function WordStudies({ sermon }) {
   const [list, setList] = useState(null);
+  const [noneNeeded, setNoneNeeded] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     let live = true;
     setList(null);
     adminFetch(`/api/admin/word-studies?sermon_id=${sermon.id}`)
-      .then((r) => live && setList(r.words))
+      .then((r) => {
+        if (!live) return;
+        setList(r.words);
+        setNoneNeeded(!!r.none_needed);
+      })
       .catch((e) => live && setError(e.message));
     return () => {
       live = false;
     };
   }, [sermon.id]);
 
-  if (error) return <Notice tone="error">{error}</Notice>;
+  // "Checked: explains no Greek or Hebrew", so it stops counting as missing.
+  async function markNone(value) {
+    setBusy(true);
+    setError("");
+    try {
+      const r = await adminFetch(`/api/admin/sermons/${sermon.id}`, { method: "PATCH", body: { word_studies_none: value } });
+      setNoneNeeded(!!r.sermon?.word_studies_none);
+    } catch (e) {
+      setError(e.message);
+    }
+    setBusy(false);
+  }
+
+  if (!list && error) return <Notice tone="error">{error}</Notice>;
   if (!list) return <div className="h-48 rounded-3xl bg-white/70 motion-safe:animate-pulse" aria-busy="true" />;
   if (!list.length) {
     return (
       <div className={cn(card, "p-8 text-center")}>
-        <p className="font-semibold text-brand-ink">No word studies for this message</p>
-        <p className="mt-1 text-sm text-slate-500">Many messages don&apos;t explain a Greek or Hebrew word, and that&apos;s fine.</p>
+        {noneNeeded ? (
+          <>
+            <p className="inline-flex items-center gap-2 font-semibold text-brand-ink">
+              <Check size={18} aria-hidden="true" className="text-[#0a6b0a]" />
+              Checked: no word studies needed
+            </p>
+            <p className="mt-1 text-sm text-slate-500">
+              This message explains no Greek or Hebrew word, so it no longer counts as missing word studies.
+            </p>
+            <Btn variant="ghost" size="sm" className="mt-3" busy={busy} onClick={() => markNone(false)}>
+              Undo
+            </Btn>
+          </>
+        ) : (
+          <>
+            <p className="font-semibold text-brand-ink">No word studies for this message</p>
+            <p className="mt-1 text-sm text-slate-500">
+              Many messages don&apos;t explain a Greek or Hebrew word, and that&apos;s fine. If this is one of them, mark it
+              so it stops counting as missing.
+            </p>
+            <Btn variant="secondary" size="sm" icon={Check} className="mt-4" busy={busy} onClick={() => markNone(true)}>
+              Mark: no word studies needed
+            </Btn>
+          </>
+        )}
+        {error && <Notice tone="error" className="mt-3">{error}</Notice>}
       </div>
     );
   }

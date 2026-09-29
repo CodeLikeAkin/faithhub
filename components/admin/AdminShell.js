@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Library,
   ListChecks,
+  ListVideo,
   LogOut,
   PlusCircle,
   ShieldCheck,
@@ -20,6 +21,7 @@ import { cn } from "@/lib/utils";
 // An item with `soon: true` shows the plan without linking to a dead end.
 const NAV = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
+  { href: "/admin/messages", label: "Messages", icon: ListVideo },
   { href: "/admin/add", label: "Add sermons", icon: PlusCircle },
   { href: "/admin/processing", label: "Processing", icon: ListChecks },
   { href: "/admin/careful-pass", label: "Careful pass", icon: Feather },

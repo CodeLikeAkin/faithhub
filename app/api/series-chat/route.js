@@ -193,7 +193,8 @@ export async function POST(req) {
             sermons (
               id,
               title,
-              youtube_video_id
+              youtube_video_id,
+              published
             )
           )
         `)
@@ -204,7 +205,9 @@ export async function POST(req) {
         return NextResponse.json({ error: true, message: 'Series not found' }, { status: 404 });
       }
 
+      // Same parts the series page lists: published ones only.
       const sortedSermons = series.series_sermons
+        .filter((ss) => ss.sermons?.published)
         .sort((a, b) => a.part_number - b.part_number)
         .map((ss) => ss.sermons);
 
