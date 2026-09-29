@@ -418,7 +418,7 @@ export default function AddSermons({ workerOnline }) {
             {done.count > 0 && (
               <>
                 {done.count} {done.count === 1 ? "message is" : "messages are"} in the queue. The processing computer picks
-                them up within a minute.{" "}
+                them up at its next check, within half an hour.{" "}
                 <Link href="/admin/processing" className="font-bold underline underline-offset-2">
                   Watch progress
                 </Link>

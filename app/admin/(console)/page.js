@@ -197,7 +197,14 @@ export default async function AdminOverview() {
           </div>
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-            <ReadinessCard order={6} coverage={c} segmentGaps={d.segmentGaps} className="xl:col-span-2" />
+            <ReadinessCard
+              order={6}
+              coverage={c}
+              segmentGaps={d.segmentGaps}
+              extractions={d.extractions}
+              declarationsTotal={d.declarationsTotal}
+              className="xl:col-span-2"
+            />
 
             <Card id="attention" order={7} title="Needs attention" subtitle="Things to fix, most urgent first.">
               {attention.length ? (
