@@ -243,7 +243,7 @@ export default function SeriesOverview({ seriesId }) {
                           </span>
                           {/* No `block` beside line-clamp-* — it overrides the -webkit-box
                               display the clamp needs, and the text spills instead of clamping. */}
-                          <span className="mt-1 line-clamp-2 font-display text-lg font-medium leading-snug text-brand-ink sm:text-xl">
+                          <span className="mt-1 line-clamp-1 sm:line-clamp-2 font-display text-lg font-medium leading-snug text-brand-ink sm:text-xl">
                             {partTitle(p.title, series.title)}
                           </span>
                           {p.summary && (

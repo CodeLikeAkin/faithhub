@@ -43,7 +43,7 @@ const cardLink =
 const cardArt = "relative block aspect-video w-full flex-shrink-0 overflow-hidden rounded-xl";
 const cardTag = "absolute bottom-2 right-2 rounded-lg bg-black/60 px-2 py-1 text-xs font-semibold text-white backdrop-blur-sm";
 const cardTitle =
-  "mt-2.5 line-clamp-2 hyphens-auto break-words text-sm font-semibold leading-snug text-brand-ink transition-colors group-hover:text-brand-navy sm:text-base";
+  "mt-2.5 line-clamp-1 sm:line-clamp-2 hyphens-auto break-words text-sm font-semibold leading-snug text-brand-ink transition-colors group-hover:text-brand-navy sm:text-base";
 const cardMeta = "mt-1 flex min-w-0 items-baseline justify-between gap-2 text-xs text-brand-gray sm:text-sm";
 
 function SeriesCover({ s, className }) {
@@ -126,7 +126,7 @@ function MessageRow({ m }) {
       <span className="min-w-0 flex-1">
         {/* No `block` beside line-clamp-* — it overrides the -webkit-box
             display the clamp needs, and the text spills instead of clamping. */}
-        <span className="line-clamp-2 text-sm font-semibold leading-snug text-brand-ink group-hover:text-brand-navy">
+        <span className="line-clamp-1 sm:line-clamp-2 text-sm font-semibold leading-snug text-brand-ink group-hover:text-brand-navy">
           {m.title}
         </span>
         {meta && <span className="mt-0.5 block truncate text-xs text-brand-gray">{meta}</span>}

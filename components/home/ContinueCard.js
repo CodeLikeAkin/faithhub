@@ -88,7 +88,7 @@ export default function ContinueCard({ className, style }) {
             </span>
           </span>
           <span className="px-1">
-            <span className="line-clamp-2 font-display text-xl font-medium leading-snug text-brand-ink">{displayTitle(item.title)}</span>
+            <span className="line-clamp-1 sm:line-clamp-2 font-display text-xl font-medium leading-snug text-brand-ink">{displayTitle(item.title)}</span>
             <span className="mt-1 block text-sm text-brand-gray">{meta}</span>
           </span>
           <span className="mt-auto flex items-center gap-3 px-1">

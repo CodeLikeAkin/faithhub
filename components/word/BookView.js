@@ -194,7 +194,7 @@ export default function BookView({ slug }) {
                         )}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="line-clamp-2 text-sm font-semibold leading-snug text-brand-ink group-hover:text-brand-navy">
+                        <span className="line-clamp-1 sm:line-clamp-2 text-sm font-semibold leading-snug text-brand-ink group-hover:text-brand-navy">
                           {cleanTitle(sermon.title)}
                         </span>
                         <span className="mt-0.5 block text-xs text-brand-gray">

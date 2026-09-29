@@ -97,7 +97,7 @@ export default function LatestShelf({ style }) {
                   </span>
                 </span>
                 <span className="min-w-0 px-0.5">
-                  <span className="line-clamp-2 text-sm font-semibold leading-snug text-brand-ink group-hover:text-brand-navy">{m.name}</span>
+                  <span className="line-clamp-1 sm:line-clamp-2 text-sm font-semibold leading-snug text-brand-ink group-hover:text-brand-navy">{m.name}</span>
                   <span className="mt-0.5 block truncate text-xs text-brand-gray">
                     {m.speaker}
                     {m.date ? ` · ${shortDate(m.date)}` : ""}
