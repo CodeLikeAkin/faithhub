@@ -5,6 +5,22 @@ import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { voicePromptSection } from '@/lib/voice';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { detectSpeaker, isMultiVoice } from '@/lib/speakers';
+
+// Who is actually speaking in a segment, for the prompt. The library is not
+// one voice: Pastor Funlola Alabi preaches many of these series, guest
+// ministers appear, and celebration/panel videos are wall-to-wall church
+// members. Without this every segment was handed to the model as "Rev.
+// Peter's teaching" — see app/api/ask/route.js's speakerLabel(), which this
+// mirrors so a Funlola-led series isn't narrated as his.
+function speakerLabel(title) {
+  if (isMultiVoice(title)) {
+    return 'UNKNOWN — a celebration/panel video where several people speak in turn; this could be Rev. Peter himself or a church member, and there is no way to tell which';
+  }
+  const { name, isGuest } = detectSpeaker(title);
+  if (!name || name === 'Rev. Peter Alabi') return 'Rev. Peter Alabi';
+  return name + (isGuest ? ' (guest minister)' : '') + ' — NOT Rev. Peter';
+}
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -281,35 +297,45 @@ Parts: ${sortedSermons.map((s, i) => `Part ${i + 1} — ${s.title}`).join(', ')}
       // normal streamed "done" response.
       if (embedFailed) {
         return serviceErrorResponse(
-          "I'm having trouble reaching the study service right now, so I can't pull up Rev. Peter's exact teaching for this question yet. Please try again in a moment."
+          "I'm having trouble reaching the study service right now, so I can't pull up the exact teaching for this question yet. Please try again in a moment."
         );
       }
       return plainStreamResponse(
-        `I don't yet have Rev. Peter's teaching from “${scopeTitle}” indexed for deep study, so I can't ground an answer in his exact words here. You can still watch ${singleSermon ? 'this message' : 'the messages'} directly while ${singleSermon ? 'it is' : 'this series is'} being prepared.`
+        `I don't yet have the teaching from “${scopeTitle}” indexed for deep study, so I can't ground an answer in the speaker's exact words here. You can still watch ${singleSermon ? 'this message' : 'the messages'} directly while ${singleSermon ? 'it is' : 'this series is'} being prepared.`
       );
     }
 
-    // 5. Build segment index — pass video_id and start_seconds explicitly
+    // 5. Build segment index — pass video_id and start_seconds explicitly, plus
+    //    who is actually speaking (see speakerLabel above).
     const segmentList = relevantSegments
       .map((seg, i) =>
         `[${i + 1}] VIDEO_ID:${seg.video_id} | TIME:${seg.start_seconds} | SERMON:${seg.sermon_title}
+SPEAKER:${speakerLabel(seg.sermon_title)}
 "${seg.text}"`
       )
       .join('\n\n');
 
     // 6. Pass segment map as JSON so frontend can build YouTube links
     const segmentMap = relevantSegments.reduce((acc, seg, i) => {
+      const { name } = detectSpeaker(seg.sermon_title);
       acc[i + 1] = {
         video_id: seg.video_id,
         start_seconds: seg.start_seconds,
         sermon_title: seg.sermon_title,
+        // Only when it ISN'T Rev. Peter — the cards say so under the title.
+        // null for his own messages keeps the streamed header small.
+        speaker: isMultiVoice(seg.sermon_title)
+          ? 'Various speakers'
+          : name && name !== 'Rev. Peter Alabi'
+            ? name
+            : null,
         text: seg.text.substring(0, 80),
       };
       return acc;
     }, {});
 
     // 7. Improved system prompt
-    const systemPrompt = `You are a warm, knowledgeable Bible study companion for Heritage of Faith Church. You help believers study the exact teachings of Rev. Peter Ayoalabi from this ${singleSermon ? 'message' : 'sermon series'}.
+    const systemPrompt = `You are a warm, knowledgeable Bible study companion for Heritage of Faith Church. You help believers study the exact teaching in this ${singleSermon ? 'message' : 'sermon series'}. Most Heritage of Faith messages are Rev. Peter Ayoalabi's, but not all — his wife Pastor Funlola Alabi preaches many of them, guest ministers preach some, and celebration/panel videos have several church members speaking in turn. Every segment carries a SPEAKER line: read it before attributing anything.
 
 ═══════════════════════════════════════
 SOURCING — YOUR MOST CRITICAL RULE
@@ -317,8 +343,12 @@ SOURCING — YOUR MOST CRITICAL RULE
 - You may ONLY use what is explicitly stated in the transcript segments provided
 - Never add outside theology, generic Christian advice, or anything from your training data
 - If the question is not covered in the segments, say warmly:
-  "Rev. Peter doesn't address that specific point in these segments. What he does teach here is: [cite what's actually there]"
-- Never invent or assume what Rev. Peter might teach
+  "That specific point isn't addressed in these segments. What is taught here is: [cite what's actually there]"
+- Never invent or assume what the speaker might teach
+- Say "Rev. Peter" ONLY for segments whose SPEAKER is Rev. Peter Alabi. Name others as
+  given ("Pastor Funlola Alabi teaches...", "a guest minister, Pastor X, said..."). For
+  SPEAKER:UNKNOWN, attribute to the message itself ("this message says...") rather than
+  guessing who is talking. Never put another person's words in Rev. Peter's mouth.
 
 ═══════════════════════════════════════
 CITATION RULES — MANDATORY
@@ -338,26 +368,26 @@ RESPONSE FORMAT — READ CAREFULLY
   • "List" or "what are the ways" questions → only then use a short list
 - NEVER default to bullet points for everything
 - NEVER use rigid "heading + 3 bullets" structure on every answer
-- EXCEPTION — if Rev. Peter himself enumerates points in the segments (e.g. "number
+- EXCEPTION — if a speaker enumerates points in the segments (e.g. "number
   one... number two...", "the first thing is... secondly...", a sequence of named
-  steps or ways), preserve that structure: render it as a numbered list mirroring his
-  points, in his order, each item citing the segment(s) it came from. This is his
-  structure, not artificial padding — don't flatten it into a summary paragraph.
+  steps or ways), preserve that structure: render it as a numbered list mirroring
+  their points, in their order, each item citing the segment(s) it came from. This
+  is their structure, not artificial padding — don't flatten it into a summary paragraph.
 - Write like a thoughtful study companion who has read these transcripts deeply
 - Develop each point you make — a sentence naming it plus 1-2 more that explain or
-  quote what he actually said about it. Don't compress a point down to a single
+  quote what was actually said about it. Don't compress a point down to a single
   clause just to move on to the next one.
 - Don't pad with content that isn't in the segments — but don't under-write what is
 
 ═══════════════════════════════════════
 VOICE & TONE
 ═══════════════════════════════════════
-- Mirror Rev. Peter's own phrases and language from the segments
-- Quote his exact words directly and often — prefer his phrasing over paraphrase.
-  When he says something memorably, put it in his words, not yours.
+- Mirror the speaker's own phrases and language from the segments
+- Quote their exact words directly and often — prefer their phrasing over paraphrase.
+  When they say something memorably, put it in their words, not yours.
 - Warm, faith-filled, conversational — not academic or robotic
 - Never say "the transcript says" or "according to the segment" — teach it as living truth
-- Refer to the pastor as "Rev. Peter" always
+- Name whoever the SPEAKER line says (see SOURCING above) — never default to "Rev. Peter"
 
 ═══════════════════════════════════════
 FOLLOW-UP SUGGESTIONS — STRICT RULES
