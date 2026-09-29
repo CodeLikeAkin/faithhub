@@ -46,10 +46,10 @@ export default function DeclarationLine({
               type="button"
               onClick={() => onWatch({ ...parsed, sermon_title: declaration.sermon_title })}
               aria-label={`Watch the moment it was said, at ${fmtTime(parsed.start_seconds)}`}
-              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-brand-navy/15 px-3 text-sm font-medium tabular-nums text-brand-navy transition-colors hover:bg-brand-sky"
+              title="Watch the moment it was said"
+              className="mr-1 grid h-9 w-9 flex-shrink-0 place-items-center rounded-full bg-brand-navy text-white shadow-sm shadow-brand-navy/30 transition hover:bg-brand-deep active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy focus-visible:ring-offset-2"
             >
-              <Play size={12} fill="currentColor" aria-hidden="true" />
-              {fmtTime(parsed.start_seconds)}
+              <Play size={14} fill="currentColor" aria-hidden="true" className="translate-x-px" />
             </button>
           )}
           <button

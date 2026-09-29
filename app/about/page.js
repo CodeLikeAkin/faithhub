@@ -16,6 +16,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { DotGrid, Rings } from "@/components/Decor";
+import ToolShell from "@/components/shell/ToolShell";
 import FeedbackForm from "./FeedbackForm";
 
 export const metadata = {
@@ -230,7 +231,8 @@ export default async function AboutPage() {
   ];
 
   return (
-    <main id="main-content" className="min-h-screen overflow-x-clip bg-white">
+    <ToolShell kind="about" title="About & feedback">
+    <div className="min-h-0 flex-1 overflow-y-auto overflow-x-clip bg-white custom-scrollbar">
       {/* ── hero ── */}
       <section className="px-3 pt-3 sm:px-5 sm:pt-5">
         <div className="relative mx-auto max-w-[1400px] overflow-hidden rounded-[1.75rem] bg-brand-deep sm:rounded-[2.5rem]">
@@ -240,7 +242,7 @@ export default async function AboutPage() {
             <DotGrid dark className="inset-0 [mask-image:radial-gradient(ellipse_at_top_left,black,transparent_55%)]" />
           </div>
 
-          <div className="relative z-10 grid items-center gap-14 px-6 pb-12 pt-28 sm:px-10 sm:pt-36 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-8 lg:px-16 lg:pb-16 lg:pt-40">
+          <div className="relative z-10 grid items-center gap-14 px-6 pb-12 pt-14 sm:px-10 sm:pt-16 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-8 lg:px-16 lg:pb-16 lg:pt-20">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/60 animate-in fade-in fill-mode-both duration-700 motion-reduce:animate-none">
                 About FaithHub
@@ -491,7 +493,7 @@ export default async function AboutPage() {
       {/* ── feedback ── */}
       <section id="feedback" className="scroll-mt-20 border-t border-brand-navy/10 bg-brand-light">
         <div className="mx-auto grid max-w-[1400px] gap-12 px-4 py-20 sm:px-6 sm:py-28 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-20">
-          <div className="lg:sticky lg:top-28 lg:self-start">
+          <div className="lg:sticky lg:top-8 lg:self-start">
             <SectionLabel number="05">Feedback</SectionLabel>
             <h2 className="mt-5 font-display text-4xl font-medium leading-tight tracking-tight text-brand-ink sm:text-5xl">
               Tell us what to fix or add.
@@ -532,6 +534,7 @@ export default async function AboutPage() {
           </Link>
         </div>
       </footer>
-    </main>
+    </div>
+    </ToolShell>
   );
 }

@@ -6,7 +6,7 @@ import { fmtDate, plainText } from "@/lib/ask-format";
 import { EXAMPLE_THEMES } from "@/lib/ask-examples";
 import { byRecent } from "@/lib/studies";
 import { displayTitle } from "@/lib/titles";
-import { DotGrid, Rings } from "@/components/Decor";
+import Masthead from "@/components/shell/Masthead";
 import Composer from "./Composer";
 
 export const studyWhere = (s) => displayTitle(s.context?.seriesTitle || s.context?.sermonTitle) || "Everything";
@@ -23,31 +23,21 @@ export default function AskEmptyState({ onAsk, busy, studies, inputRef, onDelete
 
   return (
     <div className="relative">
-      <section className="relative overflow-hidden px-4 pb-14 pt-12 sm:px-8 sm:pb-20 sm:pt-20">
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-          <div className="absolute inset-x-0 top-0 h-[28rem] bg-gradient-to-b from-brand-sky to-white" />
-          <DotGrid className="inset-x-0 top-0 h-[28rem] [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]" />
-          <Rings className="absolute -right-48 -top-48 h-[36rem] w-[36rem] text-brand-navy/[0.07]" />
+      <Masthead
+        className="mx-auto max-w-5xl px-3 pb-12 pt-3 sm:px-8 sm:pb-16 sm:pt-8"
+        title="Ask the Word"
+        description="Ask anything Rev. Peter has taught. Every answer comes from his recorded messages, with the moments to watch."
+      >
+        <div className="mt-7 max-w-3xl text-left">
+          <Composer
+            variant="hero"
+            onSubmit={onAsk}
+            busy={busy}
+            placeholder="What’s on your heart today?"
+            inputRef={inputRef}
+          />
         </div>
-        <div className="relative mx-auto max-w-3xl text-center">
-          <h1 className="font-display text-5xl font-medium tracking-tight text-brand-ink sm:text-6xl">
-            Ask the Word
-          </h1>
-          <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-brand-gray">
-            Ask anything Rev. Peter has taught. Every answer comes from his recorded
-            messages, with the moments to watch.
-          </p>
-          <div className="mt-9 text-left">
-            <Composer
-              variant="hero"
-              onSubmit={onAsk}
-              busy={busy}
-              placeholder="What’s on your heart today?"
-              inputRef={inputRef}
-            />
-          </div>
-        </div>
-      </section>
+      </Masthead>
 
       <section aria-labelledby="examples-heading" className="mx-auto max-w-5xl px-4 pb-16 sm:px-8">
         <h2 id="examples-heading" className="font-display text-2xl font-medium text-brand-ink sm:text-3xl">

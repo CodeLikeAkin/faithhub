@@ -2,30 +2,38 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
+import { MoreHorizontal, PanelLeft, X } from "lucide-react";
 import { useMediaQuery, PANEL_DOCKED_QUERY } from "@/lib/useMediaQuery";
 import { cn } from "@/lib/utils";
-import ToolRail from "./ToolRail";
+import ToolRail, { TOOLS } from "./ToolRail";
 import { deleteStudyWithUndo, useToast } from "./Toast";
 
 /**
- * The frame every tool page shares (Ask, lessons, series). Replaces the global
- * Navbar on these routes (Navbar hides itself there).
+ * The frame every page shares (Home, the tools, lessons, Vision, About).
+ * Replaces the global Navbar on these routes (Navbar hides itself there).
  *
- *   [ rail ] [ header / main ] [ panel ]
+ *   [ rail ] [ header / main / phone tabs ] [ panel ]
  *
- * - rail: 248px on desktop (collapsible to a 72px icon strip); a drawer from
- *   the left below lg.
- * - panel (optional): a 400px column from xl; a bottom sheet below that. It is
- *   ONE element whichever way it shows, so its state (a streaming answer, its
- *   scroll) survives a resize.
+ * - rail (navy): 248px from lg, foldable to a 72px icon strip or hidden
+ *   entirely; below lg it becomes a bottom tab bar, with the full rail
+ *   (studies, Vision, About) in a drawer behind the header's "More" button.
+ * - panel (optional): a docked column from lg (360px, 400px from xl); a bottom
+ *   sheet below that. It is ONE element whichever way it shows, so its state
+ *   (a streaming answer, its scroll) survives a resize.
  * - While a drawer or sheet is open the columns behind it are `inert` and the
  *   body can't scroll; Escape closes it.
  *
- * Rail preference is remembered per page kind ("hof-rail-ask" for every tool
- * page, "hof-rail-lesson" for series/lesson pages): tool pages default
- * expanded, lesson pages default to the icon strip below 2xl so the video
- * gets the room.
+ * When the rail is open, folded or hidden:
+ *   - open on browsing pages (Home, Ask, the catalogue, Declarations, The Word,
+ *     Vision, About) — it is the map of the app;
+ *   - folded to icons on series/lesson pages below 2xl, so the video and the
+ *     docked Ask panel both fit;
+ *   - hidden only when the reader chooses (the header's sidebar button).
+ * The reader's choice is remembered per page kind ("hof-rail-ask" for every
+ * other page, "hof-rail-lesson" for series/lesson pages); showing a hidden
+ * rail again returns to these defaults.
  *
  * `overlay` renders OUTSIDE the inert columns (a page's full-screen layer,
  * e.g. Declarations' Speak mode, and its toasts); `coveredByOverlay` makes
@@ -36,14 +44,14 @@ import { deleteStudyWithUndo, useToast } from "./Toast";
 const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 function useRailPref(kind) {
-  const [pref, setPref] = useState(null); // null | "open" | "closed"
+  const [pref, setPref] = useState(null); // null (the page's default) | "open" | "closed" | "hidden"
   const key = `hof-rail-${kind}`;
   // Read before the first paint: most tool pages mount their own shell on
   // navigation, and a passive effect let a collapsed rail flash open first.
   useIsoLayoutEffect(() => {
     try {
       const v = localStorage.getItem(key);
-      if (v === "open" || v === "closed") setPref(v);
+      if (v === "open" || v === "closed" || v === "hidden") setPref(v);
     } catch {
       /* storage unavailable */
     }
@@ -52,7 +60,8 @@ function useRailPref(kind) {
     (v) => {
       setPref(v);
       try {
-        localStorage.setItem(key, v);
+        if (v) localStorage.setItem(key, v);
+        else localStorage.removeItem(key);
       } catch {
         /* storage unavailable */
       }
@@ -62,7 +71,7 @@ function useRailPref(kind) {
   return [pref, save];
 }
 
-const RAIL_WIDTH = { expanded: "w-[248px]", collapsed: "w-[72px]", auto: "w-[72px] 2xl:w-[248px]" };
+const RAIL_WIDTH = { expanded: "w-[248px]", collapsed: "w-[72px]", auto: "w-[72px] 2xl:w-[248px]", hidden: "w-0" };
 
 // Progressive resistance past a boundary (Apple's rubber-banding) — used so the
 // bottom sheet gives a little when dragged *up* past its open position instead
@@ -100,7 +109,17 @@ export default function ToolShell({
   const sheetRef = useRef(null);
   const sheetDragRef = useRef(null); // live { startY, lastY, lastT, vy, height } while dragging the sheet
 
-  const mode = pref === "open" ? "expanded" : pref === "closed" ? "collapsed" : kind === "lesson" ? "auto" : "expanded";
+  const pathname = usePathname() || "";
+  const mode =
+    pref === "open"
+      ? "expanded"
+      : pref === "closed"
+      ? "collapsed"
+      : pref === "hidden"
+      ? "hidden"
+      : kind === "lesson"
+      ? "auto"
+      : "expanded";
 
   // Width animates only for changes the reader makes here, never on mount.
   const [railAnimate, setRailAnimate] = useState(false);
@@ -113,17 +132,10 @@ export default function ToolShell({
     setPref(railExpandedNow() ? "closed" : "open");
   };
 
-  // Whenever the rail is expanded (opened by the reader, or the page default,
-  // or just arrived at from the rail), the next click outside it tucks it away.
-  // Runs on click (not pointerdown) so the click lands on what the reader
-  // aimed at before the layout shifts under it. Clicks inside the rail itself
-  // don't count.
-  const collapseRailAfterPageClick = (e) => {
-    if (e.target.closest?.("[data-tool-rail]")) return;
-    if (window.matchMedia("(min-width: 1024px)").matches && railExpandedNow()) {
-      setRailAnimate(true);
-      setPref("closed");
-    }
+  // Hide the rail entirely, or bring it back to this page's default.
+  const toggleHidden = () => {
+    setRailAnimate(true);
+    setPref(mode === "hidden" ? null : "hidden");
   };
 
   // Panel visibility: null = automatic (docked column from xl, closed sheet
@@ -218,41 +230,53 @@ export default function ToolShell({
   const inertProps = overlayOpen || coveredByOverlay ? { inert: "" } : {};
 
   return (
-    <div onClickCapture={collapseRailAfterPageClick} className="flex h-dvh overflow-hidden bg-white text-brand-ink">
+    <div className="flex h-dvh overflow-hidden bg-white text-brand-ink">
       {/* Rail — desktop */}
       <aside
         data-tool-rail=""
         {...inertProps}
+        {...(mode === "hidden" ? { "aria-hidden": true, inert: "" } : {})}
         aria-label="FaithHub"
         className={cn(
-          "hidden flex-shrink-0 overflow-hidden border-r border-brand-navy/10 bg-brand-sky/40 lg:block",
-          railAnimate && "transition-[width] duration-200 ease-out",
+          "hidden flex-shrink-0 overflow-hidden bg-brand-navy lg:block",
+          railAnimate && "transition-[width] duration-300 ease-out",
           RAIL_WIDTH[mode]
         )}
       >
-        <ToolRail
-          mode={mode}
-          onToggleCollapse={toggleCollapse}
-          activeStudyId={activeStudyId}
-          activeBlockId={activeBlockId}
-          onJumpToBlock={onJumpToBlock}
-          onDeleteStudy={onDeleteStudy}
-          onOpenStudy={onOpenStudy}
-        />
+        {/* Fixed inner width while hidden, so the rail slides away instead of
+            re-wrapping its contents as it narrows. */}
+        <div className={cn("h-full", mode === "hidden" && "w-[248px]")}>
+          <ToolRail
+            mode={mode === "hidden" ? "expanded" : mode}
+            onToggleCollapse={toggleCollapse}
+            activeStudyId={activeStudyId}
+            activeBlockId={activeBlockId}
+            onJumpToBlock={onJumpToBlock}
+            onDeleteStudy={onDeleteStudy}
+            onOpenStudy={onOpenStudy}
+          />
+        </div>
       </aside>
 
-      {/* Header + main */}
+      {/* Header + main + phone tabs */}
       <div {...inertProps} className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 flex-shrink-0 items-center gap-1.5 border-b border-brand-navy/10 bg-white px-2 sm:h-16 sm:gap-2 sm:px-4 lg:px-6">
-          <button
-            ref={menuButtonRef}
-            type="button"
-            onClick={() => setRailOpen(true)}
-            aria-label="Open menu"
-            aria-expanded={railOpen}
-            className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-full text-brand-navy transition hover:bg-brand-sky active:scale-95 lg:hidden"
+        <header className="flex h-14 flex-shrink-0 items-center gap-1.5 border-b border-brand-navy/10 bg-white px-3 sm:h-16 sm:gap-2 sm:px-4 lg:px-6">
+          <Link
+            href="/"
+            aria-label="FaithHub home"
+            className="-ml-1 flex h-10 flex-shrink-0 items-center rounded-lg px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy lg:hidden"
           >
-            <Menu size={20} aria-hidden="true" />
+            <Image src="/hofng-logo.png" alt="" width={208} height={146} className="h-7 w-auto" />
+          </Link>
+          <button
+            type="button"
+            onClick={toggleHidden}
+            aria-label={mode === "hidden" ? "Show sidebar" : "Hide sidebar"}
+            title={mode === "hidden" ? "Show sidebar" : "Hide sidebar"}
+            aria-pressed={mode !== "hidden"}
+            className="-ml-2 hidden h-9 w-9 flex-shrink-0 place-items-center rounded-lg text-brand-navy transition hover:bg-brand-sky active:scale-95 lg:grid"
+          >
+            <PanelLeft size={18} aria-hidden="true" />
           </button>
           <div className="flex min-w-0 flex-1 items-center gap-2 text-sm sm:text-base">
             {back && (
@@ -266,21 +290,61 @@ export default function ToolShell({
             <TitleTag className="min-w-0 truncate font-semibold text-brand-ink">{title}</TitleTag>
           </div>
           {actions && <div className="flex flex-shrink-0 items-center gap-1.5">{actions}</div>}
+          <button
+            ref={menuButtonRef}
+            type="button"
+            onClick={() => setRailOpen(true)}
+            aria-label="More: your studies, Vision, About"
+            title="More"
+            aria-expanded={railOpen}
+            className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-full text-brand-navy transition hover:bg-brand-sky active:scale-95 lg:hidden"
+          >
+            <MoreHorizontal size={22} aria-hidden="true" />
+          </button>
         </header>
 
         <main id="main-content" className="flex min-h-0 min-w-0 flex-1 flex-col">
           {children}
         </main>
+
+        {/* Phone and small-tablet sections — the rail's job below lg */}
+        <nav
+          aria-label="Sections"
+          className="flex flex-shrink-0 justify-around bg-brand-navy px-1 pt-1.5 lg:hidden"
+          style={{ paddingBottom: "max(0.375rem, env(safe-area-inset-bottom))" }}
+        >
+          {TOOLS.map(({ short, href, icon: Icon, match }) => {
+            const active = match(pathname);
+            return (
+              <Link
+                key={href}
+                href={href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl py-1.5 text-xs font-medium transition-colors active:scale-95",
+                  active ? "text-white" : "text-white/60 hover:text-white"
+                )}
+              >
+                <span
+                  aria-hidden="true"
+                  className={cn("h-0.5 w-7 rounded-full bg-white transition-opacity", active ? "opacity-100" : "opacity-0")}
+                />
+                <Icon size={21} aria-hidden="true" />
+                {short}
+              </Link>
+            );
+          })}
+        </nav>
       </div>
 
-      {/* Panel — docked column from xl, bottom sheet below */}
+      {/* Panel — docked column from lg, bottom sheet below */}
       {panel && (
         <>
           {sheetOpen && (
             <div
               aria-hidden="true"
               onClick={() => onPanelOpenChange?.(false)}
-              className="fixed inset-0 z-30 bg-brand-ink/40 xl:hidden"
+              className="fixed inset-0 z-30 bg-brand-ink/40 lg:hidden"
             />
           )}
           <aside
@@ -292,11 +356,11 @@ export default function ToolShell({
             className={cn(
               "fixed inset-x-0 bottom-0 top-[calc(env(safe-area-inset-top)+2.75rem)] z-40 flex min-h-0 flex-col overflow-hidden rounded-t-[1.75rem] bg-white shadow-2xl outline-none transition-transform duration-300",
               sheetOpen ? "translate-y-0" : "pointer-events-none translate-y-full",
-              "xl:pointer-events-auto xl:static xl:z-auto xl:w-[400px] xl:flex-shrink-0 xl:translate-y-0 xl:rounded-none xl:border-l xl:border-brand-navy/10 xl:shadow-none xl:transition-none",
-              panelVisibleDocked ? "xl:flex" : "xl:hidden"
+              "lg:pointer-events-auto lg:static lg:z-auto lg:w-[360px] lg:flex-shrink-0 lg:translate-y-0 lg:rounded-none lg:border-l lg:border-brand-navy/10 lg:shadow-none lg:transition-none xl:w-[400px]",
+              panelVisibleDocked ? "lg:flex" : "lg:hidden"
             )}
           >
-            {/* Grabber — drag down to dismiss (below xl only; the docked column
+            {/* Grabber — drag down to dismiss (below lg only; the docked column
                 doesn't move). aria-hidden: Escape and the scrim already close it. */}
             <div
               aria-hidden="true"
@@ -304,7 +368,7 @@ export default function ToolShell({
               onPointerMove={onSheetDrag}
               onPointerUp={onSheetRelease}
               onPointerCancel={onSheetRelease}
-              className="flex flex-shrink-0 touch-none cursor-grab items-center justify-center py-2.5 active:cursor-grabbing xl:hidden"
+              className="flex flex-shrink-0 touch-none cursor-grab items-center justify-center py-2.5 active:cursor-grabbing lg:hidden"
             >
               <span className="h-1 w-9 rounded-full bg-brand-navy/20" />
             </div>
@@ -327,7 +391,7 @@ export default function ToolShell({
         aria-label="Menu"
         {...(!railOpen ? { inert: "", "aria-hidden": true } : {})}
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-[min(20rem,86vw)] bg-brand-sky shadow-2xl transition-transform duration-300 lg:hidden",
+          "fixed inset-y-0 left-0 z-50 w-[min(20rem,86vw)] bg-brand-navy shadow-2xl transition-transform duration-300 lg:hidden",
           railOpen ? "translate-x-0" : "-translate-x-full"
         )}
         style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
@@ -337,7 +401,7 @@ export default function ToolShell({
           type="button"
           onClick={() => setRailOpen(false)}
           aria-label="Close menu"
-          className="absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full text-brand-gray transition hover:bg-white hover:text-brand-navy active:scale-95"
+          className="absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white active:scale-95"
           style={{ marginTop: "env(safe-area-inset-top)" }}
         >
           <X size={20} aria-hidden="true" />

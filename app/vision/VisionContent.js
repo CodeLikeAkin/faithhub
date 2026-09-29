@@ -211,34 +211,37 @@ function Reveal({ as: Tag = "div", className, delay = 0, children, ...rest }) {
   );
 }
 
-function ReadingProgress() {
+// Tracks the page's own scroll area (the app frame scrolls its content
+// column, not the window) and pins a thin bar to the top of it.
+function ReadingProgress({ scrollRef }) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
     let frame = 0;
     const update = () => {
       frame = 0;
-      const doc = document.documentElement;
-      const max = doc.scrollHeight - doc.clientHeight;
-      setProgress(max > 0 ? Math.min(doc.scrollTop / max, 1) : 0);
+      const max = el.scrollHeight - el.clientHeight;
+      setProgress(max > 0 ? Math.min(el.scrollTop / max, 1) : 0);
     };
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(update);
     };
     update();
-    window.addEventListener("scroll", onScroll, { passive: true });
+    el.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
     return () => {
-      window.removeEventListener("scroll", onScroll);
+      el.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
       cancelAnimationFrame(frame);
     };
-  }, []);
+  }, [scrollRef]);
 
   return (
     <div
       aria-hidden="true"
-      className="fixed inset-x-0 top-0 z-[60] h-1 origin-left bg-brand-navy"
+      className="sticky top-0 z-30 -mb-1 h-1 origin-left bg-brand-navy"
       style={{ transform: `scaleX(${progress})` }}
     />
   );
@@ -325,7 +328,7 @@ function PartHeader({ id, number, label, icon: Icon, title, aside, children }) {
     <Reveal
       as="header"
       id={id}
-      className="relative scroll-mt-32 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-16"
+      className="relative scroll-mt-8 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-16"
     >
       <div>
         <div className="flex items-end gap-4 sm:gap-6">
@@ -374,7 +377,7 @@ function Mark({ number, refs, title, children }) {
   return (
     <Reveal as="article" className="relative grid gap-6 md:grid-cols-[3.5rem_minmax(0,1fr)] md:gap-10">
       <div className="hidden md:block">
-        <div className="sticky top-28 grid h-14 w-14 place-items-center rounded-full border-2 border-brand-navy bg-white font-display text-2xl text-brand-navy shadow-[0_0_0_8px_#fff,0_12px_30px_-10px_rgba(23,58,104,0.45)]">
+        <div className="sticky top-8 grid h-14 w-14 place-items-center rounded-full border-2 border-brand-navy bg-white font-display text-2xl text-brand-navy shadow-[0_0_0_8px_#fff,0_12px_30px_-10px_rgba(23,58,104,0.45)]">
           {number}
         </div>
       </div>
@@ -409,7 +412,7 @@ function Mark({ number, refs, title, children }) {
           <div className="flex max-w-2xl flex-col gap-4 leading-relaxed text-brand-ink">{children}</div>
 
           <aside className="order-first lg:order-none">
-            <div className="rounded-2xl bg-brand-sky/60 p-4 lg:sticky lg:top-28 lg:p-5">
+            <div className="rounded-2xl bg-brand-sky/60 p-4 lg:sticky lg:top-8 lg:p-5">
               <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-brand-navy">
                 <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
                 Scripture
@@ -478,10 +481,11 @@ function SonshipPoint({ index, heading, children }) {
 
 export default function VisionContent() {
   const [watching, setWatching] = useState(null);
+  const scrollRef = useRef(null);
 
   return (
-    <main id="main-content" className="min-h-screen overflow-x-clip bg-white">
-      <ReadingProgress />
+    <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overflow-x-clip bg-white custom-scrollbar">
+      <ReadingProgress scrollRef={scrollRef} />
 
       {/* ── hero ── */}
       <section className="px-3 pt-3 sm:px-5 sm:pt-5">
@@ -492,7 +496,7 @@ export default function VisionContent() {
             <DotGrid className="inset-0 [mask-image:radial-gradient(ellipse_at_top_right,black,transparent_60%)]" />
           </div>
 
-          <div className="relative z-10 grid items-center gap-16 px-6 pb-16 pt-28 sm:px-10 sm:pt-36 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-10 lg:px-16 lg:pb-20 lg:pt-40">
+          <div className="relative z-10 grid items-center gap-16 px-6 pb-16 pt-14 sm:px-10 sm:pt-16 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-10 lg:px-16 lg:pb-20 lg:pt-20">
             <div>
               <h1 className="font-display text-5xl font-medium leading-[1.02] tracking-tight text-brand-ink text-balance animate-in fade-in slide-in-from-bottom-4 fill-mode-both duration-700 motion-reduce:animate-none sm:text-6xl lg:text-7xl">
                 Raising{" "}
@@ -1206,7 +1210,7 @@ export default function VisionContent() {
           </PartHeader>
 
           <div className="mt-12 grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
-            <Reveal className="lg:sticky lg:top-28 lg:self-start">
+            <Reveal className="lg:sticky lg:top-8 lg:self-start">
               <figure className="relative overflow-hidden rounded-[2rem] border border-brand-navy/10 bg-white p-8 shadow-[0_30px_60px_-40px_rgba(23,58,104,0.35)] sm:p-10">
                 <Rings className="absolute -bottom-28 -right-28 h-80 w-80 text-brand-navy/[0.07]" />
                 <QuoteGlyph className="relative h-9 w-12 text-brand-navy" />
@@ -1290,6 +1294,6 @@ export default function VisionContent() {
       </p>
 
       <VideoModal seg={watching} onClose={() => setWatching(null)} />
-    </main>
+    </div>
   );
 }

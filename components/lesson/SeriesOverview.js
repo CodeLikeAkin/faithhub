@@ -145,7 +145,7 @@ export default function SeriesOverview({ seriesId }) {
             label={panelShown ? "Hide Ask" : "Ask"}
             aria-pressed={panelShown}
             onClick={() => setPanelOpen(!panelShown)}
-            className="hidden xl:inline-flex"
+            className="hidden lg:inline-flex"
           />
         ) : null
       }
@@ -243,7 +243,7 @@ export default function SeriesOverview({ seriesId }) {
                           </span>
                           {/* No `block` beside line-clamp-* — it overrides the -webkit-box
                               display the clamp needs, and the text spills instead of clamping. */}
-                          <span className="mt-1 line-clamp-2 font-display text-lg font-medium leading-snug text-brand-ink sm:text-xl">
+                          <span className="mt-1 line-clamp-1 sm:line-clamp-2 font-display text-lg font-medium leading-snug text-brand-ink sm:text-xl">
                             {partTitle(p.title, series.title)}
                           </span>
                           {p.summary && (
@@ -330,7 +330,7 @@ export default function SeriesOverview({ seriesId }) {
           /* Icon-only on a phone: the labelled pill ran half the width of the
              screen and sat on top of whatever part you were reading. The
              label comes back where there's room for it. */
-          className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-20 inline-flex h-14 w-14 items-center justify-center gap-2 rounded-full bg-brand-navy text-sm font-bold text-white shadow-xl shadow-brand-navy/30 transition-colors hover:bg-brand-deep sm:h-auto sm:w-auto sm:px-5 sm:py-3.5 xl:hidden"
+          className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-20 inline-flex h-14 w-14 items-center justify-center gap-2 rounded-full bg-brand-navy text-sm font-bold text-white shadow-xl shadow-brand-navy/30 transition-colors hover:bg-brand-deep sm:h-auto sm:w-auto sm:px-5 sm:py-3.5 lg:hidden"
         >
           <Sparkles size={16} aria-hidden="true" />
           <span className="hidden sm:inline">Ask about this series</span>

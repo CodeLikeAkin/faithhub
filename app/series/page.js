@@ -11,6 +11,7 @@ import { cleanTitle, parseSermonDate, partTitle, seriesName } from "@/lib/titles
 import { detectSpeaker } from "@/lib/speakers";
 import { clientIdHeader } from "@/lib/client-id";
 import { cn } from "@/lib/utils";
+import Masthead from "@/components/shell/Masthead";
 
 /**
  * /series — the catalog: the latest series featured, then a row per year of
@@ -32,22 +33,23 @@ const fmtRange = (start, end) => {
 
 const fmtDay = (d) => (d ? d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) : "");
 
-/**
- * The cover runs the full width of the card — no inset frame eating into the
- * picture — with the words small underneath. The date leads so that a title of
- * one line leaves its spare room at the foot of the card rather than as a gap
- * between the two lines.
- */
+const fmtMonth = (d) => (d ? d.toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" }) : "");
+
+// Shared by the series and guest cards: the art stands on its own (rounded,
+// no frame around the card), a small dark tag sits on the picture, and the
+// words run underneath — bold title, then a grey line.
+const cardLink =
+  "group flex min-w-0 flex-col rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy focus-visible:ring-offset-4";
+const cardArt = "relative block aspect-video w-full flex-shrink-0 overflow-hidden rounded-xl";
+const cardTag = "absolute bottom-2 right-2 rounded-lg bg-black/60 px-2 py-1 text-xs font-semibold text-white backdrop-blur-sm";
+const cardTitle =
+  "mt-2.5 line-clamp-1 sm:line-clamp-2 hyphens-auto break-words text-sm font-semibold leading-snug text-brand-ink transition-colors group-hover:text-brand-navy sm:text-base";
+const cardMeta = "mt-1 flex min-w-0 items-baseline justify-between gap-2 text-xs text-brand-gray sm:text-sm";
+
 function SeriesCover({ s, className }) {
   return (
-    <Link
-      href={`/series/${s.id}`}
-      className={cn(
-        "group flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-inset ring-brand-navy/10 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_30px_50px_-30px_rgba(16,42,78,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy",
-        className
-      )}
-    >
-      <span className="relative block aspect-video w-full flex-shrink-0 overflow-hidden bg-brand-deep">
+    <Link href={`/series/${s.id}`} className={cn(cardLink, className)}>
+      <span className={cn(cardArt, "bg-brand-deep")}>
         {/* Shows through only when no part has a live thumbnail. */}
         <DotGrid dark className="inset-0" />
         <YtThumb
@@ -55,16 +57,16 @@ function SeriesCover({ s, className }) {
           quality="mqdefault"
           className="relative h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <span className="absolute bottom-1.5 right-1.5 rounded-md bg-brand-ink/80 px-1.5 py-0.5 text-xs font-semibold text-white">
+        <span className={cardTag}>
           {s.parts} {s.parts === 1 ? "part" : "parts"}
         </span>
       </span>
-      <span className="block px-2.5 pb-2.5 pt-2">
-        <span className="block text-xs text-brand-gray">{s.range || " "}</span>
-        <span className="mt-0.5 line-clamp-2 hyphens-auto break-words font-display text-sm font-medium leading-snug text-brand-ink sm:text-base">
-          {s.title}
+      <span className={cardTitle}>{s.title}</span>
+      {s.range && (
+        <span className={cardMeta}>
+          <span className="truncate">{s.range}</span>
         </span>
-      </span>
+      )}
     </Link>
   );
 }
@@ -78,14 +80,8 @@ function GuestCard({ g, className }) {
   while (isDash(words[words.length - 1])) words.pop();
   const title = words.join(" ") || full;
   return (
-    <Link
-      href={`/sermon/${g.id}`}
-      className={cn(
-        "group flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-inset ring-brand-navy/10 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_30px_50px_-30px_rgba(16,42,78,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy",
-        className
-      )}
-    >
-      <span className="relative block aspect-video w-full flex-shrink-0 overflow-hidden bg-brand-sky">
+    <Link href={`/sermon/${g.id}`} className={cn(cardLink, className)}>
+      <span className={cn(cardArt, "bg-brand-sky")}>
         {g.youtube_video_id && (
           <img
             src={`https://img.youtube.com/vi/${g.youtube_video_id}/mqdefault.jpg`}
@@ -95,10 +91,10 @@ function GuestCard({ g, className }) {
           />
         )}
       </span>
-      <span className="block px-2.5 pb-2.5 pt-2">
-        <span className="block text-xs text-brand-gray">{g.date ? fmtDay(g.date) : " "}</span>
-        <span className="mt-0.5 block truncate font-display text-sm font-medium leading-tight text-brand-ink sm:text-base">{g.speaker}</span>
-        <span className="mt-0.5 line-clamp-2 text-xs text-brand-gray">{title}</span>
+      <span className={cardTitle}>{title}</span>
+      <span className={cardMeta}>
+        <span className="truncate">{g.speaker}</span>
+        {g.date && <span className="flex-shrink-0">{fmtMonth(g.date)}</span>}
       </span>
     </Link>
   );
@@ -130,7 +126,7 @@ function MessageRow({ m }) {
       <span className="min-w-0 flex-1">
         {/* No `block` beside line-clamp-* — it overrides the -webkit-box
             display the clamp needs, and the text spills instead of clamping. */}
-        <span className="line-clamp-2 text-sm font-semibold leading-snug text-brand-ink group-hover:text-brand-navy">
+        <span className="line-clamp-1 sm:line-clamp-2 text-sm font-semibold leading-snug text-brand-ink group-hover:text-brand-navy">
           {m.title}
         </span>
         {meta && <span className="mt-0.5 block truncate text-xs text-brand-gray">{meta}</span>}
@@ -380,16 +376,16 @@ export default function SeriesBrowsePage() {
   return (
     <ToolShell kind="series" title="Series Study" titleAs="p">
       <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
-        <header className="mx-auto flex max-w-[1400px] flex-col gap-6 px-4 pt-10 sm:px-8 sm:pt-14 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h1 className="font-display text-5xl font-medium tracking-tight text-brand-ink sm:text-6xl">Series Study</h1>
-            <p className="mt-3 text-base text-brand-gray">
-              {series?.length
-                ? `${series.length} series · ${totalMessages} messages, each one a course to study and ask about.`
-                : "Rev. Peter’s teaching, series by series."}
-            </p>
-          </div>
-          <div className="relative w-full lg:w-96">
+        <Masthead
+          className="mx-auto max-w-[1400px] px-3 pt-3 sm:px-8 sm:pt-8"
+          title="Series Study"
+          description={
+            series?.length
+              ? `${series.length} series · ${totalMessages} messages, each one a course to study and ask about.`
+              : "Rev. Peter’s teaching, series by series."
+          }
+        >
+          <div className="relative mt-6 w-full max-w-xl">
             <Search size={18} aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-brand-gray" />
             <input
               type="search"
@@ -397,7 +393,7 @@ export default function SeriesBrowsePage() {
               onChange={(e) => updateQuery(e.target.value)}
               placeholder="Search every series and message"
               aria-label="Search every series and message"
-              className="h-12 w-full rounded-full border border-brand-navy/15 bg-white pl-11 pr-11 text-base text-brand-ink placeholder:text-brand-gray/70 focus:border-brand-navy/40 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+              className="h-12 w-full rounded-full border border-white bg-white pl-11 pr-11 text-base text-brand-ink shadow-[0_18px_40px_-20px_rgba(0,0,0,0.6)] placeholder:text-brand-gray/80 focus:outline-none focus:ring-4 focus:ring-white/25 [&::-webkit-search-cancel-button]:hidden"
             />
             {query && (
               <button
@@ -410,7 +406,7 @@ export default function SeriesBrowsePage() {
               </button>
             )}
           </div>
-        </header>
+        </Masthead>
 
         {series === null && (
           <div aria-hidden="true" className="mx-auto mt-10 max-w-[1400px] px-2 sm:px-8">
@@ -449,7 +445,7 @@ export default function SeriesBrowsePage() {
             {results.series.length > 0 && (
               <>
                 <h2 className="mt-8 font-display text-2xl font-medium text-brand-ink">Series</h2>
-                <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
+                <ul className="mt-4 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-5">
                   {results.series.map((s) => (
                     <li key={s.id}>
                       <SeriesCover s={s} />
@@ -604,7 +600,7 @@ export default function SeriesBrowsePage() {
                         </div>
                         <YearFilterSelect value={filterYear} onChange={(e) => setFilterYear(e.target.value)} years={years} />
                       </div>
-                      <ul className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+                      <ul className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4 xl:grid-cols-5">
                         {series.map((s) => (
                           <li key={s.id}>
                             <SeriesCover s={s} />
@@ -621,7 +617,7 @@ export default function SeriesBrowsePage() {
                         <p className="mt-1 text-sm text-brand-gray">
                           {guests.length} messages from ministers who visited Heritage of Faith
                         </p>
-                        <ul className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+                        <ul className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4 xl:grid-cols-5">
                           {guests.map((g) => (
                             <li key={g.id}>
                               <GuestCard g={g} />
@@ -661,7 +657,7 @@ export default function SeriesBrowsePage() {
                             </div>
                             <YearFilterSelect value={filterYear} onChange={(e) => setFilterYear(e.target.value)} years={years} />
                           </div>
-                          <ul className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+                          <ul className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4 xl:grid-cols-5">
                             {filteredSeriesForYear.map((s) => (
                               <li key={s.id}>
                                 <SeriesCover s={s} />
@@ -682,7 +678,7 @@ export default function SeriesBrowsePage() {
                           <p className="mt-1 text-sm text-brand-gray">
                             {filteredGuestsForYear.length} guest {filteredGuestsForYear.length === 1 ? "message" : "messages"} in {filterYear}
                           </p>
-                          <ul className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+                          <ul className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4 xl:grid-cols-5">
                             {filteredGuestsForYear.map((g) => (
                               <li key={g.id}>
                                 <GuestCard g={g} />

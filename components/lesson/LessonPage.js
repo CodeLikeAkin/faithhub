@@ -255,7 +255,7 @@ export default function LessonPage({ sermonId }) {
             label={panelShown ? "Hide Ask" : "Ask"}
             aria-pressed={panelShown}
             onClick={() => setPanelOpen(!panelShown)}
-            className="hidden xl:inline-flex"
+            className="hidden lg:inline-flex"
           />
         ) : null
       }
@@ -432,7 +432,7 @@ export default function LessonPage({ sermonId }) {
                     <span className="block text-sm text-white/70">Up next · Part {next.part_number}</span>
                     {/* No `block` beside line-clamp-* — it overrides the -webkit-box
                         display the clamp needs, and the text spills instead of clamping. */}
-                    <span className="mt-1 line-clamp-2 font-display text-xl font-medium leading-snug sm:text-2xl">
+                    <span className="mt-1 line-clamp-1 sm:line-clamp-2 font-display text-xl font-medium leading-snug sm:text-2xl">
                       {nameOf(next)}
                     </span>
                   </span>
@@ -452,7 +452,7 @@ export default function LessonPage({ sermonId }) {
         <button
           type="button"
           onClick={() => setPanelOpen(true)}
-          className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-20 inline-flex items-center gap-2 rounded-full bg-brand-navy px-5 py-3.5 text-sm font-bold text-white shadow-xl shadow-brand-navy/30 transition-colors hover:bg-brand-deep xl:hidden"
+          className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-20 inline-flex items-center gap-2 rounded-full bg-brand-navy px-5 py-3.5 text-sm font-bold text-white shadow-xl shadow-brand-navy/30 transition-colors hover:bg-brand-deep lg:hidden"
         >
           <Sparkles size={16} aria-hidden="true" />
           Ask about this message
