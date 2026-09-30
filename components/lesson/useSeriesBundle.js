@@ -151,10 +151,16 @@ export function useSeriesBundle(entry, { withSeriesExtras = false, withSummary =
 
         // Parts not yet published stay out of the outline, except the message
         // actually opened (a direct link, e.g. from an Ask citation, still works).
+        // Stored part numbers come from the uploads' own "Part N" and have gaps
+        // (parts never uploaded or not published) and repeats, so the course is
+        // numbered by position: "Part 4 of 4", never "Part 9 of 4".
         const sorted = data.series_sermons
           .filter((ss) => ss.sermons && (ss.sermons.published || ss.sermons.id === entrySermonId))
-          .sort((a, b) => a.part_number - b.part_number)
-          .map((ss) => ({ ...ss.sermons, part_number: ss.part_number }));
+          .sort(
+            (a, b) =>
+              a.part_number - b.part_number || (a.sermons.sermon_date || "").localeCompare(b.sermons.sermon_date || "")
+          )
+          .map((ss, i) => ({ ...ss.sermons, part_number: i + 1 }));
         if (!sorted.length) {
           setNotFound(true);
           return;
