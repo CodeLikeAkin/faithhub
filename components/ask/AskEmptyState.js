@@ -24,7 +24,6 @@ export default function AskEmptyState({ onAsk, busy, studies, inputRef, onDelete
   return (
     <div className="relative">
       <Masthead
-        image={{ src: "/church-hero.jpg", position: "object-[30%_35%]" }}
         className="mx-auto max-w-5xl px-4 pb-12 pt-3 sm:px-8 sm:pb-16 sm:pt-8"
         title="Ask the Word"
         description="Ask anything Rev. Peter has taught. Every answer comes from his recorded messages, with the moments to watch."
