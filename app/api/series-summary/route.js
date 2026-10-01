@@ -16,6 +16,24 @@ const supabaseAdmin = createClient(
 const MAX_SERIES_SERMONS = 100;
 const MAX_TITLE_LENGTH = 300;
 
+// Groq's on-demand tier caps gpt-oss-20b at 8,000 tokens per minute, and one
+// request over that is refused outright (413) rather than queued. Segments run
+// ~1,550 chars, so an 18-part series used to send ~14k tokens and fail on every
+// view. The excerpts now share a fixed budget: more parts means shorter
+// excerpts, never a bigger prompt. Budget + system prompt + SUMMARY_MAX_TOKENS
+// stays near 6.5k.
+const EXCERPT_BUDGET_CHARS = 16_000;
+const MAX_EXCERPT_CHARS = 900;
+const SUMMARY_MAX_TOKENS = 2_000;
+const SUGGESTIONS_MAX_TOKENS = 800;
+
+function clip(text, max) {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  const lastSpace = cut.lastIndexOf(' ');
+  return `${(lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
+}
+
 export async function POST(req) {
   const rl = await rateLimit(req, { max: 8, windowMs: 60_000, prefix: 'series-summary' });
   if (!rl.allowed) return rateLimitResponse(rl);
@@ -58,36 +76,57 @@ export async function POST(req) {
     let excerptText = '';
     if (Array.isArray(sermonIds) && sermonIds.length > 0) {
       const perSermonCount = sermonIds.length > 8 ? 2 : sermonIds.length > 4 ? 3 : 4;
-      const { data: allSegments, error: segErr } = await supabaseAdmin
-        .from('sermon_segments')
-        .select('sermon_id, text, start_seconds')
-        .in('sermon_id', sermonIds)
-        .order('start_seconds', { ascending: true });
+      const excerptChars = Math.min(
+        MAX_EXCERPT_CHARS,
+        Math.floor(EXCERPT_BUDGET_CHARS / (sermonIds.length * perSermonCount))
+      );
 
-      if (!segErr && allSegments?.length) {
-        const bySermon = new Map();
-        for (const seg of allSegments) {
-          if (!bySermon.has(seg.sermon_id)) bySermon.set(seg.sermon_id, []);
-          bySermon.get(seg.sermon_id).push(seg);
-        }
+      // Each message's timeline on its own, ids only. One .in() across the
+      // whole series hit PostgREST's 1,000-row cap on long series and quietly
+      // dropped the back half of every message, so the "spread" wasn't one.
+      const timelines = await Promise.all(
+        sermonIds.map(async (sid) => {
+          const { data } = await supabaseAdmin
+            .from('sermon_segments')
+            .select('id')
+            .eq('sermon_id', sid)
+            .order('start_seconds', { ascending: true });
+          return data || [];
+        })
+      );
 
-        const blocks = [];
-        sermonIds.forEach((sid, i) => {
-          const segs = bySermon.get(sid);
-          if (!segs?.length) return;
-          const picks = [];
-          for (let p = 0; p < perSermonCount; p++) {
-            const idx = Math.min(
-              segs.length - 1,
-              Math.floor(((p + 1) / (perSermonCount + 1)) * segs.length)
-            );
-            picks.push(segs[idx]);
-          }
-          blocks.push(
-            `FROM "${sermonTitles[i]}":\n${picks.map((s) => `"${s.text}"`).join('\n')}`
+      const picksBySermon = timelines.map((segs) => {
+        if (!segs.length) return [];
+        const ids = [];
+        for (let p = 0; p < perSermonCount; p++) {
+          const idx = Math.min(
+            segs.length - 1,
+            Math.floor(((p + 1) / (perSermonCount + 1)) * segs.length)
           );
-        });
-        excerptText = blocks.join('\n\n');
+          ids.push(segs[idx].id);
+        }
+        return ids;
+      });
+
+      const pickedIds = [...new Set(picksBySermon.flat())];
+      if (pickedIds.length) {
+        const { data: picked, error: segErr } = await supabaseAdmin
+          .from('sermon_segments')
+          .select('id, text')
+          .in('id', pickedIds);
+
+        if (!segErr && picked?.length) {
+          const textById = new Map(picked.map((s) => [s.id, s.text]));
+          const blocks = [];
+          picksBySermon.forEach((ids, i) => {
+            const texts = ids.map((id) => textById.get(id)).filter(Boolean);
+            if (!texts.length) return;
+            blocks.push(
+              `FROM "${sermonTitles[i]}":\n${texts.map((t) => `"${clip(t, excerptChars)}"`).join('\n')}`
+            );
+          });
+          excerptText = blocks.join('\n\n');
+        }
       }
     }
 
@@ -133,9 +172,10 @@ ${preacherContext} Only credit the preacher(s) named above — do not invent or 
       model: 'openai/gpt-oss-20b',
       reasoning_effort: 'low',
       temperature: 0.5,
+      max_tokens: SUMMARY_MAX_TOKENS,
     });
 
-    const summary = completion.choices[0]?.message?.content || "No summary available.";
+    const summary =completion.choices[0]?.message?.content || "No summary available.";
 
     // Generate 3 contextual suggestions based on the summary
     let suggestions = [];
@@ -158,9 +198,10 @@ Output only a JSON array of 5 strings, nothing else. Example format:\n["Living o
         model: 'openai/gpt-oss-20b',
         reasoning_effort: 'low',
         temperature: 0.5,
+        max_tokens: SUGGESTIONS_MAX_TOKENS,
       });
 
-      const content = suggestionsCompletion.choices[0]?.message?.content || "[]";
+      const content =suggestionsCompletion.choices[0]?.message?.content || "[]";
       const startIdx = content.indexOf('[');
       const endIdx = content.lastIndexOf(']');
       if (startIdx !== -1 && endIdx !== -1) {
