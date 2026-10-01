@@ -73,7 +73,7 @@ export default function ContinueCard({ className, style }) {
     >
       <p className="px-1 text-xs font-bold uppercase tracking-[0.18em] text-brand-gray">{eyebrow || " "}</p>
       {item === undefined ? (
-        <div aria-hidden="true" className="aspect-video rounded-2xl bg-brand-sky motion-safe:animate-pulse" />
+        <div aria-hidden="true" className="aspect-video rounded-2xl fh-skeleton" />
       ) : (
         <Link href={item.href} className="group flex flex-1 flex-col gap-3">
           <span className="relative block aspect-video overflow-hidden rounded-2xl bg-brand-deep">
@@ -88,7 +88,7 @@ export default function ContinueCard({ className, style }) {
             </span>
           </span>
           <span className="px-1">
-            <span className="line-clamp-1 sm:line-clamp-2 font-display text-xl font-medium leading-snug text-brand-ink">{displayTitle(item.title)}</span>
+            <span className="line-clamp-2 font-display text-xl font-medium leading-snug text-brand-ink">{displayTitle(item.title)}</span>
             <span className="mt-1 block text-sm text-brand-gray">{meta}</span>
           </span>
           <span className="mt-auto flex items-center gap-3 px-1">

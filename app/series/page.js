@@ -43,7 +43,7 @@ const cardLink =
 const cardArt = "relative block aspect-video w-full flex-shrink-0 overflow-hidden rounded-xl";
 const cardTag = "absolute bottom-2 right-2 rounded-lg bg-black/60 px-2 py-1 text-xs font-semibold text-white backdrop-blur-sm";
 const cardTitle =
-  "mt-2.5 line-clamp-1 sm:line-clamp-2 hyphens-auto break-words text-sm font-semibold leading-snug text-brand-ink transition-colors group-hover:text-brand-navy sm:text-base";
+  "mt-2.5 line-clamp-2 hyphens-auto break-words text-sm font-semibold leading-snug text-brand-ink transition-colors group-hover:text-brand-navy sm:text-base";
 const cardMeta = "mt-1 flex min-w-0 items-baseline justify-between gap-2 text-xs text-brand-gray sm:text-sm";
 
 function SeriesCover({ s, className }) {
@@ -111,7 +111,7 @@ function MessageRow({ m }) {
   return (
     <Link
       href={href}
-      className="group flex gap-3 rounded-2xl border border-brand-navy/10 bg-white p-2.5 transition-[border-color,box-shadow] hover:border-brand-navy/25 hover:shadow-[0_20px_40px_-30px_rgba(23,58,104,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy"
+      className="group flex gap-3 rounded-2xl border border-brand-navy/10 bg-white p-2.5 transition-[border-color,box-shadow] hover:border-brand-navy/25 hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy"
     >
       <span className="relative aspect-video w-28 flex-shrink-0 self-start overflow-hidden rounded-xl bg-brand-sky sm:w-36">
         {m.videoId && (
@@ -126,7 +126,7 @@ function MessageRow({ m }) {
       <span className="min-w-0 flex-1">
         {/* No `block` beside line-clamp-* — it overrides the -webkit-box
             display the clamp needs, and the text spills instead of clamping. */}
-        <span className="line-clamp-1 sm:line-clamp-2 text-sm font-semibold leading-snug text-brand-ink group-hover:text-brand-navy">
+        <span className="line-clamp-2 text-sm font-semibold leading-snug text-brand-ink group-hover:text-brand-navy">
           {m.title}
         </span>
         {meta && <span className="mt-0.5 block truncate text-xs text-brand-gray">{meta}</span>}
@@ -377,7 +377,7 @@ export default function SeriesBrowsePage() {
     <ToolShell kind="series" title="Series Study" titleAs="p">
       <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
         <Masthead
-          className="mx-auto max-w-[1400px] px-3 pt-3 sm:px-8 sm:pt-8"
+          className="mx-auto max-w-[1400px] px-4 pt-3 sm:px-8 sm:pt-8"
           title="Series Study"
           description={
             series?.length
@@ -409,11 +409,11 @@ export default function SeriesBrowsePage() {
         </Masthead>
 
         {series === null && (
-          <div aria-hidden="true" className="mx-auto mt-10 max-w-[1400px] px-2 sm:px-8">
-            <div className="h-72 rounded-[2rem] bg-brand-sky motion-safe:animate-pulse" />
+          <div aria-hidden="true" className="mx-auto mt-10 max-w-[1400px] px-4 sm:px-8">
+            <div className="h-72 rounded-[2rem] fh-skeleton" />
             <div className="mt-10 flex gap-4 overflow-hidden">
               {[0, 1, 2, 3, 4].map((i) => (
-                <div key={i} className="aspect-[4/5] w-52 flex-shrink-0 rounded-[1.5rem] bg-brand-sky/70 motion-safe:animate-pulse" />
+                <div key={i} className="aspect-[4/5] w-52 flex-shrink-0 rounded-[1.5rem] fh-skeleton" />
               ))}
             </div>
           </div>
@@ -426,7 +426,7 @@ export default function SeriesBrowsePage() {
         )}
 
         {results ? (
-          <section aria-label="Search results" className="mx-auto max-w-[1400px] px-2 pb-24 pt-10 sm:px-8">
+          <section aria-label="Search results" className="mx-auto max-w-[1400px] px-4 pb-24 pt-10 sm:px-8">
             <p className="text-sm text-brand-gray" role="status">
               {results.searching && results.messages.length === 0 && results.series.length === 0
                 ? `Searching every message for “${query.trim()}”…`
@@ -444,7 +444,7 @@ export default function SeriesBrowsePage() {
 
             {results.series.length > 0 && (
               <>
-                <h2 className="mt-8 font-display text-2xl font-medium text-brand-ink">Series</h2>
+                <h2 className="mt-8 font-display text-2xl font-semibold text-brand-ink">Series</h2>
                 <ul className="mt-4 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-5">
                   {results.series.map((s) => (
                     <li key={s.id}>
@@ -457,7 +457,7 @@ export default function SeriesBrowsePage() {
 
             {results.messages.length > 0 && (
               <>
-                <h2 className="mt-10 font-display text-2xl font-medium text-brand-ink">Messages</h2>
+                <h2 className="mt-10 font-display text-2xl font-semibold text-brand-ink">Messages</h2>
                 <p className="mt-1 text-sm text-brand-gray">
                   Matched on the title or on what was preached &mdash; those open at the moment it was said
                 </p>
@@ -486,7 +486,7 @@ export default function SeriesBrowsePage() {
                 <>
                   {/* Latest series */}
                   {featured && (
-                    <div className="mx-auto mt-10 max-w-[1400px] px-2 sm:px-8">
+                    <div className="mx-auto mt-10 max-w-[1400px] px-4 sm:px-8">
                       <section
                         aria-labelledby="latest-heading"
                         // The hero is the same white card as the grid below it, only
@@ -502,7 +502,7 @@ export default function SeriesBrowsePage() {
                         // the panel is narrow enough that it out-grows the cover's 16:9
                         // by ~100px a side; stacking there gives a full-width picture
                         // instead. 1120 keeps a landscape iPad (1180) side by side.
-                        className="grid grid-cols-[minmax(0,1fr)] overflow-hidden rounded-[1.75rem] border border-brand-navy/12 bg-white shadow-[0_30px_60px_-45px_rgba(16,42,78,0.5)] sm:rounded-[2rem] min-[1120px]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]"
+                        className="grid grid-cols-[minmax(0,1fr)] overflow-hidden rounded-[1.75rem] border border-brand-navy/12 bg-white shadow-card sm:rounded-[2rem] min-[1120px]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]"
                       >
                         {/* Full-bleed: the cover runs to the card's edges, no inset frame
                             eating into the picture.
@@ -537,7 +537,7 @@ export default function SeriesBrowsePage() {
                           <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-navy/60">Latest series</p>
                           <h2
                             id="latest-heading"
-                            className="mt-2 font-display text-2xl font-medium leading-[1.1] tracking-tight text-brand-ink text-balance sm:text-3xl xl:text-4xl"
+                            className="mt-2 font-display text-2xl font-semibold leading-[1.1] tracking-tight text-brand-ink text-balance"
                           >
                             {featured.title}
                           </h2>
@@ -589,11 +589,11 @@ export default function SeriesBrowsePage() {
                     </div>
                   )}
 
-                  <div className="mx-auto mt-12 max-w-[1400px] px-2 sm:px-8">
+                  <div className="mx-auto mt-12 max-w-[1400px] px-4 sm:px-8">
                     <section aria-labelledby="all-series-heading">
                       <div className="flex flex-wrap items-end justify-between gap-4">
                         <div>
-                          <h2 id="all-series-heading" className="font-display text-2xl font-medium text-brand-ink">
+                          <h2 id="all-series-heading" className="font-display text-2xl font-semibold text-brand-ink">
                             Series
                           </h2>
                           <p className="mt-1 text-sm text-brand-gray">{series.length} series</p>
@@ -611,7 +611,7 @@ export default function SeriesBrowsePage() {
 
                     {guests.length > 0 && (
                       <section aria-labelledby="all-guests-heading" className="mt-12">
-                        <h2 id="all-guests-heading" className="font-display text-2xl font-medium text-brand-ink">
+                        <h2 id="all-guests-heading" className="font-display text-2xl font-semibold text-brand-ink">
                           Guest speakers
                         </h2>
                         <p className="mt-1 text-sm text-brand-gray">
@@ -629,7 +629,7 @@ export default function SeriesBrowsePage() {
                   </div>
                 </>
               ) : (
-                <div className="mx-auto mt-10 max-w-[1400px] px-2 sm:px-8">
+                <div className="mx-auto mt-10 max-w-[1400px] px-4 sm:px-8">
                   {filteredSeriesForYear.length === 0 && filteredGuestsForYear.length === 0 ? (
                     <div className="flex flex-col items-center py-24 text-center">
                       <p className="text-lg font-medium text-brand-ink">Nothing from {filterYear}.</p>
@@ -648,7 +648,7 @@ export default function SeriesBrowsePage() {
                         <section aria-labelledby="filtered-series-heading">
                           <div className="flex flex-wrap items-end justify-between gap-4">
                             <div>
-                              <h2 id="filtered-series-heading" className="font-display text-2xl font-medium text-brand-ink">
+                              <h2 id="filtered-series-heading" className="font-display text-2xl font-semibold text-brand-ink">
                                 Series
                               </h2>
                               <p className="mt-1 text-sm text-brand-gray">
@@ -672,7 +672,7 @@ export default function SeriesBrowsePage() {
                           aria-labelledby="filtered-guests-heading"
                           className={filteredSeriesForYear.length > 0 ? "mt-12" : undefined}
                         >
-                          <h2 id="filtered-guests-heading" className="font-display text-2xl font-medium text-brand-ink">
+                          <h2 id="filtered-guests-heading" className="font-display text-2xl font-semibold text-brand-ink">
                             Guest speakers
                           </h2>
                           <p className="mt-1 text-sm text-brand-gray">

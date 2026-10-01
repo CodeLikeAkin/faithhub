@@ -99,7 +99,7 @@ export default function BookView({ slug }) {
   if (!book) {
     return (
       <div className="px-6 py-24 text-center">
-        <h1 className="font-display text-3xl font-medium text-brand-ink">We couldn&rsquo;t find that book</h1>
+        <h1 className="font-display text-2xl font-semibold text-brand-ink">We couldn&rsquo;t find that book</h1>
         <Link href="/word" className="mt-6 inline-flex items-center gap-2 font-semibold text-brand-navy hover:underline">
           Back to The Word <ArrowRight size={16} aria-hidden="true" />
         </Link>
@@ -115,7 +115,7 @@ export default function BookView({ slug }) {
     <div className="mx-auto max-w-4xl px-4 pb-24 pt-8 sm:px-8 sm:pt-12">
       <header>
         <p className="text-sm text-brand-gray">{sectionFor(book)?.name}</p>
-        <h1 className="mt-1 font-display text-5xl font-medium tracking-tight text-brand-ink sm:text-6xl">{book.name}</h1>
+        <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight text-brand-ink sm:text-4xl">{book.name}</h1>
         <p className="mt-3 text-sm text-brand-gray">
           {s
             ? `Opened in ${s.sermons.toLocaleString()} messages · ${s.refs.toLocaleString()} references`
@@ -137,7 +137,7 @@ export default function BookView({ slug }) {
       {view && (
         <>
           <section aria-labelledby="chapters-heading" className="pt-10">
-            <h2 id="chapters-heading" className="font-display text-2xl font-medium tracking-tight text-brand-ink sm:text-3xl">
+            <h2 id="chapters-heading" className="font-display text-2xl font-semibold tracking-tight text-brand-ink">
               Chapters
             </h2>
             <p className="mt-1.5 text-sm text-brand-gray">Tap a chapter to read it. The darker it is, the more messages open it.</p>
@@ -148,7 +148,7 @@ export default function BookView({ slug }) {
 
           {view.passages.length > 0 && (
             <section aria-labelledby="passages-heading" className="pt-12">
-              <h2 id="passages-heading" className="font-display text-2xl font-medium tracking-tight text-brand-ink sm:text-3xl">
+              <h2 id="passages-heading" className="font-display text-2xl font-semibold tracking-tight text-brand-ink">
                 Most-opened passages
               </h2>
               <ul className="mt-5 space-y-1.5">
@@ -172,7 +172,7 @@ export default function BookView({ slug }) {
 
           {view.messages.length > 0 && (
             <section aria-labelledby="messages-heading" className="pt-12">
-              <h2 id="messages-heading" className="font-display text-2xl font-medium tracking-tight text-brand-ink sm:text-3xl">
+              <h2 id="messages-heading" className="font-display text-2xl font-semibold tracking-tight text-brand-ink">
                 Messages that open {book.name}
               </h2>
               <p className="mt-1.5 text-sm text-brand-gray">Most references first</p>
@@ -181,7 +181,7 @@ export default function BookView({ slug }) {
                   <li key={sermon.id}>
                     <Link
                       href={`/sermon/${sermon.id}#scriptures`}
-                      className="group flex items-center gap-3 rounded-2xl border border-brand-navy/10 bg-white p-2.5 pr-4 transition-[border-color,box-shadow] hover:border-brand-navy/25 hover:shadow-[0_20px_40px_-30px_rgba(23,58,104,0.45)]"
+                      className="group flex items-center gap-3 rounded-2xl border border-brand-navy/10 bg-white p-2.5 pr-4 transition-[border-color,box-shadow] hover:border-brand-navy/25 hover:shadow-lift"
                     >
                       <span className="relative aspect-video w-24 flex-shrink-0 overflow-hidden rounded-xl bg-brand-sky">
                         {sermon.youtube_video_id && (
@@ -194,7 +194,7 @@ export default function BookView({ slug }) {
                         )}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="line-clamp-1 sm:line-clamp-2 text-sm font-semibold leading-snug text-brand-ink group-hover:text-brand-navy">
+                        <span className="line-clamp-2 text-sm font-semibold leading-snug text-brand-ink group-hover:text-brand-navy">
                           {cleanTitle(sermon.title)}
                         </span>
                         <span className="mt-0.5 block text-xs text-brand-gray">

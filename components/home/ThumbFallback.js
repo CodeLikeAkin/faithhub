@@ -16,7 +16,7 @@ export default function ThumbFallback({ title, subtitle }) {
         aria-hidden="true"
         className="absolute -right-4 -top-3 h-24 w-auto opacity-[0.12]"
       />
-      {title && <span className="relative line-clamp-1 sm:line-clamp-2 font-display text-lg font-medium leading-tight">{title}</span>}
+      {title && <span className="relative line-clamp-2 font-display text-lg font-medium leading-tight">{title}</span>}
       {subtitle && <span className="relative mt-0.5 text-xs text-white/70">{subtitle}</span>}
     </span>
   );

@@ -205,7 +205,7 @@ export default function DeclarationsPage() {
       }
     >
       <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
-        <div className="mx-auto w-full max-w-5xl px-3 pb-28 pt-3 sm:px-8 sm:pt-8">
+        <div className="mx-auto w-full max-w-5xl px-4 pb-28 pt-3 sm:px-8 sm:pt-8">
           <Masthead
             eyebrow="Declarations"
             title="Speak Life"
@@ -218,8 +218,8 @@ export default function DeclarationsPage() {
                   </h2>
                   {today === undefined ? (
                     <div aria-hidden="true" className="mt-4 space-y-3">
-                      <div className="h-6 w-11/12 rounded-full bg-white/10 motion-safe:animate-pulse" />
-                      <div className="h-6 w-2/3 rounded-full bg-white/10 motion-safe:animate-pulse" />
+                      <div className="h-6 w-11/12 rounded-full fh-skeleton-dark" />
+                      <div className="h-6 w-2/3 rounded-full fh-skeleton-dark" />
                     </div>
                   ) : (
                     <>
@@ -236,34 +236,41 @@ export default function DeclarationsPage() {
                           From <span className="font-semibold text-white/85">{cleanTitle(today.sermon_title)}</span>
                         </p>
                       )}
-                      <div className="mt-4 flex flex-wrap items-center gap-2">
-                        <Button variant="light" size="sm" icon={false} className="py-2.5" onClick={() => openSpeak("today")}>
-                          <Volume2 className="h-4 w-4" aria-hidden="true" />
-                          Speak it
-                        </Button>
+                      {/* Icons only, in one row — the same three actions the
+                          declaration rows below carry, and the labels wrapped
+                          onto two lines on a phone. The names live in the
+                          tooltip and for screen readers. */}
+                      <div className="mt-4 flex items-center gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => openSpeak("today")}
+                          aria-label="Speak today's declaration"
+                          title="Speak it"
+                          className="grid h-11 w-11 place-items-center rounded-full bg-white text-brand-navy transition hover:bg-brand-sky active:scale-[0.94] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                        >
+                          <Volume2 className="h-[1.15rem] w-[1.15rem]" aria-hidden="true" />
+                        </button>
                         {todayParsed && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            icon={false}
-                            className="py-2.5"
+                          <button
+                            type="button"
                             onClick={() => setWatching({ ...todayParsed, sermon_title: today.sermon_title })}
+                            aria-label="Watch the moment this was preached"
+                            title="Watch"
+                            className="grid h-11 w-11 place-items-center rounded-full border border-white/40 text-white transition hover:bg-white/10 active:scale-[0.94] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                           >
-                            <Play className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
-                            Watch
-                          </Button>
+                            <Play className="h-4 w-4 fill-current" aria-hidden="true" />
+                          </button>
                         )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          icon={false}
-                          className="py-2.5"
+                        <button
+                          type="button"
                           onClick={() => toggleSaved(today)}
                           aria-pressed={todaySaved}
+                          aria-label={todaySaved ? "Saved — tap to remove" : "Save this declaration"}
+                          title={todaySaved ? "Saved" : "Save"}
+                          className="grid h-11 w-11 place-items-center rounded-full border border-white/40 text-white transition hover:bg-white/10 active:scale-[0.94] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                         >
-                          <Bookmark className="h-3.5 w-3.5" fill={todaySaved ? "currentColor" : "none"} aria-hidden="true" />
-                          {todaySaved ? "Saved" : "Save"}
-                        </Button>
+                          <Bookmark className="h-4 w-4" fill={todaySaved ? "currentColor" : "none"} aria-hidden="true" />
+                        </button>
                       </div>
                     </>
                   )}
@@ -293,7 +300,7 @@ export default function DeclarationsPage() {
                   <p className="text-sm font-medium text-brand-gray">Finding declarations for you…</p>
                   <div aria-hidden="true" className="mt-5 space-y-5">
                     {[88, 72, 94].map((w) => (
-                      <div key={w} className="h-6 rounded-full bg-brand-sky motion-safe:animate-pulse" style={{ width: `${w}%` }} />
+                      <div key={w} className="h-6 rounded-full fh-skeleton" style={{ width: `${w}%` }} />
                     ))}
                   </div>
                 </div>
@@ -332,7 +339,7 @@ export default function DeclarationsPage() {
                       </div>
                     ))}
                   <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-                    <h3 className="font-display text-2xl font-medium text-brand-ink">Declarations to speak</h3>
+                    <h3 className="font-display text-2xl font-semibold text-brand-ink">Declarations to speak</h3>
                     <Button variant="dark" size="sm" icon={false} onClick={() => openSpeak("facing")} className="py-2.5">
                       <Volume2 className="h-4 w-4" aria-hidden="true" />
                       Speak these
@@ -398,7 +405,7 @@ export default function DeclarationsPage() {
               <div className="flex flex-wrap items-end justify-between gap-4">
                 <div className="min-w-0">
                   <p className="text-sm text-brand-gray">{themeInfo.sub}</p>
-                  <h2 id="theme-heading" className="mt-1 font-display text-4xl font-medium tracking-tight text-brand-ink">
+                  <h2 id="theme-heading" className="mt-1 font-display text-2xl font-semibold tracking-tight text-brand-ink">
                     {themeInfo.name}
                   </h2>
                   {counts[theme] != null && (
@@ -421,7 +428,7 @@ export default function DeclarationsPage() {
               {themeItems === null ? (
                 <div aria-hidden="true" className="mt-6 space-y-5">
                   {[92, 76, 88, 70].map((w) => (
-                    <div key={w} className="h-6 rounded-full bg-brand-sky motion-safe:animate-pulse" style={{ width: `${w}%` }} />
+                    <div key={w} className="h-6 rounded-full fh-skeleton" style={{ width: `${w}%` }} />
                   ))}
                 </div>
               ) : themeItems.length ? (
@@ -450,7 +457,7 @@ export default function DeclarationsPage() {
               style={{ "--i": 1 }}
             >
               <div className="min-w-0">
-                <h2 id="mine-heading" className="font-display text-2xl font-medium text-brand-ink">
+                <h2 id="mine-heading" className="font-display text-2xl font-semibold text-brand-ink">
                   My declarations
                 </h2>
                 <p className="mt-2 text-sm text-brand-gray">

@@ -24,9 +24,9 @@ import { recordLastLesson } from "@/lib/recent";
 const DECL_PREVIEW = 5;
 
 const NOTES_MARKDOWN = {
-  h1: ({ node, ...props }) => <h3 className="mb-2 mt-8 font-display text-2xl font-medium text-brand-ink first:mt-0" {...props} />,
-  h2: ({ node, ...props }) => <h3 className="mb-2 mt-8 font-display text-2xl font-medium text-brand-ink first:mt-0" {...props} />,
-  h3: ({ node, ...props }) => <h4 className="mb-2 mt-6 font-display text-xl font-medium text-brand-ink first:mt-0" {...props} />,
+  h1: ({ node, ...props }) => <h3 className="mb-2 mt-8 font-display text-2xl font-semibold text-brand-ink first:mt-0" {...props} />,
+  h2: ({ node, ...props }) => <h3 className="mb-2 mt-8 font-display text-2xl font-semibold text-brand-ink first:mt-0" {...props} />,
+  h3: ({ node, ...props }) => <h4 className="mb-2 mt-6 font-display text-xl font-semibold text-brand-ink first:mt-0" {...props} />,
   p: ({ node, ...props }) => <p className="mb-4 last:mb-0" {...props} />,
   strong: ({ node, ...props }) => <strong className="font-semibold text-brand-ink" {...props} />,
   ul: ({ node, ...props }) => <ul className="my-4 list-disc space-y-2 pl-6 marker:text-brand-navy/50" {...props} />,
@@ -39,10 +39,10 @@ const NOTES_MARKDOWN = {
 function LessonSkeleton() {
   return (
     <div aria-hidden="true" className="mx-auto w-full max-w-4xl px-0 pt-0 sm:px-8 sm:pt-8">
-      <div className="aspect-video w-full bg-brand-sky motion-safe:animate-pulse sm:rounded-[1.5rem]" />
+      <div className="aspect-video w-full fh-skeleton sm:rounded-[1.5rem]" />
       <div className="px-4 sm:px-0">
-        <div className="mt-8 h-4 w-48 rounded-full bg-brand-sky motion-safe:animate-pulse" />
-        <div className="mt-4 h-10 w-3/4 rounded-2xl bg-brand-sky motion-safe:animate-pulse" />
+        <div className="mt-8 h-4 w-48 rounded-full fh-skeleton" />
+        <div className="mt-4 h-10 w-3/4 rounded-2xl fh-skeleton" />
         <div className="mt-8 h-40 rounded-[1.5rem] bg-brand-sky/60 motion-safe:animate-pulse" />
       </div>
     </div>
@@ -66,7 +66,7 @@ export default function LessonPage({ sermonId }) {
   const [startAt, setStartAt] = useState(0);
   const [watching, setWatching] = useState(null); // moments outside this series → modal
   const [showAllDecls, setShowAllDecls] = useState(false);
-  const [toast, showToast] = useToast();
+  const [toast, showToast] = useToast({ offset: "5.5rem" }); // clears the Ask button
   const docked = useMediaQuery(PANEL_DOCKED_QUERY);
   const scrollRef = useRef(null);
   const playerRef = useRef(null);
@@ -271,7 +271,7 @@ export default function LessonPage({ sermonId }) {
           <LessonSkeleton />
         ) : notFound || !part ? (
           <div className="mx-auto max-w-xl px-6 py-24 text-center">
-            <h1 className="font-display text-3xl font-medium text-brand-ink">We couldn&rsquo;t find that message</h1>
+            <h1 className="font-display text-2xl font-semibold text-brand-ink">We couldn&rsquo;t find that message</h1>
             <p className="mt-3 text-brand-gray">It may have been moved, or the link is incomplete.</p>
             <Link
               href="/series"
@@ -301,7 +301,7 @@ export default function LessonPage({ sermonId }) {
                     )}
                   </p>
                 )}
-                <h1 className="mt-2 font-display text-2xl font-medium leading-[1.1] tracking-tight text-brand-ink text-balance sm:text-3xl lg:text-4xl">
+                <h1 className="mt-2 font-display text-3xl font-semibold leading-[1.1] tracking-tight text-brand-ink text-balance sm:text-4xl">
                   {header.name}
                 </h1>
                 {header.session && (
@@ -432,7 +432,7 @@ export default function LessonPage({ sermonId }) {
                     <span className="block text-sm text-white/70">Up next · Part {next.part_number}</span>
                     {/* No `block` beside line-clamp-* — it overrides the -webkit-box
                         display the clamp needs, and the text spills instead of clamping. */}
-                    <span className="mt-1 line-clamp-1 sm:line-clamp-2 font-display text-xl font-medium leading-snug sm:text-2xl">
+                    <span className="mt-1 line-clamp-2 font-display text-xl font-semibold leading-snug sm:text-2xl">
                       {nameOf(next)}
                     </span>
                   </span>
@@ -452,10 +452,14 @@ export default function LessonPage({ sermonId }) {
         <button
           type="button"
           onClick={() => setPanelOpen(true)}
-          className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-20 inline-flex items-center gap-2 rounded-full bg-brand-navy px-5 py-3.5 text-sm font-bold text-white shadow-xl shadow-brand-navy/30 transition-colors hover:bg-brand-deep lg:hidden"
+          aria-label="Ask about this message"
+          /* Icon-only on a phone: the labelled pill ran half the width of the
+             screen and sat on top of the notes you were reading. The label
+             comes back where there's room for it. */
+          className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-20 inline-flex h-14 w-14 items-center justify-center gap-2 rounded-full bg-brand-navy text-sm font-bold text-white shadow-xl shadow-brand-navy/30 transition-colors hover:bg-brand-deep sm:h-auto sm:w-auto sm:px-5 sm:py-3.5 lg:hidden"
         >
           <Sparkles size={16} aria-hidden="true" />
-          Ask about this message
+          <span className="hidden sm:inline">Ask about this message</span>
         </button>
       )}
 

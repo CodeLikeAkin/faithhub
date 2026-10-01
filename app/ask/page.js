@@ -107,11 +107,11 @@ function OutlineMenu({ study, activeBlockId, onJump }) {
 function DocumentSkeleton() {
   return (
     <div aria-hidden="true" className="mx-auto w-full max-w-5xl px-4 pt-12 sm:px-8">
-      <div className="h-4 w-40 rounded-full bg-brand-sky motion-safe:animate-pulse" />
-      <div className="mt-5 h-10 w-3/4 rounded-2xl bg-brand-sky motion-safe:animate-pulse" />
+      <div className="h-4 w-40 rounded-full fh-skeleton" />
+      <div className="mt-5 h-10 w-3/4 rounded-2xl fh-skeleton" />
       <div className="mt-8 flex gap-3 overflow-hidden">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="aspect-video w-60 flex-shrink-0 rounded-2xl bg-brand-sky/70 motion-safe:animate-pulse" />
+          <div key={i} className="aspect-video w-60 flex-shrink-0 rounded-2xl fh-skeleton" />
         ))}
       </div>
     </div>
@@ -138,7 +138,7 @@ function AskView() {
   const [activeBlockId, setActiveBlockId] = useState(null);
   const [watching, setWatching] = useState(null); // moment playing in the video modal
   // Raised clear of the docked composer.
-  const [toast, showToast] = useToast({ offset: "7.5rem" });
+  const [toast, showToast] = useToast({ offset: "5rem" });
   const docRef = useRef(null);
   const inputRef = useRef(null);
 

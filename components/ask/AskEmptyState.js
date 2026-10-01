@@ -24,7 +24,8 @@ export default function AskEmptyState({ onAsk, busy, studies, inputRef, onDelete
   return (
     <div className="relative">
       <Masthead
-        className="mx-auto max-w-5xl px-3 pb-12 pt-3 sm:px-8 sm:pb-16 sm:pt-8"
+        image={{ src: "/church-hero.jpg", position: "object-[30%_35%]" }}
+        className="mx-auto max-w-5xl px-4 pb-12 pt-3 sm:px-8 sm:pb-16 sm:pt-8"
         title="Ask the Word"
         description="Ask anything Rev. Peter has taught. Every answer comes from his recorded messages, with the moments to watch."
       >
@@ -40,7 +41,7 @@ export default function AskEmptyState({ onAsk, busy, studies, inputRef, onDelete
       </Masthead>
 
       <section aria-labelledby="examples-heading" className="mx-auto max-w-5xl px-4 pb-16 sm:px-8">
-        <h2 id="examples-heading" className="font-display text-2xl font-medium text-brand-ink sm:text-3xl">
+        <h2 id="examples-heading" className="font-display text-2xl font-semibold text-brand-ink">
           Start with a question
         </h2>
         <div className="mt-7 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
@@ -75,7 +76,7 @@ export default function AskEmptyState({ onAsk, busy, studies, inputRef, onDelete
       {recent.length > 0 && (
         <section aria-labelledby="studies-heading" className="mx-auto max-w-5xl px-4 pb-20 sm:px-8">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 id="studies-heading" className="font-display text-2xl font-medium text-brand-ink sm:text-3xl">
+            <h2 id="studies-heading" className="font-display text-2xl font-semibold text-brand-ink">
               Your studies
             </h2>
             <p className="text-sm text-brand-gray">Saved on this device</p>
@@ -85,12 +86,12 @@ export default function AskEmptyState({ onAsk, busy, studies, inputRef, onDelete
               <li key={s.id} className="group relative">
                 <Link
                   href={`/ask?study=${s.id}`}
-                  className="flex h-full flex-col rounded-[1.5rem] border border-brand-navy/10 bg-white p-5 transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-brand-navy/25 hover:shadow-[0_24px_50px_-30px_rgba(23,58,104,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy"
+                  className="flex h-full flex-col rounded-[1.5rem] border border-brand-navy/10 bg-white p-5 transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-brand-navy/25 hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy"
                 >
                   <span className="pr-8 text-xs text-brand-gray">
                     {studyWhere(s)} · {fmtDate(s.updatedAt)}
                   </span>
-                  <span className="mt-2 font-display text-xl font-medium leading-snug text-brand-ink">
+                  <span className="mt-2 font-display text-xl font-semibold leading-snug text-brand-ink">
                     {s.title}
                   </span>
                   <span className="mt-2 line-clamp-3 text-sm leading-relaxed text-brand-gray">

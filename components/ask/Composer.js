@@ -149,7 +149,7 @@ export default function Composer({
     return (
       <form
         onSubmit={onFormSubmit}
-        className="rounded-[1.75rem] border border-brand-navy/15 bg-white p-3 shadow-[0_30px_60px_-30px_rgba(23,58,104,0.35)] transition-colors focus-within:border-brand-navy/40 sm:p-4"
+        className="rounded-[1.75rem] border border-brand-navy/15 bg-white p-3 shadow-card transition-colors focus-within:border-brand-navy/40 sm:p-4"
       >
         {field}
         <div className="mt-2 flex items-center justify-between gap-3">
@@ -165,7 +165,7 @@ export default function Composer({
 
   return (
     <div
-      className="flex-shrink-0 border-t border-brand-navy/10 bg-white px-3 pt-3 pb-3.5 transition-transform duration-150 sm:px-6"
+      className="flex-shrink-0 border-t border-brand-navy/10 bg-white px-4 pt-3 pb-3.5 transition-transform duration-150 sm:px-6"
       style={{
         transform: keyboardInset ? `translateY(-${keyboardInset}px)` : undefined,
         paddingBottom: keyboardInset ? undefined : "calc(0.875rem + env(safe-area-inset-bottom))",
@@ -180,7 +180,7 @@ export default function Composer({
             textarea, losing its measured height and the caret mid-sentence. */}
         <div
           className={cn(
-            "flex gap-1.5 rounded-[1.4rem] border border-brand-navy/15 bg-white p-1.5 shadow-[0_10px_30px_-18px_rgba(23,58,104,0.35)] transition-colors focus-within:border-brand-navy/40",
+            "flex gap-1.5 rounded-[1.4rem] border border-brand-navy/15 bg-white p-1.5 shadow-subtle transition-colors focus-within:border-brand-navy/40",
             wrapped ? "flex-wrap items-center" : "items-end"
           )}
         >

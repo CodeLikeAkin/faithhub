@@ -69,8 +69,8 @@ export default function LatestShelf({ style }) {
         {items === null
           ? [0, 1, 2, 3].map((i) => (
               <div key={i} aria-hidden="true" className="snap-start">
-                <div className="aspect-video rounded-xl bg-brand-sky motion-safe:animate-pulse" />
-                <div className="mt-3 h-4 w-4/5 rounded-full bg-brand-sky motion-safe:animate-pulse" />
+                <div className="aspect-video rounded-xl fh-skeleton" />
+                <div className="mt-3 h-4 w-4/5 rounded-full fh-skeleton" />
               </div>
             ))
           : items.map((m, i) => (
@@ -97,7 +97,7 @@ export default function LatestShelf({ style }) {
                   </span>
                 </span>
                 <span className="min-w-0 px-0.5">
-                  <span className="line-clamp-1 sm:line-clamp-2 text-sm font-semibold leading-snug text-brand-ink group-hover:text-brand-navy">{m.name}</span>
+                  <span className="line-clamp-2 text-sm font-semibold leading-snug text-brand-ink group-hover:text-brand-navy">{m.name}</span>
                   <span className="mt-0.5 block truncate text-xs text-brand-gray">
                     {m.speaker}
                     {m.date ? ` · ${shortDate(m.date)}` : ""}

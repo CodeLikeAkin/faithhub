@@ -161,17 +161,17 @@ export default function AnswerBody({
             </em>
           ),
           h1: ({ node, children, ...props }) => (
-            <h3 className="mb-3 mt-8 font-display text-2xl font-medium text-brand-ink first:mt-0" {...props}>
+            <h3 className="mb-3 mt-8 font-display text-2xl font-semibold text-brand-ink first:mt-0" {...props}>
               {walk(children)}
             </h3>
           ),
           h2: ({ node, children, ...props }) => (
-            <h3 className="mb-3 mt-8 font-display text-2xl font-medium text-brand-ink first:mt-0" {...props}>
+            <h3 className="mb-3 mt-8 font-display text-2xl font-semibold text-brand-ink first:mt-0" {...props}>
               {walk(children)}
             </h3>
           ),
           h3: ({ node, children, ...props }) => (
-            <h4 className="mb-2 mt-6 font-display text-xl font-medium text-brand-ink first:mt-0" {...props}>
+            <h4 className="mb-2 mt-6 font-display text-xl font-semibold text-brand-ink first:mt-0" {...props}>
               {walk(children)}
             </h4>
           ),

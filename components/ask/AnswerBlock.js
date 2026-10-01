@@ -97,7 +97,7 @@ function SearchingStatus({ scope, startedAt, retrying, density = "page" }) {
       {/* The answer's own shape, faint — where the words will land. */}
       <div aria-hidden="true" className="mt-7 max-w-3xl space-y-3">
         {["w-full", "w-[94%]", "w-[68%]"].map((w) => (
-          <div key={w} className={cn("h-3.5 rounded-full bg-brand-sky/70 motion-safe:animate-pulse", w)} />
+          <div key={w} className={cn("h-3.5 rounded-full fh-skeleton", w)} />
         ))}
       </div>
     </div>
@@ -144,8 +144,8 @@ export default function AnswerBlock({
   const long = block.question.length > 110;
   const headingSize = page
     ? long
-      ? "text-xl sm:text-2xl"
-      : "text-2xl sm:text-3xl"
+      ? "text-xl"
+      : "text-2xl"
     : long
     ? "text-base"
     : "text-lg";

@@ -42,7 +42,7 @@ export default function Shelf({ eyebrow, title, action, children, className, col
       <div className="mb-4 flex items-end justify-between gap-4">
         <div className="min-w-0">
           {eyebrow && <p className="text-xs font-bold uppercase tracking-[0.12em] text-brand-gray">{eyebrow}</p>}
-          <h2 className="mt-1 font-display text-2xl font-medium tracking-tight text-brand-ink">{title}</h2>
+          <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight text-brand-ink">{title}</h2>
         </div>
         <div className="flex flex-shrink-0 items-center gap-2">
           {action}

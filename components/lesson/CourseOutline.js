@@ -54,11 +54,11 @@ export default function CourseOutline({ series, parts, activeId, onSelect, class
     <nav
       aria-label={`${series.title}: parts`}
       className={cn(
-        "overflow-hidden rounded-[1.5rem] border border-brand-navy/10 bg-white shadow-[0_24px_50px_-40px_rgba(23,58,104,0.45)]",
+        "overflow-hidden rounded-[1.5rem] border border-brand-navy/10 bg-white shadow-card",
         className
       )}
     >
-      <div className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
+      <div className="flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-3.5">
         <div className="min-w-0 flex-1">
           <p className="text-sm text-brand-gray">
             Part {parts[idx]?.part_number} of {parts.length}
@@ -80,7 +80,7 @@ export default function CourseOutline({ series, parts, activeId, onSelect, class
         type="button"
         onClick={() => setOpenMobile((o) => !o)}
         aria-expanded={openMobile}
-        className="flex w-full items-center justify-between border-t border-brand-navy/10 px-4 py-3 text-sm font-semibold text-brand-navy sm:hidden"
+        className="flex w-full items-center justify-between border-t border-brand-navy/10 px-4 py-2.5 text-sm font-semibold text-brand-navy sm:hidden"
       >
         {openMobile ? "Hide the parts" : `All ${parts.length} parts`}
         <ChevronDown size={16} aria-hidden="true" className={cn("transition-transform", openMobile && "rotate-180")} />

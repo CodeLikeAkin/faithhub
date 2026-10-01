@@ -160,7 +160,7 @@ export default function ChapterView({ slug, chapter }) {
   if (!valid) {
     return (
       <div className="px-6 py-24 text-center">
-        <h1 className="font-display text-3xl font-medium text-brand-ink">That chapter doesn&rsquo;t exist</h1>
+        <h1 className="font-display text-2xl font-semibold text-brand-ink">That chapter doesn&rsquo;t exist</h1>
         <Link href={book ? `/word/${book.slug}` : "/word"} className="mt-6 inline-flex items-center gap-2 font-semibold text-brand-navy hover:underline">
           {book ? `Back to ${book.name}` : "Back to The Word"} <ArrowRight size={16} aria-hidden="true" />
         </Link>
@@ -200,7 +200,7 @@ export default function ChapterView({ slug, chapter }) {
           <Link href={`/word/${book.slug}`} className="text-sm font-semibold text-brand-navy hover:underline">
             {book.name}
           </Link>
-          <h1 className="mt-1 font-display text-5xl font-medium tracking-tight text-brand-ink sm:text-6xl">
+          <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight text-brand-ink sm:text-4xl">
             {book.name} {ch}
           </h1>
           <p className="mt-3 text-lg text-brand-gray">

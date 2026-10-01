@@ -90,6 +90,18 @@ module.exports = {
           light: "#F8F9FA",
         },
       },
+      /* Elevation — three steps, and nothing else. Every card shadow in the
+         app used to be hand-written at the call site, which left 17 near-identical
+         values drifting apart (-28px here, -35px there). A surface reads as one
+         system when it lifts by the same amount everywhere.
+           subtle — a small control resting on the page
+           card   — a card at rest
+           lift   — a card under the cursor, or anything floating */
+      boxShadow: {
+        subtle: "0 10px 26px -18px rgba(23, 58, 104, 0.3)",
+        card: "0 18px 40px -28px rgba(23, 58, 104, 0.35)",
+        lift: "0 26px 50px -30px rgba(23, 58, 104, 0.45)",
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",

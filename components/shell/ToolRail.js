@@ -22,7 +22,7 @@ import { displayTitle } from "@/lib/titles";
 import { byRecent, useStudies } from "@/lib/studies";
 import { cn } from "@/lib/utils";
 
-/** Every section of the app, in rail order. The phone tab bar uses the same list. */
+/** Every section of the app, in rail order. The mobile drawer uses the same list. */
 export const TOOLS = [
   { name: "Home", short: "Home", href: "/", icon: Home, match: (p) => p === "/" },
   { name: "Ask the Word", short: "Ask", href: "/ask", icon: Sparkles, match: (p) => p === "/ask" },
@@ -60,7 +60,7 @@ const LABEL = {
   auto: "max-w-0 opacity-0 2xl:max-w-[10rem] 2xl:opacity-100",
 };
 
-function RailLink({ link, mode, pathname, onNavigate }) {
+function RailLink({ link, mode, pathname, onNavigate, compact = false }) {
   const { name, href, icon: Icon, match } = link;
   const active = match(pathname);
   return (
@@ -70,7 +70,8 @@ function RailLink({ link, mode, pathname, onNavigate }) {
       aria-current={active ? "page" : undefined}
       title={name}
       className={cn(
-        "flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors",
+        "flex items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors",
+        compact ? "h-9" : "h-10",
         active ? "bg-white/[0.14] text-white" : "text-white/70 hover:bg-white/10 hover:text-white"
       )}
     >
@@ -100,10 +101,6 @@ export default function ToolRail({
   // this rail — and an optional call to action under the footer links.
   trailingLinks = [],
   footerCta = null,
-  // Skips the Home/Ask/Series/Declare/Word list. Used only by the mobile
-  // "More" drawer, where the phone tab bar right below already gives one-tap
-  // access to every tool — repeating them here was pure duplication.
-  hideTools = false,
 }) {
   const pathname = usePathname() || "";
   const { studies } = useStudies();
@@ -143,17 +140,15 @@ export default function ToolRail({
         )}
       </div>
 
-      {!hideTools && (
-        <nav aria-label="Sections" className="flex-shrink-0 px-3">
-          <ul className="space-y-0.5">
-            {navLinks.map((link) => (
-              <li key={link.href}>
-                <RailLink link={link} mode={mode} pathname={pathname} onNavigate={onNavigate} />
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )}
+      <nav aria-label="Sections" className="flex-shrink-0 px-3">
+        <ul className="space-y-0.5">
+          {navLinks.map((link) => (
+            <li key={link.href}>
+              <RailLink link={link} mode={mode} pathname={pathname} onNavigate={onNavigate} />
+            </li>
+          ))}
+        </ul>
+      </nav>
 
       {/* Studies — expanded rail */}
       <div className={cn("mt-7 min-h-0 flex-1 flex-col", SHOW_FLEX[mode])}>
@@ -258,11 +253,11 @@ export default function ToolRail({
       </div>
 
       {/* Foot: Vision and About, in both modes; expand control on the icon strip */}
-      <div className="flex-shrink-0 border-t border-white/10 px-3 py-3">
+      <div className="flex-shrink-0 border-t border-white/10 px-3 py-2">
         <ul className="space-y-0.5">
           {ABOUT_LINKS.map((link) => (
             <li key={link.href}>
-              <RailLink link={link} mode={mode} pathname={pathname} onNavigate={onNavigate} />
+              <RailLink link={link} mode={mode} pathname={pathname} onNavigate={onNavigate} compact />
             </li>
           ))}
           {onToggleCollapse && (
@@ -272,14 +267,14 @@ export default function ToolRail({
                 onClick={onToggleCollapse}
                 aria-label="Expand sidebar"
                 title="Expand sidebar"
-                className="flex h-10 items-center gap-3 rounded-xl px-3 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                className="flex h-9 items-center gap-3 rounded-xl px-3 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
               >
                 <PanelLeftOpen size={18} aria-hidden="true" />
               </button>
             </li>
           )}
         </ul>
-        <p className={cn("px-3 pt-2 text-xs leading-relaxed text-white/45", SHOW_BLOCK[mode])}>
+        <p className={cn("px-3 pb-0.5 pt-1.5 text-xs leading-snug text-white/45", SHOW_BLOCK[mode])}>
           Answers are grounded in HOF recorded messages. Studies stay on this device.
         </p>
         {footerCta}

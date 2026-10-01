@@ -4,21 +4,22 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { MoreHorizontal, PanelLeft, X } from "lucide-react";
+import { Menu, PanelLeft, X } from "lucide-react";
 import { useMediaQuery, PANEL_DOCKED_QUERY } from "@/lib/useMediaQuery";
 import { cn } from "@/lib/utils";
-import ToolRail, { TOOLS } from "./ToolRail";
+import ToolRail from "./ToolRail";
 import { deleteStudyWithUndo, useToast } from "./Toast";
 
 /**
  * The frame every page shares (Home, the tools, lessons, Vision, About).
  * Replaces the global Navbar on these routes (Navbar hides itself there).
  *
- *   [ rail ] [ header / main / phone tabs ] [ panel ]
+ *   [ rail ] [ header / main ] [ panel ]
  *
  * - rail (navy): 248px from lg, foldable to a 72px icon strip or hidden
- *   entirely; below lg it becomes a bottom tab bar, with the full rail
- *   (studies, Vision, About) in a drawer behind the header's "More" button.
+ *   entirely; below lg it lives entirely in a drawer behind the header's menu
+ *   button (sections, studies, Vision, About). Phones get no bottom bar —
+ *   the screen is short enough that the content wants every pixel.
  * - panel (optional): a docked column from lg (360px, 400px from xl); a bottom
  *   sheet below that. It is ONE element whichever way it shows, so its state
  *   (a streaming answer, its scroll) survives a resize.
@@ -258,9 +259,9 @@ export default function ToolShell({
         </div>
       </aside>
 
-      {/* Header + main + phone tabs */}
+      {/* Header + main */}
       <div {...inertProps} className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 flex-shrink-0 items-center gap-1.5 border-b border-brand-navy/10 bg-white px-3 sm:h-16 sm:gap-2 sm:px-4 lg:px-6">
+        <header className="flex h-14 flex-shrink-0 items-center gap-1.5 border-b border-brand-navy/10 bg-white px-4 sm:h-16 sm:gap-2 sm:px-6 lg:px-6">
           <Link
             href="/"
             aria-label="FaithHub home"
@@ -294,52 +295,18 @@ export default function ToolShell({
             ref={menuButtonRef}
             type="button"
             onClick={() => setRailOpen(true)}
-            aria-label="More: your studies, Vision, About"
-            title="More"
+            aria-label="Menu: sections, your studies, Vision, About"
+            title="Menu"
             aria-expanded={railOpen}
             className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-full text-brand-navy transition hover:bg-brand-sky active:scale-95 lg:hidden"
           >
-            <MoreHorizontal size={22} aria-hidden="true" />
+            <Menu size={22} aria-hidden="true" />
           </button>
         </header>
 
         <main id="main-content" className="flex min-h-0 min-w-0 flex-1 flex-col">
           {children}
         </main>
-
-        {/* Phone and small-tablet sections — the rail's job below lg. The row
-            of icons is centered and no wider than it needs to be (not
-            stretched edge to edge), so it reads as one clustered control
-            sitting in the middle of the bar rather than a full-bleed strip. */}
-        <nav
-          aria-label="Sections"
-          className="flex flex-shrink-0 justify-center bg-brand-navy px-1 pt-1.5 lg:hidden"
-          style={{ paddingBottom: "max(0.375rem, env(safe-area-inset-bottom))" }}
-        >
-          <div className="flex w-full max-w-xs justify-between gap-1">
-            {TOOLS.map(({ short, href, icon: Icon, match }) => {
-              const active = match(pathname);
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  aria-current={active ? "page" : undefined}
-                  className={cn(
-                    "flex min-w-0 flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-xs font-medium transition-colors active:scale-95",
-                    active ? "text-white" : "text-white/60 hover:text-white"
-                  )}
-                >
-                  <span
-                    aria-hidden="true"
-                    className={cn("h-0.5 w-7 rounded-full bg-white transition-opacity", active ? "opacity-100" : "opacity-0")}
-                  />
-                  <Icon size={21} aria-hidden="true" />
-                  {short}
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
       </div>
 
       {/* Panel — docked column from lg, bottom sheet below */}
@@ -413,11 +380,6 @@ export default function ToolShell({
         </button>
         <ToolRail
           mode="expanded"
-          // The phone tab bar right below already covers Home/Ask/Series/
-          // Declare/Word one tap away — repeating them at the top of this
-          // drawer was pure duplication. It opens straight into what the tab
-          // bar can't hold: studies, Vision, About.
-          hideTools
           onNavigate={() => setRailOpen(false)}
           activeStudyId={activeStudyId}
           activeBlockId={activeBlockId}

@@ -21,7 +21,7 @@ export default function WordLanding({ stats }) {
 
   return (
     <div className="pb-24">
-      <div className="px-3 pt-3 sm:px-6 sm:pt-6">
+      <div className="px-4 pt-3 sm:px-6 sm:pt-6">
         <section className="relative overflow-hidden rounded-[1.75rem] bg-brand-deep px-6 py-10 text-white sm:rounded-[2.5rem] sm:px-10 sm:py-12">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0">
             <div className="absolute -left-40 -top-40 h-[26rem] w-[26rem] rounded-full bg-brand-navy blur-3xl" />
@@ -29,17 +29,17 @@ export default function WordLanding({ stats }) {
             <Rings className="absolute -bottom-56 -right-48 h-[34rem] w-[34rem] text-white/[0.06]" />
           </div>
           <div className="relative">
-            <h1 className="font-display text-5xl font-medium tracking-tight sm:text-6xl">The Word</h1>
+            <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">The Word</h1>
             <p className="mt-3 max-w-xl text-lg leading-relaxed text-white/75">
               Every scripture Rev. Peter has opened in his messages, mapped across the Bible.
             </p>
             {stats && (
               <dl className="mt-8 grid max-w-2xl grid-cols-3 gap-3">
                 {[
-                  [fmt(stats.totals.refs), "scriptures opened"],
-                  [fmt(stats.totals.messages), "messages"],
-                  [`${stats.totals.books} of 66`, "books"],
-                ].map(([value, label]) => (
+                  { value: fmt(stats.totals.refs), label: "scriptures opened", short: "scriptures" },
+                  { value: fmt(stats.totals.messages), label: "messages" },
+                  { value: `${stats.totals.books} of 66`, label: "books" },
+                ].map(({ value, label, short }) => (
                   <div key={label} className="rounded-2xl bg-white/[0.07] px-3 py-3 ring-1 ring-white/10 sm:px-4">
                     <dt className="sr-only">{label}</dt>
                     <dd>
@@ -47,7 +47,13 @@ export default function WordLanding({ stats }) {
                       <span className="block whitespace-nowrap font-display text-lg font-medium tabular-nums sm:text-2xl lg:text-3xl">
                         {value}
                       </span>
-                      <span className="block text-xs text-white/60 sm:text-sm">{label}</span>
+                      {/* A phone can't fit "scriptures opened" on one line next to the
+                          other two, and the wrap left the row ragged. The full label is
+                          still what a screen reader gets, from <dt> above. */}
+                      <span className="block text-xs text-white/60 sm:text-sm">
+                        <span className="sm:hidden">{short || label}</span>
+                        <span className="hidden sm:inline">{label}</span>
+                      </span>
                     </dd>
                   </div>
                 ))}
@@ -61,7 +67,7 @@ export default function WordLanding({ stats }) {
         {/* Browsing comes first: someone opening The Word wants to go to a verse,
             not read the rankings. Above xl the left pane already holds the nav. */}
         <section aria-labelledby="browse-heading" className="pt-10 xl:hidden">
-          <h2 id="browse-heading" className="font-display text-3xl font-medium tracking-tight text-brand-ink">
+          <h2 id="browse-heading" className="font-display text-2xl font-semibold tracking-tight text-brand-ink">
             Browse the Bible
           </h2>
           <p className="mt-1.5 text-sm text-brand-gray">Tap a book to open its chapters</p>
@@ -72,7 +78,7 @@ export default function WordLanding({ stats }) {
           <section aria-labelledby="passages-heading" className="pt-14">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <h2 id="passages-heading" className="font-display text-3xl font-medium tracking-tight text-brand-ink">
+                <h2 id="passages-heading" className="font-display text-2xl font-semibold tracking-tight text-brand-ink">
                   Most-preached passages
                 </h2>
                 <p className="mt-1.5 text-sm text-brand-gray">The verses he opens in the most messages</p>
@@ -84,7 +90,7 @@ export default function WordLanding({ stats }) {
                 <li key={p.label}>
                   <Link
                     href={`/word/${p.slug}/${p.chapter}#v${p.verseStart}`}
-                    className="block h-full rounded-2xl transition-shadow hover:shadow-[0_20px_40px_-28px_rgba(23,58,104,0.5)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy"
+                    className="block h-full rounded-2xl transition-shadow hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy"
                   >
                     <VerseCard
                       reference={p.label}
@@ -103,7 +109,7 @@ export default function WordLanding({ stats }) {
 
         {stats?.chapters?.length > 0 && (
           <section aria-labelledby="chapters-heading" className="pt-14">
-            <h2 id="chapters-heading" className="font-display text-3xl font-medium tracking-tight text-brand-ink">
+            <h2 id="chapters-heading" className="font-display text-2xl font-semibold tracking-tight text-brand-ink">
               Chapters Rev returns to
             </h2>
             <ul className="mt-6 space-y-2">
@@ -129,7 +135,7 @@ export default function WordLanding({ stats }) {
 
         {stats?.books?.length > 0 && (
           <section aria-labelledby="books-heading" className="pt-14">
-            <h2 id="books-heading" className="font-display text-3xl font-medium tracking-tight text-brand-ink">
+            <h2 id="books-heading" className="font-display text-2xl font-semibold tracking-tight text-brand-ink">
               The books Rev preaches from most
             </h2>
             <ol className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -137,7 +143,7 @@ export default function WordLanding({ stats }) {
                 <li key={b.id}>
                   <Link
                     href={`/word/${b.slug}`}
-                    className="group flex items-center gap-4 rounded-2xl border border-brand-navy/10 bg-white p-4 transition-[border-color,box-shadow] hover:border-brand-navy/25 hover:shadow-[0_20px_40px_-30px_rgba(23,58,104,0.45)]"
+                    className="group flex items-center gap-4 rounded-2xl border border-brand-navy/10 bg-white p-4 transition-[border-color,box-shadow,transform] hover:border-brand-navy/25 hover:shadow-lift active:scale-[0.99]"
                   >
                     <span className="w-6 text-right font-display text-xl tabular-nums text-brand-navy/40">{i + 1}</span>
                     <span className="min-w-0 flex-1">

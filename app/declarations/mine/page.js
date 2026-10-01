@@ -74,7 +74,7 @@ export default function MyDeclarationsPage() {
       <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
         <div className="mx-auto w-full max-w-4xl px-4 sm:px-8">
           <header className="pt-10 sm:pt-14">
-            <h1 className="font-display text-5xl font-medium tracking-tight text-brand-ink sm:text-6xl">My declarations</h1>
+            <h1 className="font-display text-3xl font-semibold tracking-tight text-brand-ink sm:text-4xl">My declarations</h1>
             <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-lg text-brand-gray">
               <span>{saved.length ? `${saved.length} saved on this device` : "Your own set, to speak each day"}</span>
               <span className="inline-flex items-center gap-1.5 text-base font-medium text-brand-navy">
@@ -90,7 +90,7 @@ export default function MyDeclarationsPage() {
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white text-brand-navy shadow-sm">
                 <Bookmark size={20} aria-hidden="true" />
               </span>
-              <h2 className="mt-5 font-display text-2xl font-medium text-brand-ink">Build the set you&rsquo;ll speak every day</h2>
+              <h2 className="mt-5 font-display text-2xl font-semibold text-brand-ink">Build the set you&rsquo;ll speak every day</h2>
               <p className="mt-2 max-w-xl text-base leading-relaxed text-brand-gray">
                 Open a theme and tap the bookmark on any declaration that speaks to you. They gather here, and
                 one tap on &ldquo;Speak them&rdquo; takes you through them in Speak mode. Each day you speak

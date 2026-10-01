@@ -92,8 +92,8 @@ export default function TodayCard({ className, style }) {
       <p className="relative text-xs font-bold uppercase tracking-[0.18em] text-white/65">Today&rsquo;s declaration</p>
       {decl === undefined ? (
         <div aria-hidden="true" className="relative mt-auto space-y-3">
-          <div className="h-6 w-4/5 rounded-full bg-white/10 motion-safe:animate-pulse" />
-          <div className="h-6 w-3/5 rounded-full bg-white/10 motion-safe:animate-pulse" />
+          <div className="h-6 w-4/5 rounded-full fh-skeleton-dark" />
+          <div className="h-6 w-3/5 rounded-full fh-skeleton-dark" />
         </div>
       ) : (
         <>

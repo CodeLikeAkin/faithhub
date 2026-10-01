@@ -18,7 +18,7 @@ export default function BibleNav({ selectedId, className }) {
     <nav aria-label="Books of the Bible" className={cn("px-3 py-6", className)}>
       {SECTIONS.map((sec) => (
         <section key={sec.name} className="mb-7 last:mb-0">
-          <h2 className="px-2 font-display text-xl font-medium text-brand-ink">{sec.name}</h2>
+          <h2 className="px-2 font-display text-xl font-semibold text-brand-ink">{sec.name}</h2>
           <ul className="mt-2 space-y-px">
             {sec.books.map((b) => {
               const s = stats?.[b.id];

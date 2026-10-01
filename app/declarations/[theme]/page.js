@@ -119,7 +119,7 @@ export default function ThemePage() {
         <div className="mx-auto w-full max-w-4xl px-4 sm:px-8">
           {!theme ? (
             <div className="py-24 text-center">
-              <h1 className="font-display text-3xl font-medium text-brand-ink">We don&rsquo;t have that theme</h1>
+              <h1 className="font-display text-2xl font-semibold text-brand-ink">We don&rsquo;t have that theme</h1>
               <Link
                 href="/declarations"
                 className="mt-8 inline-flex items-center gap-2 rounded-full bg-brand-navy px-5 py-3 text-sm font-bold text-white hover:bg-brand-deep"
@@ -130,7 +130,7 @@ export default function ThemePage() {
           ) : (
             <>
               <header className="pt-10 sm:pt-14">
-                <h1 className="font-display text-5xl font-medium tracking-tight text-brand-ink sm:text-6xl">{theme.name}</h1>
+                <h1 className="font-display text-3xl font-semibold tracking-tight text-brand-ink sm:text-4xl">{theme.name}</h1>
                 <p className="mt-3 text-lg text-brand-gray">
                   {theme.sub}
                   {count != null && ` · ${count.toLocaleString()} declarations from Rev. Peter’s messages`}
@@ -141,7 +141,7 @@ export default function ThemePage() {
               {status === "loading" && (
                 <div aria-hidden="true" className="mt-8 space-y-8">
                   {[92, 80, 96, 70].map((w) => (
-                    <div key={w} className="h-7 rounded-full bg-brand-sky motion-safe:animate-pulse" style={{ width: `${w}%` }} />
+                    <div key={w} className="h-7 rounded-full fh-skeleton" style={{ width: `${w}%` }} />
                   ))}
                 </div>
               )}

@@ -42,7 +42,7 @@ export default function HomeHero() {
             ? `${greeting(now.getHours())} · ${now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}`
             : "Heritage of Faith Church"}
         </p>
-        <h1 className="mt-3 font-display text-4xl font-medium leading-[1.02] tracking-tight sm:text-5xl lg:text-6xl">
+        <h1 className="mt-3 font-display text-3xl font-semibold leading-[1.02] tracking-tight sm:text-4xl">
           Go deeper
           <br />
           in the Word.

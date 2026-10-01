@@ -67,7 +67,7 @@ export default function SeriesOverview({ seriesId }) {
   const [watching, setWatching] = useState(null);
   const [translation, setTranslation] = useState("KJV");
   const [showAllDecls, setShowAllDecls] = useState(false);
-  const [toast, showToast] = useToast();
+  const [toast, showToast] = useToast({ offset: "5.5rem" }); // clears the Ask button
   const docked = useMediaQuery(PANEL_DOCKED_QUERY);
   const panelShown = panelOpen ?? docked;
   const sheetShown = panelOpen === true && !docked;
@@ -158,12 +158,12 @@ export default function SeriesOverview({ seriesId }) {
     >
       <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
         {loading ? (
-          <div aria-hidden="true" className="px-3 pt-3 sm:px-6 sm:pt-6">
-            <div className="h-80 rounded-[1.75rem] bg-brand-sky motion-safe:animate-pulse sm:rounded-[2.5rem]" />
+          <div aria-hidden="true" className="px-4 pt-3 sm:px-6 sm:pt-6">
+            <div className="h-80 rounded-[1.75rem] fh-skeleton sm:rounded-[2.5rem]" />
           </div>
         ) : notFound || !series ? (
           <div className="mx-auto max-w-xl px-6 py-24 text-center">
-            <h1 className="font-display text-3xl font-medium text-brand-ink">We couldn&rsquo;t find that series</h1>
+            <h1 className="font-display text-2xl font-semibold text-brand-ink">We couldn&rsquo;t find that series</h1>
             <p className="mt-3 text-brand-gray">It may have been renamed, or the link is incomplete.</p>
             <Link
               href="/series"
@@ -175,7 +175,7 @@ export default function SeriesOverview({ seriesId }) {
         ) : (
           <>
             {/* Cover */}
-            <div className="px-3 pt-3 sm:px-6 sm:pt-6">
+            <div className="px-4 pt-3 sm:px-6 sm:pt-6">
               <section className="relative overflow-hidden rounded-[1.75rem] bg-brand-deep px-6 py-12 text-white sm:rounded-[2.5rem] sm:px-12 sm:py-16 lg:px-16 lg:py-20">
                 <div aria-hidden="true" className="pointer-events-none absolute inset-0">
                   <YtThumb
@@ -191,7 +191,7 @@ export default function SeriesOverview({ seriesId }) {
                     A series in {parts.length} {parts.length === 1 ? "part" : "parts"}
                     {dateRange && ` · ${dateRange}`}
                   </p>
-                  <h1 className="mt-4 font-display text-4xl font-medium leading-[1.05] tracking-tight text-balance sm:text-6xl">
+                  <h1 className="mt-4 font-display text-3xl font-semibold leading-[1.05] tracking-tight text-balance sm:text-4xl">
                     {seriesName(series.title)}
                   </h1>
                 </div>
@@ -208,7 +208,7 @@ export default function SeriesOverview({ seriesId }) {
                   ) : (
                     <div aria-label="Reading the series…" className="max-w-2xl space-y-3">
                       {[92, 100, 84, 60].map((w) => (
-                        <div key={w} className="h-4 rounded-full bg-brand-sky motion-safe:animate-pulse" style={{ width: `${w}%` }} />
+                        <div key={w} className="h-4 rounded-full fh-skeleton" style={{ width: `${w}%` }} />
                       ))}
                     </div>
                   )}
@@ -221,7 +221,7 @@ export default function SeriesOverview({ seriesId }) {
                     <li key={p.id}>
                       <Link
                         href={`/sermon/${p.id}`}
-                        className="group flex items-center gap-4 rounded-[1.25rem] border border-brand-navy/10 bg-white p-3 pr-4 transition-[border-color,box-shadow] hover:border-brand-navy/25 hover:shadow-[0_24px_50px_-35px_rgba(23,58,104,0.45)] sm:gap-5"
+                        className="group flex items-center gap-4 rounded-[1.25rem] border border-brand-navy/10 bg-white p-3 pr-4 transition-[border-color,box-shadow,transform] hover:border-brand-navy/25 hover:shadow-lift active:scale-[0.99] sm:gap-5"
                       >
                         <span className="relative aspect-video w-28 flex-shrink-0 overflow-hidden rounded-xl bg-brand-sky sm:w-40">
                           {p.youtube_video_id && (
@@ -243,7 +243,7 @@ export default function SeriesOverview({ seriesId }) {
                           </span>
                           {/* No `block` beside line-clamp-* — it overrides the -webkit-box
                               display the clamp needs, and the text spills instead of clamping. */}
-                          <span className="mt-1 line-clamp-1 sm:line-clamp-2 font-display text-lg font-medium leading-snug text-brand-ink sm:text-xl">
+                          <span className="mt-1 line-clamp-2 font-display text-lg font-medium leading-snug text-brand-ink sm:text-xl">
                             {partTitle(p.title, series.title)}
                           </span>
                           {p.summary && (
@@ -330,7 +330,7 @@ export default function SeriesOverview({ seriesId }) {
           /* Icon-only on a phone: the labelled pill ran half the width of the
              screen and sat on top of whatever part you were reading. The
              label comes back where there's room for it. */
-          className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-20 inline-flex h-14 w-14 items-center justify-center gap-2 rounded-full bg-brand-navy text-sm font-bold text-white shadow-xl shadow-brand-navy/30 transition-colors hover:bg-brand-deep sm:h-auto sm:w-auto sm:px-5 sm:py-3.5 lg:hidden"
+          className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-20 inline-flex h-14 w-14 items-center justify-center gap-2 rounded-full bg-brand-navy text-sm font-bold text-white shadow-xl shadow-brand-navy/30 transition-colors hover:bg-brand-deep sm:h-auto sm:w-auto sm:px-5 sm:py-3.5 lg:hidden"
         >
           <Sparkles size={16} aria-hidden="true" />
           <span className="hidden sm:inline">Ask about this series</span>

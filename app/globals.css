@@ -157,6 +157,38 @@ a, button {
   animation: fh-settle 2.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
+/*
+  Skeletons. A sheen travels across the block instead of the whole thing
+  blinking: a pulse reads as stalled when the data is slow (and on a free-tier
+  database it often is), a sweep reads as working. Reduced motion keeps the
+  plain tinted block, which is the point of the background-color.
+
+  .fh-skeleton      — on white
+  .fh-skeleton-dark — on a navy surface
+*/
+.fh-skeleton {
+  background-color: #eaf2fb;
+}
+.fh-skeleton-dark {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+@keyframes fh-sheen {
+  from { background-position: 160% 0; }
+  to { background-position: -60% 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .fh-skeleton,
+  .fh-skeleton-dark {
+    background-image: linear-gradient(100deg, transparent 18%, rgba(255, 255, 255, 0.7) 50%, transparent 82%);
+    background-size: 220% 100%;
+    background-repeat: no-repeat;
+    animation: fh-sheen 1.7s linear infinite;
+  }
+  .fh-skeleton-dark {
+    background-image: linear-gradient(100deg, transparent 18%, rgba(255, 255, 255, 0.14) 50%, transparent 82%);
+  }
+}
+
 /* Horizontal shelves scroll by swipe or their arrows, without a scrollbar. */
 .fh-no-scrollbar {
   scrollbar-width: none;

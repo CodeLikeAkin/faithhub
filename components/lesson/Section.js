@@ -6,7 +6,7 @@ export default function Section({ id, title, intro, action, children }) {
         <div className="min-w-0">
           <h2
             id={id ? `${id}-heading` : undefined}
-            className="font-display text-2xl font-medium tracking-tight text-brand-ink sm:text-3xl"
+            className="font-display text-2xl font-semibold tracking-tight text-brand-ink"
           >
             {title}
           </h2>

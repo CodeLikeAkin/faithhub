@@ -32,12 +32,12 @@ function Tool({ href, icon: Icon, title, desc, foot, style }) {
     <Link
       href={href}
       style={style}
-      className="fh-rise group flex min-w-0 flex-col gap-2.5 rounded-[1.5rem] border border-brand-navy/10 bg-white p-5 transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-brand-navy/40 hover:shadow-[0_24px_40px_-30px_rgba(23,58,104,0.55)]"
+      className="fh-rise group flex min-w-0 flex-col gap-2 rounded-[1.5rem] border border-brand-navy/10 bg-white p-4 transition-[transform,border-color,box-shadow] sm:gap-2.5 sm:p-5 duration-300 hover:-translate-y-0.5 hover:border-brand-navy/40 hover:shadow-lift active:scale-[0.99]"
     >
       <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-sky text-brand-navy">
         <Icon size={19} aria-hidden="true" />
       </span>
-      <span className="mt-1 font-display text-xl font-medium text-brand-ink">{title}</span>
+      <span className="mt-1 font-display text-xl font-semibold text-brand-ink">{title}</span>
       <span className="text-sm leading-relaxed text-brand-gray">{desc}</span>
       <span className="mt-auto flex items-center justify-between gap-3 pt-2 text-sm text-brand-gray">
         {foot}
@@ -72,8 +72,8 @@ export default function GoDeeper({ startIndex = 0 }) {
   return (
     <section>
       <p className="text-xs font-bold uppercase tracking-[0.12em] text-brand-gray">Go deeper</p>
-      <h2 className="mt-1 font-display text-2xl font-medium tracking-tight text-brand-ink">Four ways into the teaching</h2>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight text-brand-ink">Four ways into the teaching</h2>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
         <Tool
           style={i(0)}
           href={`/ask?q=${encodeURIComponent(STARTER_QUESTIONS[0])}`}

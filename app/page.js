@@ -15,7 +15,7 @@ export default function Home() {
   return (
     <ToolShell kind="home" title="Home">
       <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-3 pb-12 pt-3 sm:gap-6 sm:px-6 sm:pt-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 pb-12 pt-3 sm:gap-6 sm:px-6 sm:pt-6 lg:px-8">
           <HomeHero />
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
             <TodayCard className="fh-rise" style={{ "--i": 1 }} />

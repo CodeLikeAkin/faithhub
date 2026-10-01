@@ -10,7 +10,7 @@ import { deleteStudy, restoreStudy } from "@/lib/studies";
  * `showToast("Removed", { label: "Undo", run })`. `offset` is how far above
  * the bottom edge it sits (raise it over a docked composer).
  */
-export function useToast({ offset = "6rem" } = {}) {
+export function useToast({ offset = "1.5rem" } = {}) {
   const [toast, setToast] = useState(null); // { message, action? }
   const timer = useRef(null);
 
