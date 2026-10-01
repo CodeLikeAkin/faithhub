@@ -2,7 +2,6 @@ import './globals.css'
 import { Roboto, Newsreader } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import Navbar from '@/components/Navbar'
-import SplashScreen, { SPLASH_SCRIPT } from '@/components/splash/SplashScreen'
 
 const roboto = Roboto({
   subsets: ['latin'],
@@ -30,15 +29,16 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    // suppressHydrationWarning: SPLASH_SCRIPT sets data-fh-splash on <html>
-    // before React hydrates, which React would otherwise flag as a mismatch.
+    // suppressHydrationWarning: browser extensions routinely add attributes to
+    // <html> before React hydrates, which React would otherwise flag.
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
-      <head>
-        {/* Must run before the body paints, so a repeat visit never flashes the splash. */}
-        <script dangerouslySetInnerHTML={{ __html: SPLASH_SCRIPT }} />
-      </head>
       <body className={`${roboto.variable} ${newsreader.variable} font-sans antialiased`}>
-        <SplashScreen />
+        {/* The brand splash is parked for launch — the navy-background version
+            didn't read right. Nothing is deleted: the markup lives in
+            components/splash/, the animation in globals.css ("Splash screen").
+            To bring it back, re-import SplashScreen and SPLASH_SCRIPT, render
+            <SplashScreen /> here, and put SPLASH_SCRIPT back in a <head> script
+            (it must run before the body paints, or a repeat visit flashes it). */}
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-white focus:text-brand-navy focus:font-bold focus:text-sm focus:rounded-full focus:border focus:border-brand-navy focus:shadow-lg"
