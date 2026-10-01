@@ -34,7 +34,7 @@ function SeriesCard({ s }) {
           {s.thumbs?.length ? (
             <YtThumb
               ids={s.thumbs}
-              quality="mqdefault"
+              quality={["maxresdefault", "hq720", "mqdefault"]}
               className="relative h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
             />
           ) : null}
