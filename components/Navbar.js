@@ -222,7 +222,7 @@ export default function Navbar() {
         aria-modal="true"
         aria-label="Menu"
         {...(!isOpen ? { inert: "", "aria-hidden": true } : {})}
-        className={`fixed inset-y-0 left-0 z-50 w-[min(20rem,86vw)] bg-brand-navy shadow-2xl transition-transform duration-300 md:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 w-[min(20rem,86vw)] bg-brand-deep shadow-2xl transition-transform duration-300 md:hidden ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}

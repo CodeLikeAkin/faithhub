@@ -239,7 +239,7 @@ export default function ToolShell({
         {...(mode === "hidden" ? { "aria-hidden": true, inert: "" } : {})}
         aria-label="FaithHub"
         className={cn(
-          "hidden flex-shrink-0 overflow-hidden bg-brand-navy lg:block",
+          "hidden flex-shrink-0 overflow-hidden bg-brand-deep lg:block",
           railAnimate && "transition-[width] duration-300 ease-out",
           RAIL_WIDTH[mode]
         )}
@@ -363,7 +363,7 @@ export default function ToolShell({
         aria-label="Menu"
         {...(!railOpen ? { inert: "", "aria-hidden": true } : {})}
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-[min(20rem,86vw)] bg-brand-navy shadow-2xl transition-transform duration-300 lg:hidden",
+          "fixed inset-y-0 left-0 z-50 w-[min(20rem,86vw)] bg-brand-deep shadow-2xl transition-transform duration-300 lg:hidden",
           railOpen ? "translate-x-0" : "-translate-x-full"
         )}
         style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}

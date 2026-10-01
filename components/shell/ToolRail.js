@@ -21,6 +21,7 @@ import { fmtDate } from "@/lib/ask-format";
 import { displayTitle } from "@/lib/titles";
 import { byRecent, useStudies } from "@/lib/studies";
 import { cn } from "@/lib/utils";
+import { Rings } from "@/components/Decor";
 
 /** Every section of the app, in rail order. The mobile drawer uses the same list. */
 export const TOOLS = [
@@ -84,7 +85,7 @@ function RailLink({ link, mode, pathname, onNavigate, compact = false }) {
 }
 
 /**
- * The app's left rail, in the house navy: logo, every section, the reader's
+ * The app's left rail, in the deep navy admin also uses: logo, every section, the reader's
  * saved studies (the active one unfolds into its question outline), and the
  * Vision / About pages at its foot.
  */
@@ -108,7 +109,16 @@ export default function ToolRail({
   const navLinks = [...TOOLS, ...trailingLinks];
 
   return (
-    <div className="flex h-full min-h-0 flex-col text-white">
+    <div className="relative isolate flex h-full min-h-0 flex-col overflow-hidden text-white">
+      {/* Admin's rings, behind everything. Anchored to the left edge so they
+          don't slide as the rail widens; off on the icon strip, where they'd
+          only show as a cropped sliver. */}
+      <Rings
+        className={cn(
+          "pointer-events-none absolute -bottom-40 -left-40 -z-10 h-[28rem] w-[28rem] text-white/[0.05]",
+          SHOW_BLOCK[mode]
+        )}
+      />
       <div className="flex h-16 flex-shrink-0 items-center gap-2 pl-5 pr-3">
         <Link
           href="/"
@@ -274,9 +284,6 @@ export default function ToolRail({
             </li>
           )}
         </ul>
-        <p className={cn("px-3 pb-0.5 pt-1.5 text-xs leading-snug text-white/45", SHOW_BLOCK[mode])}>
-          Answers are grounded in HOF recorded messages. Studies stay on this device.
-        </p>
         {footerCta}
       </div>
     </div>

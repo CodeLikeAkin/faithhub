@@ -81,7 +81,7 @@ module.exports = {
         /* HOF NG brand palette — hofng.org is the source of truth */
         brand: {
           navy: "#173A68",  /* primary — the logo blue */
-          deep: "#102A4E",  /* darker blue for overlays/hover */
+          deep: "#102A4E",  /* darker blue — the rail/drawer field, photo heroes, overlays/hover */
           ink: "#17233B",   /* heading text */
           sky: "#EAF2FB",   /* light blue tint surface */
           mist: "#C6DAEE",  /* deeper tint for gradients */
