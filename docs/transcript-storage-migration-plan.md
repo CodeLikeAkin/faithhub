@@ -287,20 +287,41 @@ feedback screenshot has been silently discarded. Separate bug, not part of this 
 `faithhub-admin-merge/` and `faithhub-redesign/`. The live pair is `faithhub/` and
 `.claude/faithhub-pipeline/`; the app references only the latter.
 
+### Done since (all of steps 1-7, plus the step 8 prerequisites)
+
+- The three migrations have been **run** in Supabase: 741 total / 724 with text / 17 without /
+  0 still null, the `sermon-transcripts` bucket exists, and the three admin RPCs read the marker.
+  That last one was **proved, not assumed** — nulling one sermon's `transcript_chars` flipped
+  `admin_messages` to `transcript=false` for it, and the original value was restored.
+- **Step 7 done.** Sermon `e8589667` processed end to end from the stored transcript: 35 scripture
+  references + 35 watch-moments written.
+- **Cut over.** `WRITE_TRANSCRIPT_COLUMN` is now `false`: the pipeline writes transcripts only to
+  storage, and the upload in `saveSermon` throws instead of logging, since it is the only copy
+  being written. Reads are unchanged and all 724 rows still hold their text. Flip it back to
+  resume dual writes.
+- **`index.js` is NOT dead** — it is `package.json`'s `main`, the README documents it, and it was
+  last changed 2026-09-29. Its two transcript reads now go through `getTranscript`. §5's inventory
+  was wrong to omit it.
+- **`_stage-ambidextrous.js` / `_stage-series.js` were never at risk** — they selected the
+  transcript column but only ever read `transcript_segments`. The column is dropped from their
+  selects so they stop pulling tens of MB for nothing. `_stage-ambidextrous.js` is a one-off
+  hardcoded to one series and is superseded by `_stage-series.js`.
+
 ### Still to do before step 8
 
-1. **Run these in the Supabase SQL editor, in order** — DDL cannot go through PostgREST, and
-   there is no Postgres connection string in any env file:
-   `transcript_chars.sql`, `transcript_storage_bucket.sql`, `admin_transcript_chars.sql`.
-   Until the first of these runs, every switched presence check fails and the branch is
-   non-functional. `main` is untouched, so the live site is unaffected.
-2. **Step 7** — process one real sermon end to end. Blocked on the above.
-3. **`index.js` (lines 178, 239) and `_stage-ambidextrous.js` / `_stage-series.js` still read the
-   transcript column** and are not in §5's inventory. They look like the legacy entry point and
-   scratch files, so they were left alone rather than changed blind — but they will silently
-   break after step 8. Decide whether they are dead before deleting the column.
-4. **Re-run `transcripts-verify.js` immediately before step 8.** It catches a sermon transcribed
-   since the export, whose only copy would otherwise be destroyed.
+1. **Re-run `transcripts-verify.js` immediately before deleting.** It is the only thing that
+   catches a sermon transcribed since the export, whose only copy would otherwise be destroyed.
+   It must report 0 missing, 0 mismatch and 0 unverified.
+2. **`scratch/*.js` read the transcript column** (`extract-scriptures-targeted.js`,
+   `extract-word-studies-targeted.js`, `launch-coverage-report.js`, `launch-gap-detail.js`) and
+   will silently see empty text after step 8. That directory is gitignored and untracked, so they
+   were deliberately left alone — but do not trust a number any of them prints afterwards.
+3. **Two of the 724 transcripts are junk**, not English prose: one is YouTube auto-captions
+   misdetected as Indonesian, the other is `[musica]` markers. They are backed up and migrated
+   like any other, but they can never yield study artifacts.
+4. **`index.js summarize` sends a whole transcript to Groq**, which breaks CLAUDE.md rule 1 and
+   will exceed the model's context on any full-length sermon. Pre-existing, unrelated to this
+   migration, and left alone — but that mode is broken whatever happens to the column.
 
 ### Tools added (in `.claude/faithhub-pipeline/`)
 
