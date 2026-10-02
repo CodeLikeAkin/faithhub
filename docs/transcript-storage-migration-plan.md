@@ -1,9 +1,10 @@
 # Moving transcripts out of the database — plan and handoff
 
 **Written:** 2026-10-02
-**Status:** steps 1, 4, 5, 6 done and verified. Step 3 written but inert until step 2 runs.
-Steps 2 and 7 need SQL run by hand in the Supabase dashboard. Step 8 not started —
-nothing has been deleted. See §8 for what the first session through here corrected.
+**Status:** COMPLETE — all nine steps done on 2026-10-02. The database went from 510 MB to
+**477 MB**, back under the 500 MB free-plan limit. All 724 transcripts now live in the private
+`sermon-transcripts` bucket; `sermons.transcript` is empty. See §8 for the measured corrections
+to this document, which was wrong about the size of the prize, and for what is left open.
 **Why it exists:** the Supabase database is over its free-plan limit. This plan frees ~78 MB
 permanently by moving sermon transcripts to file storage. It is written so a new session can
 pick it up cold.
@@ -242,13 +243,27 @@ of the migration goes ahead.
 
 Measured, not estimated. Where this section and the sections above disagree, this one is right.
 
-**The space freed is ~25-35 MB, not ~78 MB.** §1 took the `sermons` table's 80 MB, subtracted
-1.5 MB of indexes and treated the rest as transcript text. Measured from the export, the raw
-bytes are: `transcript` 50.7 MB (32%), `transcript_segments` 105.6 MB (67%), everything else
-1.5 MB. 157.8 MB of raw data occupies ~78 MB on disk, so Postgres compresses it about 2:1 — and
-`transcript_segments`, which this plan explicitly defers, is twice the size of the transcript.
-At 120-150 MB/year growth this buys roughly 2-3 months, not a year. The deferred
-`transcript_segments` migration is the larger prize.
+**The space freed was 33 MB, not ~78 MB — measured, after step 9 completed.**
+
+| | before | after |
+|---|---|---|
+| database | 510 MB | **477 MB** |
+| `sermons` table | 80 MB | 45 MB |
+
+§1 took the `sermons` table's 80 MB, subtracted 1.5 MB of indexes and treated the rest as
+transcript text. It is not. Measured from the export, the raw bytes are: `transcript` 50.7 MB
+(32%), `transcript_segments` 105.6 MB (67%), everything else 1.5 MB. 157.8 MB of raw data
+occupied ~78 MB on disk, so Postgres compresses it about 2:1 — and `transcript_segments`, which
+this plan explicitly defers, is twice the size of the transcript it moved.
+
+The table gave up 35 MB, slightly more than the transcripts alone, because VACUUM FULL also
+cleared bloat accumulated from years of updates. That part is one-off and will not repeat.
+
+**What this actually bought: about 23 MB of headroom, or roughly 35 more sermons — two months.**
+Each sermon adds ~650 KB and the channel produces ~185 a year. `transcript_segments` is the
+larger prize and the same tooling moves it, but on current numbers this needs revisiting before
+the end of 2026, and Pro at $25/month is still the only option that ends the problem rather than
+deferring it — and the only one that provides backups.
 
 **It is 724 transcripts, not 741.** Seventeen rows have none. Step 5's "all 741 must match" is
 wrong; the correct target is 724.
@@ -307,19 +322,37 @@ feedback screenshot has been silently discarded. Separate bug, not part of this 
   selects so they stop pulling tens of MB for nothing. `_stage-ambidextrous.js` is a one-off
   hardcoded to one series and is superseded by `_stage-series.js`.
 
-### Still to do before step 8
+### Steps 8 and 9, as executed
 
-1. **Re-run `transcripts-verify.js` immediately before deleting.** It is the only thing that
-   catches a sermon transcribed since the export, whose only copy would otherwise be destroyed.
-   It must report 0 missing, 0 mismatch and 0 unverified.
-2. **`scratch/*.js` read the transcript column** (`extract-scriptures-targeted.js`,
+- **Step 8.** `transcripts-clear.js` re-verified each row against its storage copy at the moment
+  of clearing and cleared only on an exact match, so an earlier verification run was never
+  trusted and a storage read that merely failed was never treated as permission to delete.
+  Ten first, checked, then the remaining 714. **724 cleared, 0 skipped.** Afterwards the admin
+  RPCs still reported 724 transcribed, and a pipeline stage run with the column empty produced
+  43 scripture references sourced entirely from storage.
+- **Step 9.** `vacuum full sermons;` **must be submitted alone** in the Supabase SQL editor. The
+  editor wraps whatever you submit in a transaction and VACUUM cannot run inside one — a
+  multi-statement file fails with `25001`. A plain `VACUUM` is not enough either: it marks space
+  reusable inside the table without returning it to the operating system, so the reported size
+  would not have moved. `vacuum-sermons.js` is a direct-connection fallback if the editor ever
+  wraps single statements too.
+
+### Still open
+
+1. **Nothing is merged.** Both repos sit on `feature/transcripts-to-storage`. Production runs the
+   old code against the migrated database — safe, because the live site never reads transcripts,
+   but the production admin console shows the pre-migration counts until it is merged.
+2. **The backup is now load-bearing.** Storage holds the only live copy;
+   `C:\Users\Trade\Desktop\Faithhub-backups\transcripts-pre-migration-2026-10-02\` is the only
+   copy outside Supabase, on a disk that had 3.6 GB free. Move it somewhere synced.
+3. **`scratch/*.js` read the transcript column** (`extract-scriptures-targeted.js`,
    `extract-word-studies-targeted.js`, `launch-coverage-report.js`, `launch-gap-detail.js`) and
-   will silently see empty text after step 8. That directory is gitignored and untracked, so they
-   were deliberately left alone — but do not trust a number any of them prints afterwards.
-3. **Two of the 724 transcripts are junk**, not English prose: one is YouTube auto-captions
+   now silently see empty text. That directory is gitignored and untracked, so they were
+   deliberately left alone — but do not trust a number any of them prints.
+4. **Two of the 724 transcripts are junk**, not English prose: one is YouTube auto-captions
    misdetected as Indonesian, the other is `[musica]` markers. They are backed up and migrated
    like any other, but they can never yield study artifacts.
-4. **`index.js summarize` sends a whole transcript to Groq**, which breaks CLAUDE.md rule 1 and
+5. **`index.js summarize` sends a whole transcript to Groq**, which breaks CLAUDE.md rule 1 and
    will exceed the model's context on any full-length sermon. Pre-existing, unrelated to this
    migration, and left alone — but that mode is broken whatever happens to the column.
 
