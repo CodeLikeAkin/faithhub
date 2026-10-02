@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ChevronDown, Search, X } from "lucide-react";
 import ToolShell from "@/components/shell/ToolShell";
-import { DotGrid } from "@/components/Decor";
+import { DotGrid, Eyebrow, Rings } from "@/components/Decor";
 import YtThumb from "@/components/YtThumb";
 import { supabase } from "@/lib/supabase";
 import { cleanTitle, parseSermonDate, partTitle, seriesName } from "@/lib/titles";
@@ -40,7 +40,9 @@ const fmtMonth = (d) => (d ? d.toLocaleDateString("en-US", { month: "short", yea
 // words run underneath — bold title, then a grey line.
 const cardLink =
   "group flex min-w-0 flex-col rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy focus-visible:ring-offset-4";
-const cardArt = "relative block aspect-video w-full flex-shrink-0 overflow-hidden rounded-xl";
+// The art lifts on hover with the shared elevation steps, like the Vision cards.
+const cardArt =
+  "relative block aspect-video w-full flex-shrink-0 overflow-hidden rounded-xl shadow-subtle transition-[transform,box-shadow] duration-300 group-hover:-translate-y-1 group-hover:shadow-lift motion-reduce:transition-none motion-reduce:group-hover:translate-y-0";
 const cardTag = "absolute bottom-2 right-2 rounded-lg bg-black/60 px-2 py-1 text-xs font-semibold text-white backdrop-blur-sm";
 const cardTitle =
   "mt-2.5 line-clamp-2 hyphens-auto break-words text-sm font-semibold leading-snug text-brand-ink transition-colors group-hover:text-brand-navy sm:text-base";
@@ -54,7 +56,7 @@ function SeriesCover({ s, className }) {
         <DotGrid dark className="inset-0" />
         <YtThumb
           ids={s.covers}
-          quality="mqdefault"
+          quality={["maxresdefault", "hq720", "mqdefault"]}
           className="relative h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <span className={cardTag}>
@@ -83,10 +85,9 @@ function GuestCard({ g, className }) {
     <Link href={`/sermon/${g.id}`} className={cn(cardLink, className)}>
       <span className={cn(cardArt, "bg-brand-sky")}>
         {g.youtube_video_id && (
-          <img
-            src={`https://img.youtube.com/vi/${g.youtube_video_id}/mqdefault.jpg`}
-            alt=""
-            loading="lazy"
+          <YtThumb
+            ids={g.youtube_video_id}
+            quality={["maxresdefault", "hq720", "mqdefault"]}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         )}
@@ -111,7 +112,7 @@ function MessageRow({ m }) {
   return (
     <Link
       href={href}
-      className="group flex gap-3 rounded-2xl border border-brand-navy/10 bg-white p-2.5 transition-[border-color,box-shadow] hover:border-brand-navy/25 hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy"
+      className="group flex gap-3 rounded-2xl border border-brand-navy/10 bg-white p-2.5 shadow-subtle transition-[border-color,box-shadow] hover:border-brand-navy/25 hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy"
     >
       <span className="relative aspect-video w-28 flex-shrink-0 self-start overflow-hidden rounded-xl bg-brand-sky sm:w-36">
         {m.videoId && (
@@ -167,6 +168,31 @@ function YearFilterSelect({ value, onChange, years }) {
           className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-brand-gray"
         />
       </div>
+    </div>
+  );
+}
+
+/** A section opener in the Vision page's manner: eyebrow, display heading, a rule that fades out. */
+function SectionHead({ id, eyebrow, title, meta, action, className }) {
+  return (
+    <div className={className}>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0">
+          {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
+          <h2
+            id={id}
+            className={cn(
+              "font-display text-3xl font-medium leading-[1.08] tracking-tight text-brand-ink text-balance sm:text-4xl",
+              eyebrow && "mt-3"
+            )}
+          >
+            {title}
+          </h2>
+          {meta && <p className="mt-2 text-sm text-brand-gray">{meta}</p>}
+        </div>
+        {action}
+      </div>
+      <div aria-hidden="true" className="mt-5 h-px bg-gradient-to-r from-brand-navy/30 via-brand-navy/10 to-transparent" />
     </div>
   );
 }
@@ -375,10 +401,22 @@ export default function SeriesBrowsePage() {
 
   return (
     <ToolShell kind="series" title="Series Study" titleAs="p">
-      <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
+      <div className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
+        {/* The Vision page's backdrop: a sky wash behind the catalogue, dot
+            grids pinned to opposite edges and fading inward, clear of text. */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-[24rem] h-[80rem] bg-gradient-to-b from-white via-brand-sky/70 to-white" />
+        <DotGrid className="left-0 top-[28rem] h-[36rem] w-[36rem] max-w-full [mask-image:radial-gradient(circle_at_left,black,transparent_65%)]" />
+        <DotGrid className="right-0 top-[70rem] h-[32rem] w-[32rem] max-w-full [mask-image:radial-gradient(circle_at_right,black,transparent_65%)]" />
+
+        <div className="relative">
         <Masthead
           className="mx-auto max-w-[1400px] px-4 pt-3 sm:px-8 sm:pt-8"
-          title="Series Study"
+          eyebrow="The library"
+          title={
+            <>
+              Series <em>Study</em>
+            </>
+          }
           description={
             series?.length
               ? `${series.length} series · ${totalMessages} messages, each one a course to study and ask about.`
@@ -391,9 +429,16 @@ export default function SeriesBrowsePage() {
               type="search"
               value={query}
               onChange={(e) => updateQuery(e.target.value)}
-              placeholder="Search every series and message"
+              placeholder="Search series and messages"
               aria-label="Search every series and message"
-              className="h-12 w-full rounded-full border border-white bg-white pl-11 pr-11 text-base text-brand-ink shadow-[0_18px_40px_-20px_rgba(0,0,0,0.6)] placeholder:text-brand-gray/80 focus:outline-none focus:ring-4 focus:ring-white/25 [&::-webkit-search-cancel-button]:hidden"
+              // A title or a phrase. /api/search refuses anything over 200.
+              maxLength={100}
+              // Room on the right only while the clear button shows — the
+              // placeholder needs every pixel on a phone.
+              className={cn(
+                "h-12 w-full rounded-full border border-white bg-white pl-11 text-base text-brand-ink shadow-[0_18px_40px_-20px_rgba(0,0,0,0.6)] placeholder:text-brand-gray/80 focus:outline-none focus:ring-4 focus:ring-white/25 [&::-webkit-search-cancel-button]:hidden",
+                query ? "pr-11" : "pr-4"
+              )}
             />
             {query && (
               <button
@@ -444,8 +489,8 @@ export default function SeriesBrowsePage() {
 
             {results.series.length > 0 && (
               <>
-                <h2 className="mt-8 font-display text-2xl font-semibold text-brand-ink">Series</h2>
-                <ul className="mt-4 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-5">
+                <SectionHead className="mt-8" title="Series" />
+                <ul className="mt-6 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-5">
                   {results.series.map((s) => (
                     <li key={s.id}>
                       <SeriesCover s={s} />
@@ -457,11 +502,12 @@ export default function SeriesBrowsePage() {
 
             {results.messages.length > 0 && (
               <>
-                <h2 className="mt-10 font-display text-2xl font-semibold text-brand-ink">Messages</h2>
-                <p className="mt-1 text-sm text-brand-gray">
-                  Matched on the title or on what was preached &mdash; those open at the moment it was said
-                </p>
-                <ul className="mt-4 grid gap-2 sm:gap-3 lg:grid-cols-2">
+                <SectionHead
+                  className="mt-12"
+                  title="Messages"
+                  meta={<>Matched on the title or on what was preached &mdash; those open at the moment it was said</>}
+                />
+                <ul className="mt-6 grid gap-2 sm:gap-3 lg:grid-cols-2">
                   {results.messages.map((m) => (
                     // min-w-0: a grid item's default min-width:auto lets a long
                     // title push the whole row past the container.
@@ -534,10 +580,10 @@ export default function SeriesBrowsePage() {
                         </div>
 
                         <div className="flex min-w-0 flex-col justify-center px-5 py-6 sm:px-8 sm:py-6">
-                          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-navy/60">Latest series</p>
+                          <Eyebrow>Latest series</Eyebrow>
                           <h2
                             id="latest-heading"
-                            className="mt-2 font-display text-2xl font-semibold leading-[1.1] tracking-tight text-brand-ink text-balance"
+                            className="mt-3 font-display text-2xl font-medium leading-[1.1] tracking-tight text-brand-ink text-balance"
                           >
                             {featured.title}
                           </h2>
@@ -591,16 +637,14 @@ export default function SeriesBrowsePage() {
 
                   <div className="mx-auto mt-12 max-w-[1400px] px-4 sm:px-8">
                     <section aria-labelledby="all-series-heading">
-                      <div className="flex flex-wrap items-end justify-between gap-4">
-                        <div>
-                          <h2 id="all-series-heading" className="font-display text-2xl font-semibold text-brand-ink">
-                            Series
-                          </h2>
-                          <p className="mt-1 text-sm text-brand-gray">{series.length} series</p>
-                        </div>
-                        <YearFilterSelect value={filterYear} onChange={(e) => setFilterYear(e.target.value)} years={years} />
-                      </div>
-                      <ul className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4 xl:grid-cols-5">
+                      <SectionHead
+                        id="all-series-heading"
+                        eyebrow="The catalogue"
+                        title="Every series"
+                        meta={`${series.length} series`}
+                        action={<YearFilterSelect value={filterYear} onChange={(e) => setFilterYear(e.target.value)} years={years} />}
+                      />
+                      <ul className="mt-6 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4 xl:grid-cols-5">
                         {series.map((s) => (
                           <li key={s.id}>
                             <SeriesCover s={s} />
@@ -610,14 +654,14 @@ export default function SeriesBrowsePage() {
                     </section>
 
                     {guests.length > 0 && (
-                      <section aria-labelledby="all-guests-heading" className="mt-12">
-                        <h2 id="all-guests-heading" className="font-display text-2xl font-semibold text-brand-ink">
-                          Guest speakers
-                        </h2>
-                        <p className="mt-1 text-sm text-brand-gray">
-                          {guests.length} messages from ministers who visited Heritage of Faith
-                        </p>
-                        <ul className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4 xl:grid-cols-5">
+                      <section aria-labelledby="all-guests-heading" className="mt-16">
+                        <SectionHead
+                          id="all-guests-heading"
+                          eyebrow="Visiting ministers"
+                          title="Guest speakers"
+                          meta={`${guests.length} messages from ministers who visited Heritage of Faith`}
+                        />
+                        <ul className="mt-6 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4 xl:grid-cols-5">
                           {guests.map((g) => (
                             <li key={g.id}>
                               <GuestCard g={g} />
@@ -631,13 +675,16 @@ export default function SeriesBrowsePage() {
               ) : (
                 <div className="mx-auto mt-10 max-w-[1400px] px-4 sm:px-8">
                   {filteredSeriesForYear.length === 0 && filteredGuestsForYear.length === 0 ? (
-                    <div className="flex flex-col items-center py-24 text-center">
-                      <p className="text-lg font-medium text-brand-ink">Nothing from {filterYear}.</p>
-                      <p className="mt-2 text-sm text-brand-gray">Try a different year.</p>
+                    <div className="relative flex flex-col items-center overflow-hidden py-24 text-center">
+                      <Rings className="pointer-events-none absolute left-1/2 top-1/2 h-[28rem] w-[28rem] -translate-x-1/2 -translate-y-1/2 text-brand-navy/[0.07]" />
+                      <p className="relative font-display text-3xl font-medium text-brand-ink">
+                        Nothing from <em className="font-normal italic text-brand-navy">{filterYear}</em>.
+                      </p>
+                      <p className="relative mt-2 text-sm text-brand-gray">Try a different year.</p>
                       <button
                         type="button"
                         onClick={() => setFilterYear("All")}
-                        className="mt-6 text-sm font-bold text-brand-navy hover:underline"
+                        className="relative mt-6 text-sm font-bold text-brand-navy hover:underline"
                       >
                         Reset filter
                       </button>
@@ -646,18 +693,14 @@ export default function SeriesBrowsePage() {
                     <>
                       {filteredSeriesForYear.length > 0 && (
                         <section aria-labelledby="filtered-series-heading">
-                          <div className="flex flex-wrap items-end justify-between gap-4">
-                            <div>
-                              <h2 id="filtered-series-heading" className="font-display text-2xl font-semibold text-brand-ink">
-                                Series
-                              </h2>
-                              <p className="mt-1 text-sm text-brand-gray">
-                                {filteredSeriesForYear.length} series in {filterYear}
-                              </p>
-                            </div>
-                            <YearFilterSelect value={filterYear} onChange={(e) => setFilterYear(e.target.value)} years={years} />
-                          </div>
-                          <ul className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4 xl:grid-cols-5">
+                          <SectionHead
+                            id="filtered-series-heading"
+                            eyebrow={filterYear}
+                            title="Series"
+                            meta={`${filteredSeriesForYear.length} series in ${filterYear}`}
+                            action={<YearFilterSelect value={filterYear} onChange={(e) => setFilterYear(e.target.value)} years={years} />}
+                          />
+                          <ul className="mt-6 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4 xl:grid-cols-5">
                             {filteredSeriesForYear.map((s) => (
                               <li key={s.id}>
                                 <SeriesCover s={s} />
@@ -670,15 +713,15 @@ export default function SeriesBrowsePage() {
                       {filteredGuestsForYear.length > 0 && (
                         <section
                           aria-labelledby="filtered-guests-heading"
-                          className={filteredSeriesForYear.length > 0 ? "mt-12" : undefined}
+                          className={filteredSeriesForYear.length > 0 ? "mt-16" : undefined}
                         >
-                          <h2 id="filtered-guests-heading" className="font-display text-2xl font-semibold text-brand-ink">
-                            Guest speakers
-                          </h2>
-                          <p className="mt-1 text-sm text-brand-gray">
-                            {filteredGuestsForYear.length} guest {filteredGuestsForYear.length === 1 ? "message" : "messages"} in {filterYear}
-                          </p>
-                          <ul className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4 xl:grid-cols-5">
+                          <SectionHead
+                            id="filtered-guests-heading"
+                            eyebrow={filterYear}
+                            title="Guest speakers"
+                            meta={`${filteredGuestsForYear.length} guest ${filteredGuestsForYear.length === 1 ? "message" : "messages"} in ${filterYear}`}
+                          />
+                          <ul className="mt-6 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4 xl:grid-cols-5">
                             {filteredGuestsForYear.map((g) => (
                               <li key={g.id}>
                                 <GuestCard g={g} />
@@ -694,6 +737,7 @@ export default function SeriesBrowsePage() {
             </div>
           )
         )}
+        </div>
       </div>
     </ToolShell>
   );

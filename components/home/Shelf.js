@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Eyebrow } from "@/components/Decor";
 
 /**
  * A titled horizontal row of cards: swipe or use the arrows; snaps to a card
- * edge and fades the right edge while there is more to see.
+ * edge. The next card peeking in at the right is the cue that there is more
+ * (a white fade there washed out its thumbnail).
  * `itemClassName` sets each card's width (the shelf is a column-flow grid).
  */
 export default function Shelf({ eyebrow, title, action, children, className, columns = "grid-flow-col auto-cols-[72%] sm:auto-cols-[16rem]" }) {
@@ -41,8 +43,8 @@ export default function Shelf({ eyebrow, title, action, children, className, col
     <section className={className}>
       <div className="mb-4 flex items-end justify-between gap-4">
         <div className="min-w-0">
-          {eyebrow && <p className="text-xs font-bold uppercase tracking-[0.12em] text-brand-gray">{eyebrow}</p>}
-          <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight text-brand-ink">{title}</h2>
+          {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
+          <h2 className="mt-2 font-display text-3xl font-medium tracking-tight text-brand-ink">{title}</h2>
         </div>
         <div className="flex flex-shrink-0 items-center gap-2">
           {action}
@@ -64,13 +66,6 @@ export default function Shelf({ eyebrow, title, action, children, className, col
         >
           {children}
         </div>
-        <span
-          aria-hidden="true"
-          className={cn(
-            "pointer-events-none absolute inset-y-0 right-0 w-14 bg-gradient-to-l from-white to-transparent transition-opacity duration-300",
-            edge.end ? "opacity-0" : "opacity-100"
-          )}
-        />
       </div>
     </section>
   );

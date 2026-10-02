@@ -400,6 +400,8 @@ export default function AddSermons({ workerOnline }) {
               <TextArea
                 id="links"
                 rows={4}
+                // 25 links at most (the preview route's cap) fit well inside this.
+                maxLength={4000}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder={"https://www.youtube.com/watch?v=...\nhttps://youtu.be/..."}

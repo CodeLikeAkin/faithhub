@@ -267,7 +267,7 @@ function Eyebrow({ tone = "light", className, children }) {
 
 function Pull({ size = "lg", children }) {
   return (
-    <figure className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-sky to-brand-sky/40 py-5 pl-6 pr-12 sm:py-6 sm:pl-8">
+    <figure className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-sky to-brand-sky/40 py-5 pl-6 pr-16 sm:py-6 sm:pl-8">
       <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-brand-navy to-brand-mist" />
       <QuoteGlyph className="absolute right-4 top-4 h-6 w-8 text-brand-navy/15" />
       <blockquote
@@ -488,7 +488,7 @@ export default function VisionContent() {
       <ReadingProgress scrollRef={scrollRef} />
 
       {/* ── hero ── */}
-      <section className="px-3 pt-3 sm:px-5 sm:pt-5">
+      <section className="px-4 pt-3 sm:px-5 sm:pt-5">
         <div className="relative mx-auto max-w-[1400px] overflow-hidden rounded-[1.75rem] bg-brand-sky sm:rounded-[2.5rem]">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0">
             <div className="absolute -left-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-white blur-3xl" />
@@ -613,7 +613,7 @@ export default function VisionContent() {
       </section>
 
       {/* ── the vision statement ── */}
-      <section className="px-3 pt-3 sm:px-5 sm:pt-5">
+      <section className="px-4 pt-3 sm:px-5 sm:pt-5">
         <Reveal className="relative mx-auto max-w-[1400px] overflow-hidden rounded-[1.75rem] bg-brand-deep sm:rounded-[2.5rem]">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0">
             <div className="absolute -right-40 -top-40 h-[32rem] w-[32rem] rounded-full bg-brand-navy blur-3xl" />
@@ -1256,7 +1256,7 @@ export default function VisionContent() {
       </section>
 
       {/* ── finale ── */}
-      <section className="px-3 pt-24 sm:px-5 sm:pt-32">
+      <section className="px-4 pt-24 sm:px-5 sm:pt-32">
         <Reveal className="relative mx-auto max-w-[1400px] overflow-hidden rounded-[1.75rem] bg-brand-deep px-6 py-20 text-center sm:rounded-[2.5rem] sm:px-12 sm:py-28">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0">
             <div className="absolute left-1/2 top-0 h-[30rem] w-[40rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-navy blur-3xl" />

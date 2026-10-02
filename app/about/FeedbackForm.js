@@ -379,7 +379,13 @@ export default function FeedbackForm() {
                   ? "Preparing…"
                   : shots.length
                     ? "Add another"
-                    : "Drop a screenshot, paste it (Ctrl+V), or click to browse"}
+                    : (
+                      <>
+                        {/* A phone has no drag, paste shortcut or click. */}
+                        <span className="sm:hidden">Tap to add a screenshot</span>
+                        <span className="hidden sm:inline">Drop a screenshot, paste it (Ctrl+V), or click to browse</span>
+                      </>
+                    )}
               </span>
             </button>
           )}

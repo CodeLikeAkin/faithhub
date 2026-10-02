@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { readLastLesson } from "@/lib/recent";
 import { displayTitle, seriesName } from "@/lib/titles";
 import { cn } from "@/lib/utils";
+import { Eyebrow } from "@/components/Decor";
 import ThumbFallback from "./ThumbFallback";
 
 async function fetchLatestSeries() {
@@ -69,9 +70,9 @@ export default function ContinueCard({ className, style }) {
   return (
     <article
       style={style}
-      className={cn("flex flex-col gap-4 rounded-[1.75rem] border border-brand-navy/10 bg-white p-4 sm:p-5", className)}
+      className={cn("flex flex-col gap-4 rounded-[1.75rem] border border-brand-navy/10 bg-white p-4 shadow-card sm:p-5", className)}
     >
-      <p className="px-1 text-xs font-bold uppercase tracking-[0.18em] text-brand-gray">{eyebrow || " "}</p>
+      <Eyebrow className="min-h-[1rem] px-1">{eyebrow}</Eyebrow>
       {item === undefined ? (
         <div aria-hidden="true" className="aspect-video rounded-2xl fh-skeleton" />
       ) : (

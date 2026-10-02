@@ -56,7 +56,7 @@ export default function LatestShelf({ style }) {
   if (items && !items.length) return null;
 
   return (
-    <div style={style} className="fh-rise rounded-[1.75rem] border border-brand-navy/10 bg-white p-5 sm:p-6">
+    <div style={style} className="fh-rise rounded-[1.75rem] border border-brand-navy/10 bg-white p-5 shadow-card sm:p-6">
       <Shelf
         eyebrow="Just posted"
         title="Latest messages"

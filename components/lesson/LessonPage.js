@@ -10,7 +10,7 @@ import DeclarationLine from "@/components/declarations/DeclarationLine";
 import VideoModal from "@/components/VideoModal";
 import VerseExplorer from "@/components/VerseExplorer";
 import WordStudy from "@/components/WordStudy";
-import { DotGrid } from "@/components/Decor";
+import { DotGrid, QuoteGlyph, Rings } from "@/components/Decor";
 import LessonPlayer from "./LessonPlayer";
 import CourseOutline, { partDate } from "./CourseOutline";
 import AskPanel from "./AskPanel";
@@ -20,21 +20,43 @@ import { cleanTitle, parseTitle, partTitle, seriesName } from "@/lib/titles";
 import { scrollToElement } from "@/lib/scroll";
 import { useMediaQuery, PANEL_DOCKED_QUERY } from "@/lib/useMediaQuery";
 import { recordLastLesson } from "@/lib/recent";
+import { cn } from "@/lib/utils";
 
 const DECL_PREVIEW = 5;
+// Notes longer than this fold behind "Read the full notes" on a phone.
+const NOTES_FOLD_CHARS = 1200;
 
+// Set in the Vision page's reading style: medium-weight display headings,
+// navy diamonds for bullets, and quotes as its pull quote (sky gradient, a
+// navy-to-mist bar down the left, a faint quote mark in the corner).
 const NOTES_MARKDOWN = {
-  h1: ({ node, ...props }) => <h3 className="mb-2 mt-8 font-display text-2xl font-semibold text-brand-ink first:mt-0" {...props} />,
-  h2: ({ node, ...props }) => <h3 className="mb-2 mt-8 font-display text-2xl font-semibold text-brand-ink first:mt-0" {...props} />,
-  h3: ({ node, ...props }) => <h4 className="mb-2 mt-6 font-display text-xl font-semibold text-brand-ink first:mt-0" {...props} />,
+  h1: ({ node, ...props }) => <h3 className="mb-3 mt-10 font-display text-2xl font-medium tracking-tight text-brand-ink first:mt-0" {...props} />,
+  h2: ({ node, ...props }) => <h3 className="mb-3 mt-10 font-display text-2xl font-medium tracking-tight text-brand-ink first:mt-0" {...props} />,
+  h3: ({ node, ...props }) => <h4 className="mb-2 mt-7 font-display text-xl font-medium text-brand-navy first:mt-0" {...props} />,
   p: ({ node, ...props }) => <p className="mb-4 last:mb-0" {...props} />,
   strong: ({ node, ...props }) => <strong className="font-semibold text-brand-ink" {...props} />,
-  ul: ({ node, ...props }) => <ul className="my-4 list-disc space-y-2 pl-6 marker:text-brand-navy/50" {...props} />,
-  ol: ({ node, ...props }) => <ol className="my-4 list-decimal space-y-2 pl-6 marker:text-brand-navy/70" {...props} />,
-  blockquote: ({ node, ...props }) => (
-    <blockquote className="my-5 rounded-r-2xl border-l-2 border-brand-navy/40 bg-brand-sky/50 py-3 pl-5 pr-4 font-display text-lg italic text-brand-ink" {...props} />
+  ul: ({ node, ...props }) => (
+    <ul
+      className="my-4 space-y-2.5 pl-1 [&>li]:relative [&>li]:pl-6 [&>li]:before:absolute [&>li]:before:left-0.5 [&>li]:before:top-[0.72em] [&>li]:before:h-1.5 [&>li]:before:w-1.5 [&>li]:before:rotate-45 [&>li]:before:bg-brand-navy [&>li]:before:content-['']"
+      {...props}
+    />
+  ),
+  ol: ({ node, ...props }) => <ol className="my-4 list-decimal space-y-2.5 pl-6 marker:font-semibold marker:text-brand-navy" {...props} />,
+  blockquote: ({ node, children, ...props }) => (
+    <blockquote
+      className="relative isolate my-6 overflow-hidden rounded-2xl bg-gradient-to-br from-brand-sky to-brand-sky/40 py-4 pl-6 pr-12 font-display text-lg italic leading-snug text-brand-ink sm:py-5 sm:pl-8 sm:text-xl [&_p]:mb-0"
+      {...props}
+    >
+      <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-brand-navy to-brand-mist" />
+      <QuoteGlyph className="absolute right-4 top-4 -z-10 h-6 w-8 text-brand-navy/15" />
+      {children}
+    </blockquote>
   ),
 };
+
+// Some generated notes put a quote mid-line as `… text. > "quote"`; markdown
+// only reads ">" at the start of a line, so it showed as a stray character.
+const tidyNotes = (md) => md.replace(/([^\n>])[ \t]+>[ \t]+(?=["“'‘])/g, "$1 ");
 
 function LessonSkeleton() {
   return (
@@ -66,6 +88,9 @@ export default function LessonPage({ sermonId }) {
   const [startAt, setStartAt] = useState(0);
   const [watching, setWatching] = useState(null); // moments outside this series → modal
   const [showAllDecls, setShowAllDecls] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false); // phone: the folded notes
+  const [openSecs, setOpenSecs] = useState({}); // phone: scriptures / words start folded
+  const [activeSec, setActiveSec] = useState(null);
   const [toast, showToast] = useToast({ offset: "5.5rem" }); // clears the Ask button
   const docked = useMediaQuery(PANEL_DOCKED_QUERY);
   const scrollRef = useRef(null);
@@ -164,14 +189,44 @@ export default function LessonPage({ sermonId }) {
     : [];
 
   const jumpTo = (id) => {
-    const el = document.getElementById(id);
-    if (el) scrollToElement(el, { offset: 56 });
+    // A folded section has to open first, or there's nothing to land on.
+    setOpenSecs((o) => (o[id] ? o : { ...o, [id]: true }));
+    requestAnimationFrame(() => {
+      const el = document.getElementById(id);
+      if (el) scrollToElement(el, { offset: 56 });
+    });
     try {
       window.history.replaceState(null, "", `/sermon/${part.id}#${id}`);
     } catch {
       /* noop */
     }
   };
+
+  // Each message starts with its notes, scriptures and words folded again.
+  useEffect(() => {
+    setNotesOpen(false);
+    setOpenSecs({});
+  }, [part?.id]);
+
+  // Which section is under the sticky tab bar, for the tab underline.
+  const sectionKey = sections.map((s) => s.id).join();
+  useEffect(() => {
+    const box = scrollRef.current;
+    if (!box || !sectionKey) return;
+    const ids = sectionKey.split(",");
+    const onScroll = () => {
+      const line = box.getBoundingClientRect().top + 120;
+      let current = null;
+      for (const id of ids) {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top <= line) current = id;
+      }
+      setActiveSec(current);
+    };
+    onScroll();
+    box.addEventListener("scroll", onScroll, { passive: true });
+    return () => box.removeEventListener("scroll", onScroll);
+  }, [sectionKey, part?.id]);
 
   // Arriving on /sermon/[id]#scriptures: jump there once the content exists.
   const jumpedToHash = useRef(false);
@@ -239,6 +294,9 @@ export default function LessonPage({ sermonId }) {
       />
     ) : null;
 
+  // On a phone the tab bar carries the Ask button, so the floating one only
+  // appears there when there is no tab bar (and from sm up, where it has room).
+  const askInNav = Boolean(panel) && sections.length > 1;
   const decls = pd?.declarations || [];
   const shownDecls = showAllDecls ? decls : decls.slice(0, DECL_PREVIEW);
 
@@ -288,21 +346,23 @@ export default function LessonPage({ sermonId }) {
 
             <div className="px-4 sm:px-0">
               <header className="mt-6 sm:mt-8">
+                {/* Set as the Vision eyebrow (rule + caps); the series name is
+                    still the way back to the course. */}
                 {series && (
-                  <p className="text-sm text-brand-gray">
-                    <Link href={`/series/${series.id}`} className="font-semibold text-brand-navy hover:underline">
+                  <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-bold uppercase tracking-[0.2em] text-brand-navy">
+                    <span aria-hidden="true" className="h-px w-8 bg-brand-navy/40" />
+                    <Link href={`/series/${series.id}`} className="hover:underline">
                       {seriesName(series.title)}
                     </Link>
-                    {part.part_number && (
-                      <>
-                        {" "}
-                        · Part {part.part_number} of {parts.length}
-                      </>
+                    {part.part_number && header.named && (
+                      <span className="text-brand-gray">
+                        Part {part.part_number} of {parts.length}
+                      </span>
                     )}
                   </p>
                 )}
-                <h1 className="mt-2 font-display text-3xl font-semibold leading-[1.1] tracking-tight text-brand-ink text-balance sm:text-4xl">
-                  {header.name}
+                <h1 className="mt-3 font-display text-3xl font-medium leading-[1.1] tracking-tight text-brand-ink text-balance sm:text-4xl">
+                  {header.named || !series || !part.part_number ? header.name : `Part ${part.part_number}`}
                 </h1>
                 {header.session && (
                   <p className="mt-4">
@@ -312,38 +372,61 @@ export default function LessonPage({ sermonId }) {
                   </p>
                 )}
                 {(header.speaker || headerDate) && (
-                  <p className="mt-3 text-sm text-brand-gray">{[header.speaker, headerDate].filter(Boolean).join(" · ")}</p>
+                  <p className="mt-2 text-sm text-brand-gray sm:mt-3">{[header.speaker, headerDate].filter(Boolean).join(" · ")}</p>
                 )}
                 {part.summary && (
-                  <p className="mt-5 max-w-2xl text-justify [hyphens:auto] text-lg leading-relaxed text-brand-ink/80">{part.summary}</p>
+                  <p className="mt-4 max-w-2xl text-base leading-relaxed text-brand-ink/80 sm:mt-5 sm:text-lg">{part.summary}</p>
                 )}
               </header>
 
               {series && parts.length > 1 && (
-                <CourseOutline className="mt-9" series={series} parts={parts} activeId={part.id} onSelect={(id) => goPart(id)} />
+                <CourseOutline className="mt-7 sm:mt-9" series={series} parts={parts} activeId={part.id} onSelect={(id) => goPart(id)} />
               )}
 
               {sections.length > 1 && (
                 <nav
                   aria-label="On this page"
-                  className="sticky top-0 z-10 -mx-4 mt-10 border-b border-brand-navy/10 bg-white/90 px-4 backdrop-blur sm:-mx-8 sm:px-8"
+                  className="sticky top-0 z-10 -mx-4 mt-8 flex items-center border-b border-brand-navy/10 bg-white/95 pl-4 backdrop-blur sm:-mx-8 sm:mt-10 sm:px-8"
                 >
-                  <ul className="flex gap-1 overflow-x-auto py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    {sections.map((s) => (
-                      <li key={s.id} className="flex-shrink-0">
-                        <a
-                          href={`#${s.id}`}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            jumpTo(s.id);
-                          }}
-                          className="inline-flex h-9 items-center rounded-full px-3.5 text-sm font-medium text-brand-ink/75 transition-colors hover:bg-brand-sky hover:text-brand-navy"
-                        >
-                          {s.label}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="relative min-w-0 flex-1">
+                    <ul className="flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                      {sections.map((s) => (
+                        <li key={s.id} className="flex-shrink-0">
+                          <a
+                            href={`#${s.id}`}
+                            aria-current={activeSec === s.id ? "location" : undefined}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              jumpTo(s.id);
+                            }}
+                            className={cn(
+                              "relative inline-flex h-11 items-center px-3 text-sm font-medium transition-colors after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full",
+                              activeSec === s.id
+                                ? "text-brand-navy after:bg-brand-navy"
+                                : "text-brand-ink/70 hover:text-brand-navy"
+                            )}
+                          >
+                            {s.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                    {/* Tells a phone reader the tabs scroll sideways. */}
+                    <span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent sm:hidden"
+                    />
+                  </div>
+                  {askInNav && (
+                    <button
+                      type="button"
+                      onClick={() => setPanelOpen(true)}
+                      aria-label="Ask about this message"
+                      className="mx-2 grid h-9 w-9 flex-shrink-0 place-items-center rounded-full bg-brand-navy text-white transition-colors hover:bg-brand-deep sm:hidden"
+                    >
+                      <Sparkles size={16} aria-hidden="true" />
+                    </button>
+                  )}
                 </nav>
               )}
 
@@ -363,17 +446,50 @@ export default function LessonPage({ sermonId }) {
               )}
 
               {pd?.notes && (
-                <Section id="notes" title="Notes" intro="As if you sat in the service with a notebook open">
-                  <div className="max-w-2xl text-justify [hyphens:auto] text-base leading-[1.8] text-brand-ink/90 lg:text-lg lg:leading-[1.75]">
-                    <ReactMarkdown components={NOTES_MARKDOWN}>{pd.notes}</ReactMarkdown>
-                  </div>
+                <Section id="notes" eyebrow="From the service" title="Notes" intro="The key points of the message, with the scriptures behind each one">
+                  {(() => {
+                    const folded = pd.notes.length > NOTES_FOLD_CHARS && !notesOpen;
+                    return (
+                      <>
+                        <div className="relative">
+                          <div
+                            className={cn(
+                              "max-w-2xl text-base leading-[1.75] text-brand-ink/90 lg:text-lg",
+                              folded && "max-h-[34rem] overflow-hidden sm:max-h-none sm:overflow-visible"
+                            )}
+                          >
+                            <ReactMarkdown components={NOTES_MARKDOWN}>{tidyNotes(pd.notes)}</ReactMarkdown>
+                          </div>
+                          {folded && (
+                            <span
+                              aria-hidden="true"
+                              className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-white via-white/80 to-transparent sm:hidden"
+                            />
+                          )}
+                        </div>
+                        {folded && (
+                          <button
+                            type="button"
+                            onClick={() => setNotesOpen(true)}
+                            className="mt-2 inline-flex h-11 items-center rounded-full border border-brand-navy/20 px-5 text-sm font-semibold text-brand-navy transition-colors hover:bg-brand-sky sm:hidden"
+                          >
+                            Read the full notes
+                          </button>
+                        )}
+                      </>
+                    );
+                  })()}
                 </Section>
               )}
 
               {pd?.scriptures?.length > 0 && (
                 <Section
                   id="scriptures"
+                  eyebrow="Read in this message"
                   title="Scriptures in this message"
+                  count={pd.scriptures.length}
+                  collapsed={!openSecs.scriptures}
+                  onToggle={() => setOpenSecs((o) => ({ ...o, scriptures: !o.scriptures }))}
                   intro={`${pd.scriptures.length} readings. Tap one to read it and see why it was read.`}
                 >
                   <VerseExplorer sermonId={part.id} scriptures={pd.scriptures} embedded />
@@ -381,13 +497,21 @@ export default function LessonPage({ sermonId }) {
               )}
 
               {pd?.wordStudies?.length > 0 && (
-                <Section id="words" title="Words he explained" intro="The Greek and Hebrew behind the message. Tap a word.">
+                <Section
+                  id="words"
+                  eyebrow="Greek & Hebrew"
+                  title="Words he explained"
+                  count={pd.wordStudies.length}
+                  collapsed={!openSecs.words}
+                  onToggle={() => setOpenSecs((o) => ({ ...o, words: !o.words }))}
+                  intro="The Greek and Hebrew behind the message. Tap a word."
+                >
                   <WordStudy sermonId={part.id} words={pd.wordStudies} embedded onWatch={playMoment} />
                 </Section>
               )}
 
               {decls.length > 0 && (
-                <Section id="declarations" title="Declarations from this message" intro="Speak them over your life">
+                <Section id="declarations" eyebrow="To declare" title="Declarations from this message" intro="Speak them over your life">
                   <ul className="divide-y divide-brand-navy/10 border-y border-brand-navy/10">
                     {shownDecls.map((d) => (
                       <DeclarationLine
@@ -415,9 +539,12 @@ export default function LessonPage({ sermonId }) {
                 <button
                   type="button"
                   onClick={() => goPart(next.id)}
-                  className="group relative mt-16 flex w-full items-center gap-4 overflow-hidden rounded-[1.75rem] bg-brand-deep p-4 text-left text-white sm:gap-5 sm:p-5"
+                  className="group relative isolate mt-16 flex w-full items-center gap-4 overflow-hidden rounded-[1.75rem] bg-brand-deep p-4 text-left text-white shadow-card transition-shadow hover:shadow-lift sm:gap-5 sm:p-5"
                 >
-                  <DotGrid dark className="inset-0 [mask-image:radial-gradient(ellipse_at_right,black,transparent_70%)]" />
+                  {/* The Vision page's dark panel, in miniature. */}
+                  <span aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 -z-10 h-64 w-64 rounded-full bg-brand-navy blur-3xl" />
+                  <DotGrid dark className="inset-0 -z-10 [mask-image:radial-gradient(ellipse_at_right,black,transparent_70%)]" />
+                  <Rings className="pointer-events-none absolute -bottom-32 -right-24 -z-10 h-72 w-72 text-white/[0.07]" />
                   <span className="relative aspect-video w-28 flex-shrink-0 overflow-hidden rounded-xl bg-brand-navy sm:w-44">
                     {next.youtube_video_id && (
                       <img
@@ -429,10 +556,13 @@ export default function LessonPage({ sermonId }) {
                     )}
                   </span>
                   <span className="relative min-w-0 flex-1">
-                    <span className="block text-sm text-white/70">Up next · Part {next.part_number}</span>
+                    <span className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-white/65">
+                      <span aria-hidden="true" className="h-px w-6 bg-white/40" />
+                      Up next · Part {next.part_number}
+                    </span>
                     {/* No `block` beside line-clamp-* — it overrides the -webkit-box
                         display the clamp needs, and the text spills instead of clamping. */}
-                    <span className="mt-1 line-clamp-2 font-display text-xl font-semibold leading-snug sm:text-2xl">
+                    <span className="mt-2 line-clamp-2 font-display text-xl font-medium leading-snug sm:text-2xl">
                       {nameOf(next)}
                     </span>
                   </span>
@@ -456,7 +586,10 @@ export default function LessonPage({ sermonId }) {
           /* Icon-only on a phone: the labelled pill ran half the width of the
              screen and sat on top of the notes you were reading. The label
              comes back where there's room for it. */
-          className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-20 inline-flex h-14 w-14 items-center justify-center gap-2 rounded-full bg-brand-navy text-sm font-bold text-white shadow-xl shadow-brand-navy/30 transition-colors hover:bg-brand-deep sm:h-auto sm:w-auto sm:px-5 sm:py-3.5 lg:hidden"
+          className={cn(
+            "fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-20 h-14 w-14 items-center justify-center gap-2 rounded-full bg-brand-navy text-sm font-bold text-white shadow-xl shadow-brand-navy/30 transition-colors hover:bg-brand-deep sm:inline-flex sm:h-auto sm:w-auto sm:px-5 sm:py-3.5 lg:hidden",
+            askInNav ? "hidden" : "inline-flex"
+          )}
         >
           <Sparkles size={16} aria-hidden="true" />
           <span className="hidden sm:inline">Ask about this message</span>

@@ -17,6 +17,10 @@ import ScopeChip from "./ScopeChip";
  *
  * `onSubmit(text)` returns false when the question was not accepted (e.g. an
  * answer is still streaming) so the draft is kept.
+ *
+ * `maxLength` caps what can be typed or pasted (a question, not an essay); a
+ * small "n / max" counter appears once the draft passes 80% of it. The API
+ * routes keep their own, looser caps as the real guard.
  */
 export default function Composer({
   variant = "docked",
@@ -34,6 +38,7 @@ export default function Composer({
   showScope = true,
   submitLabel = "Ask",
   minLength = 1,
+  maxLength = 500,
 }) {
   const [text, setText] = useState("");
   const [wrapped, setWrapped] = useState(false);
@@ -42,6 +47,10 @@ export default function Composer({
   const oneLine = useRef(0);
   const keyboardInset = useKeyboardInset();
   const hero = variant === "hero";
+  // A side panel is too narrow for chip + field + send on one row, so it is
+  // always stacked: the field takes the full width and the controls sit under it.
+  // The page composer only stacks once the question wraps.
+  const stacked = !hero && (width === "panel" || wrapped);
 
   // Auto-grow as the question wraps (capped by max-h). When empty, stay at
   // the natural height — a placeholder that wraps on a narrow phone would
@@ -54,8 +63,12 @@ export default function Composer({
     const max = hero ? 200 : 120;
     ta.style.height = "auto";
     const natural = ta.scrollHeight;
-    if (!text) oneLine.current = natural; // the empty field IS one line
-    else ta.style.height = Math.min(natural, max) + "px";
+    if (!text) {
+      oneLine.current = natural; // the empty field IS one line
+      // The hero box has its own row, so let a long placeholder wrap in full
+      // on a phone instead of being cut off mid-word.
+      if (hero) ta.style.height = natural + "px";
+    } else ta.style.height = Math.min(natural, max) + "px";
     ta.style.overflowY = text && natural > max ? "auto" : "hidden";
     // Sticky until the field is cleared. Un-wrapping on the way back down
     // would widen the field, let the text fit one line again, and re-narrow
@@ -93,17 +106,32 @@ export default function Composer({
       }}
       placeholder={placeholder}
       aria-label={placeholder.replace(/…$/, "")}
+      maxLength={maxLength}
       enterKeyHint="send"
       className={cn(
         "min-w-0 flex-1 resize-none bg-transparent text-brand-ink placeholder:text-brand-gray/70 focus:outline-none",
         hero
           ? "block w-full px-2 py-1.5 text-lg leading-relaxed sm:text-xl max-h-[200px]"
           : "py-2 text-base leading-relaxed max-h-[120px]",
-        // Wrapped: take the whole first row, controls fall beneath.
-        !hero && wrapped && "order-1 basis-full px-1.5"
+        // Stacked: take the whole first row, controls fall beneath.
+        stacked && "order-1 basis-full px-1.5"
       )}
     />
   );
+
+  // Quiet until the draft is close to the cap, so it never nags a short question.
+  const atCap = text.length >= maxLength;
+  const counter =
+    text.length >= maxLength * 0.8 ? (
+      <span className={cn("text-xs tabular-nums", atCap ? "font-semibold text-brand-navy" : "text-brand-gray")}>
+        <span aria-hidden="true">
+          {text.length} / {maxLength}
+        </span>
+        <span className="sr-only" aria-live="polite">
+          {atCap ? `Limit reached: ${maxLength} characters` : ""}
+        </span>
+      </span>
+    ) : null;
 
   const send = (
     <button
@@ -113,7 +141,7 @@ export default function Composer({
       className={cn(
         "grid flex-shrink-0 place-items-center rounded-full bg-brand-navy text-white transition-[transform,background-color,opacity] hover:bg-brand-deep active:scale-[0.96] disabled:opacity-35",
         hero ? "h-12 w-12" : "h-10 w-10",
-        !hero && wrapped && "order-3"
+        stacked && "order-3"
       )}
     >
       {busy ? (
@@ -135,6 +163,7 @@ export default function Composer({
       relative={relative}
       dropUp={!hero}
       compact={!hero && width === "page"}
+      iconOnly={!hero && width === "panel"}
     />
   ) : (
     <span />
@@ -155,7 +184,7 @@ export default function Composer({
         <div className="mt-2 flex items-center justify-between gap-3">
           {chip}
           <div className="flex items-center gap-3">
-            <span className="hidden text-xs text-brand-gray sm:inline">Enter to ask</span>
+            {counter || <span className="hidden text-xs text-brand-gray sm:inline">Enter to ask</span>}
             {send}
           </div>
         </div>
@@ -181,10 +210,13 @@ export default function Composer({
         <div
           className={cn(
             "flex gap-1.5 rounded-[1.4rem] border border-brand-navy/15 bg-white p-1.5 shadow-subtle transition-colors focus-within:border-brand-navy/40",
-            wrapped ? "flex-wrap items-center" : "items-end"
+            stacked ? "flex-wrap items-center" : "items-end"
           )}
         >
-          <div className={cn("flex h-10 items-center", wrapped && "order-2 mr-auto")}>{chip}</div>
+          <div className={cn("flex h-10 items-center gap-2", stacked && "order-2 mr-auto")}>
+            {chip}
+            {counter}
+          </div>
           {field}
           {send}
         </div>

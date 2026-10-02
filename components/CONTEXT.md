@@ -60,7 +60,7 @@ the answer stream live in `lib/studies.js`, not in these components.
 - `ThemeChips.js` (My declarations + the 10 themes), `SpeakAllBar.js` (sticky "Speak all").
 
 ### `word/` — The Word
-- `BibleNav.js` — the Bible by canon section with a bar per book (used in `app/word/layout.js`).
+- `BibleNav.js` — the Bible by canon section with a bar per book (used in `app/word/layout.js`); `variant="tiles"` is the compact heatmap grid the landing shows below xl.
 - `WordLanding.js` (gets server-computed stats from `app/word/page.js`), `BookView.js`
   (chapter bar chart, passages, messages), `ChapterView.js` (verses + messages + watch).
 

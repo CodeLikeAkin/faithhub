@@ -19,8 +19,12 @@ import { partTitle, seriesName } from "@/lib/titles";
 import { parseScriptureRef } from "@/lib/ask-format";
 import { useMediaQuery, PANEL_DOCKED_QUERY } from "@/lib/useMediaQuery";
 import { recordLastLesson } from "@/lib/recent";
+import { cn } from "@/lib/utils";
 
 const DECL_PREVIEW = 6;
+// A summary longer than this folds behind "Read more" on a phone, so the parts
+// aren't pushed a full screen down by one paragraph.
+const SUMMARY_FOLD_CHARS = 600;
 
 const formatDateRange = (start, end) => {
   if (!start) return "";
@@ -67,6 +71,7 @@ export default function SeriesOverview({ seriesId }) {
   const [watching, setWatching] = useState(null);
   const [translation, setTranslation] = useState("KJV");
   const [showAllDecls, setShowAllDecls] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const [toast, showToast] = useToast({ offset: "5.5rem" }); // clears the Ask button
   const docked = useMediaQuery(PANEL_DOCKED_QUERY);
   const panelShown = panelOpen ?? docked;
@@ -194,6 +199,14 @@ export default function SeriesOverview({ seriesId }) {
                   <h1 className="mt-4 font-display text-3xl font-semibold leading-[1.05] tracking-tight text-balance sm:text-4xl">
                     {seriesName(series.title)}
                   </h1>
+                  {parts[0] && (
+                    <Link
+                      href={`/sermon/${parts[0].id}`}
+                      className="mt-7 inline-flex h-11 items-center gap-2 rounded-full bg-white px-5 text-sm font-bold text-brand-navy shadow-lg shadow-black/20 transition hover:bg-brand-sky active:scale-[0.97]"
+                    >
+                      Start with Part 1 <ArrowRight size={16} aria-hidden="true" />
+                    </Link>
+                  )}
                 </div>
               </section>
             </div>
@@ -202,9 +215,38 @@ export default function SeriesOverview({ seriesId }) {
               {(summaryLoading || summary) && (
                 <Section id="summary" title="What this series teaches">
                   {summary ? (
-                    <div className="max-w-2xl text-justify [hyphens:auto] text-lg leading-relaxed text-brand-ink/85">
-                      <ReactMarkdown components={SUMMARY_MARKDOWN}>{summary}</ReactMarkdown>
-                    </div>
+                    (() => {
+                      const folded = summary.length > SUMMARY_FOLD_CHARS && !summaryOpen;
+                      return (
+                        <>
+                          <div className="relative">
+                            <div
+                              className={cn(
+                                "max-w-2xl text-base leading-relaxed sm:text-lg text-brand-ink/85",
+                                folded && "max-h-[15rem] overflow-hidden sm:max-h-none sm:overflow-visible"
+                              )}
+                            >
+                              <ReactMarkdown components={SUMMARY_MARKDOWN}>{summary}</ReactMarkdown>
+                            </div>
+                            {folded && (
+                              <span
+                                aria-hidden="true"
+                                className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white via-white/80 to-transparent sm:hidden"
+                              />
+                            )}
+                          </div>
+                          {folded && (
+                            <button
+                              type="button"
+                              onClick={() => setSummaryOpen(true)}
+                              className="mt-2 inline-flex h-11 items-center rounded-full border border-brand-navy/20 px-5 text-sm font-semibold text-brand-navy transition-colors hover:bg-brand-sky sm:hidden"
+                            >
+                              Read more
+                            </button>
+                          )}
+                        </>
+                      );
+                    })()
                   ) : (
                     <div aria-label="Reading the series…" className="max-w-2xl space-y-3">
                       {[92, 100, 84, 60].map((w) => (

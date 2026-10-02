@@ -73,8 +73,15 @@ export default function LessonPlayer({ videoId, title, startAt = 0, seek }) {
     }
     if (!wantSeek) return;
     if (!src) mount(seek.t);
-    else if (ready.current) seekNow(seek.t);
-    else queued.current = seek.t;
+    else if (ready.current) {
+      // Phones only let a video start by itself when the player is created inside
+      // the tap that asked for it. A postMessage play() sent to a player that is
+      // already up has no tap behind it, so it seeks but stays paused. Rebuild
+      // the player at the new time instead.
+      const touch = window.matchMedia("(pointer: coarse)").matches;
+      if (touch && buildSrc(videoId, seek.t) !== src) mount(seek.t);
+      else seekNow(seek.t);
+    } else queued.current = seek.t;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoId, seek]);
 
@@ -169,17 +176,11 @@ export default function LessonPlayer({ videoId, title, startAt = 0, seek }) {
                 <Rings className="absolute left-1/2 top-1/2 h-[140%] w-auto -translate-x-1/2 -translate-y-1/2 text-white/[0.07]" />
               </span>
             )}
-            <span className="absolute inset-0 bg-gradient-to-t from-brand-deep/70 via-brand-deep/10 to-transparent" />
             <span className="absolute inset-0 grid place-items-center">
-              <span className="grid h-16 w-16 place-items-center rounded-full bg-white text-brand-navy shadow-2xl shadow-black/40 transition-transform group-hover:scale-105 group-focus-visible:ring-4 group-focus-visible:ring-white/60 sm:h-20 sm:w-20">
-                <Play className="h-7 w-7 translate-x-0.5 fill-current sm:h-8 sm:w-8" aria-hidden="true" />
+              <span className="grid h-12 w-12 place-items-center rounded-full bg-white/90 text-brand-navy shadow-lg shadow-black/30 transition-transform group-hover:scale-105 group-focus-visible:ring-4 group-focus-visible:ring-white/60 sm:h-14 sm:w-14">
+                <Play className="h-5 w-5 translate-x-0.5 fill-current sm:h-6 sm:w-6" aria-hidden="true" />
               </span>
             </span>
-            {startAt > 0 && (
-              <span className="absolute bottom-4 left-4 rounded-full bg-black/70 px-3 py-1.5 text-sm font-semibold text-white">
-                Play from {fmtTime(startAt)}
-              </span>
-            )}
           </button>
         )}
 
@@ -203,14 +204,6 @@ export default function LessonPlayer({ videoId, title, startAt = 0, seek }) {
           </div>
         )}
       </div>
-      <a
-        href={youtubeHref}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-2 inline-flex items-center gap-1 px-4 py-1 text-xs text-brand-gray transition-colors hover:text-brand-navy sm:px-0"
-      >
-        Open on YouTube <ExternalLink size={12} aria-hidden="true" />
-      </a>
     </div>
   );
 }

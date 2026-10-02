@@ -10,9 +10,45 @@ import { cn } from "@/lib/utils";
  * bar for how many messages open it (square-root scaled, so Obadiah's two
  * still show next to the Psalms' five hundred).
  */
-export default function BibleNav({ selectedId, className }) {
+export default function BibleNav({ selectedId, className, variant = "list" }) {
   const { data: stats } = useLoad(loadBookStats, []);
   const max = Math.max(1, ...Object.values(stats || {}).map((s) => s.sermons));
+
+  // Tiles: the same map as a heatmap grid (like a book's chapter grid), for a
+  // phone — 66 bar rows ran two and a half screens before anything else.
+  if (variant === "tiles") {
+    return (
+      <nav aria-label="Books of the Bible" className={className}>
+        {SECTIONS.map((sec) => (
+          <section key={sec.name} className="mt-6 first:mt-0">
+            <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-brand-gray">{sec.name}</h3>
+            <ul className="mt-2.5 grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
+              {sec.books.map((b) => {
+                const s = stats?.[b.id];
+                // Square-root scaled and capped at 0.45 so dark ink stays legible on every tile.
+                const weight = s ? 0.06 + 0.39 * Math.sqrt(s.sermons / max) : 0;
+                return (
+                  <li key={b.id}>
+                    <Link
+                      href={`/word/${b.slug}`}
+                      title={s ? `${b.name}: ${s.sermons} messages` : `${b.name}: not preached yet`}
+                      style={s ? { backgroundColor: `rgba(23, 58, 104, ${weight.toFixed(3)})` } : undefined}
+                      className={cn(
+                        "flex h-12 items-center justify-center rounded-xl px-1.5 text-center text-[13px] font-medium leading-tight text-balance transition-transform duration-150 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy",
+                        s ? "text-brand-ink" : "bg-brand-navy/[0.04] text-brand-gray"
+                      )}
+                    >
+                      {b.name}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))}
+      </nav>
+    );
+  }
 
   return (
     <nav aria-label="Books of the Bible" className={cn("px-3 py-6", className)}>

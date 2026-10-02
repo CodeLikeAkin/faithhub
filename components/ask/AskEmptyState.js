@@ -7,6 +7,7 @@ import { EXAMPLE_THEMES } from "@/lib/ask-examples";
 import { byRecent } from "@/lib/studies";
 import { displayTitle } from "@/lib/titles";
 import Masthead from "@/components/shell/Masthead";
+import { DotGrid, Eyebrow } from "@/components/Decor";
 import Composer from "./Composer";
 
 export const studyWhere = (s) => displayTitle(s.context?.seriesTitle || s.context?.sermonTitle) || "Everything";
@@ -22,10 +23,21 @@ export default function AskEmptyState({ onAsk, busy, studies, inputRef, onDelete
   const recent = byRecent(studies).slice(0, 6);
 
   return (
-    <div className="relative">
+    <div className="relative isolate overflow-hidden">
+      {/* The Vision page's backdrop for the start screen only — once an
+          answer is open the page goes back to plain white for reading. */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-[20rem] -z-10 h-[60rem] bg-gradient-to-b from-white via-brand-sky/70 to-white" />
+      <DotGrid className="left-0 top-[24rem] -z-10 h-[32rem] w-[32rem] max-w-full [mask-image:radial-gradient(circle_at_left,black,transparent_65%)]" />
+      <DotGrid className="right-0 top-[52rem] -z-10 h-[30rem] w-[30rem] max-w-full [mask-image:radial-gradient(circle_at_right,black,transparent_65%)]" />
+
       <Masthead
         className="mx-auto max-w-5xl px-4 pb-12 pt-3 sm:px-8 sm:pb-16 sm:pt-8"
-        title="Ask the Word"
+        eyebrow="Grounded in his messages"
+        title={
+          <>
+            Ask the <em>Word</em>
+          </>
+        }
         description="Ask anything Rev. Peter has taught. Every answer comes from his recorded messages, with the moments to watch."
       >
         <div className="mt-7 max-w-3xl text-left">
@@ -40,15 +52,27 @@ export default function AskEmptyState({ onAsk, busy, studies, inputRef, onDelete
       </Masthead>
 
       <section aria-labelledby="examples-heading" className="mx-auto max-w-5xl px-4 pb-16 sm:px-8">
-        <h2 id="examples-heading" className="font-display text-2xl font-semibold text-brand-ink">
-          Start with a question
+        <Eyebrow>Not sure where to begin</Eyebrow>
+        <h2
+          id="examples-heading"
+          className="mt-3 font-display text-3xl font-medium leading-[1.08] tracking-tight text-brand-ink sm:text-4xl"
+        >
+          Start with a <em className="font-normal italic text-brand-navy">question</em>
         </h2>
-        <div className="mt-7 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
-          {EXAMPLE_THEMES.map((t) => (
-            <div key={t.title}>
-              <h3 className="text-base font-bold text-brand-ink">{t.title}</h3>
-              <p className="mt-0.5 text-sm text-brand-gray">{t.blurb}</p>
-              <ul className="mt-3 divide-y divide-brand-navy/10 border-y border-brand-navy/10">
+        <div aria-hidden="true" className="mt-5 h-px bg-gradient-to-r from-brand-navy/30 via-brand-navy/10 to-transparent" />
+        {/* One card per theme, numbered like the Vision page's components. */}
+        <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {EXAMPLE_THEMES.map((t, i) => (
+            <div
+              key={t.title}
+              className="relative flex flex-col rounded-[1.75rem] border border-brand-navy/10 bg-white p-5 shadow-card"
+            >
+              <span aria-hidden="true" className="absolute right-5 top-4 font-display text-3xl leading-none text-brand-mist">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <h3 className="pr-10 font-display text-xl font-medium leading-tight text-brand-ink">{t.title}</h3>
+              <p className="mt-1 text-sm text-brand-gray">{t.blurb}</p>
+              <ul className="mt-3 divide-y divide-brand-navy/10 border-t border-brand-navy/10">
                 {t.questions.map((q) => (
                   <li key={q}>
                     <button
@@ -74,23 +98,25 @@ export default function AskEmptyState({ onAsk, busy, studies, inputRef, onDelete
 
       {recent.length > 0 && (
         <section aria-labelledby="studies-heading" className="mx-auto max-w-5xl px-4 pb-20 sm:px-8">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 id="studies-heading" className="font-display text-2xl font-semibold text-brand-ink">
-              Your studies
-            </h2>
-            <p className="text-sm text-brand-gray">Saved on this device</p>
-          </div>
+          <Eyebrow>Saved on this device</Eyebrow>
+          <h2
+            id="studies-heading"
+            className="mt-3 font-display text-3xl font-medium leading-[1.08] tracking-tight text-brand-ink sm:text-4xl"
+          >
+            Your studies
+          </h2>
+          <div aria-hidden="true" className="mt-5 h-px bg-gradient-to-r from-brand-navy/30 via-brand-navy/10 to-transparent" />
           <ul className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {recent.map((s) => (
               <li key={s.id} className="group relative">
                 <Link
                   href={`/ask?study=${s.id}`}
-                  className="flex h-full flex-col rounded-[1.5rem] border border-brand-navy/10 bg-white p-5 transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-brand-navy/25 hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy"
+                  className="flex h-full flex-col rounded-[1.75rem] border border-brand-navy/10 bg-white p-5 shadow-card transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-brand-navy/25 hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy"
                 >
                   <span className="pr-8 text-xs text-brand-gray">
                     {studyWhere(s)} · {fmtDate(s.updatedAt)}
                   </span>
-                  <span className="mt-2 font-display text-xl font-semibold leading-snug text-brand-ink">
+                  <span className="mt-2 font-display text-xl font-medium leading-snug text-brand-ink">
                     {s.title}
                   </span>
                   <span className="mt-2 line-clamp-3 text-sm leading-relaxed text-brand-gray">

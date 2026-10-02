@@ -123,10 +123,10 @@ export default function VerseExplorer({ sermonId, scriptures: preloaded, embedde
     <button
       onClick={() => toggleVerse(s)}
       aria-expanded={expandedId === s.id}
-      className={`inline-flex items-center rounded-full border px-3.5 min-h-11 text-xs font-bold transition-colors ${
+      className={`inline-flex min-w-[3.25rem] items-center justify-center rounded-xl px-3.5 min-h-11 text-sm font-semibold tabular-nums transition-colors ${
         expandedId === s.id
-          ? "bg-brand-navy text-white border-brand-navy"
-          : "bg-brand-sky text-brand-navy border-brand-navy/10 hover:border-brand-navy/40"
+          ? "bg-brand-navy text-white"
+          : "bg-brand-sky/70 text-brand-navy hover:bg-brand-sky"
       }`}
     >
       {label}
@@ -239,9 +239,11 @@ export default function VerseExplorer({ sermonId, scriptures: preloaded, embedde
               </button>
             ))}
           </span>
-          <span className="text-xs font-bold text-brand-navy bg-brand-sky border border-brand-navy/15 rounded-full px-2.5 py-1">
-            {scriptures.length}
-          </span>
+          {!embedded && (
+            <span className="text-xs font-bold text-brand-navy bg-brand-sky border border-brand-navy/15 rounded-full px-2.5 py-1">
+              {scriptures.length}
+            </span>
+          )}
         </span>
       </div>
 

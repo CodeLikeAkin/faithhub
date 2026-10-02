@@ -71,7 +71,7 @@ function Rename({ series, onSaved }) {
         hint="New uploads join this series when this exact name appears in their YouTube title."
         className="flex-1"
       >
-        <Input id="series-name" value={title} onChange={(e) => setTitle(e.target.value)} />
+        <Input id="series-name" maxLength={150} value={title} onChange={(e) => setTitle(e.target.value)} />
       </Field>
       <Btn type="submit" icon={Save} busy={busy} disabled={!changed || title.trim().length < 4} className="sm:mb-7">
         Save name
@@ -127,7 +127,7 @@ function AddPart({ seriesId, nextPart, onAdded }) {
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_120px]">
         <Field id="add-search" label="Find a message that's in no series" hint="Type words from its YouTube title.">
-          <Input id="add-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="e.g. Ephesians Part 16" />
+          <Input id="add-search" maxLength={100} value={q} onChange={(e) => setQ(e.target.value)} placeholder="e.g. Ephesians Part 16" />
         </Field>
         <Field id="add-part" label="As part">
           <Input id="add-part" type="number" min={1} max={999} value={part} onChange={(e) => setPart(e.target.value)} />

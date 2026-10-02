@@ -248,7 +248,7 @@ export default function VideoModal({ seg, onClose, initialMinimized = false }) {
   const src = `https://www.youtube.com/embed/${seg.video_id}?start=${Math.max(
     0,
     Math.floor(seg.start_seconds || 0)
-  )}&autoplay=1`;
+  )}&autoplay=1&playsinline=1&rel=0`;
 
   const docked = minimized && !pos; // still in its default corner
 

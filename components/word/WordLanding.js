@@ -4,10 +4,30 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import VerseCard, { TranslationToggle } from "@/components/VerseCard";
-import { DotGrid, Rings } from "@/components/Decor";
+import { DotGrid, Eyebrow } from "@/components/Decor";
+import Masthead from "@/components/shell/Masthead";
 import BibleNav from "./BibleNav";
 
 const fmt = (n) => Number(n || 0).toLocaleString();
+
+/** A section opener in the Vision page's manner: eyebrow, display heading, note, a rule that fades out. */
+function SectionHead({ id, eyebrow, title, note, action }) {
+  return (
+    <>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0">
+          <Eyebrow>{eyebrow}</Eyebrow>
+          <h2 id={id} className="mt-3 font-display text-3xl font-medium leading-[1.08] tracking-tight text-brand-ink text-balance">
+            {title}
+          </h2>
+          {note && <p className="mt-2 text-sm text-brand-gray">{note}</p>}
+        </div>
+        {action}
+      </div>
+      <div aria-hidden="true" className="mt-5 h-px bg-gradient-to-r from-brand-navy/30 via-brand-navy/10 to-transparent" />
+    </>
+  );
+}
 
 /**
  * /word with nothing selected: the headline numbers, then — below xl, where
@@ -20,19 +40,24 @@ export default function WordLanding({ stats }) {
   const maxChapter = Math.max(1, ...(stats?.chapters || []).map((c) => c.messages));
 
   return (
-    <div className="pb-24">
-      <div className="px-4 pt-3 sm:px-6 sm:pt-6">
-        <section className="relative overflow-hidden rounded-[1.75rem] bg-brand-deep px-6 py-10 text-white sm:rounded-[2.5rem] sm:px-10 sm:py-12">
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-            <div className="absolute -left-40 -top-40 h-[26rem] w-[26rem] rounded-full bg-brand-navy blur-3xl" />
-            <DotGrid dark className="inset-0 [mask-image:radial-gradient(ellipse_at_top_right,black,transparent_60%)]" />
-            <Rings className="absolute -bottom-56 -right-48 h-[34rem] w-[34rem] text-white/[0.06]" />
-          </div>
-          <div className="relative">
-            <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">The Word</h1>
-            <p className="mt-3 max-w-xl text-lg leading-relaxed text-white/75">
-              Every scripture Rev. Peter has opened in his messages, mapped across the Bible.
-            </p>
+    <div className="relative isolate overflow-hidden pb-24">
+      {/* The Vision page's backdrop: a sky wash under the header and dot grids
+          pinned to opposite edges, fading inward. */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-[22rem] -z-10 h-[70rem] bg-gradient-to-b from-white via-brand-sky/70 to-white" />
+      <DotGrid className="left-0 top-[26rem] -z-10 h-[32rem] w-[32rem] max-w-full [mask-image:radial-gradient(circle_at_left,black,transparent_65%)]" />
+      <DotGrid className="right-0 top-[64rem] -z-10 h-[30rem] w-[30rem] max-w-full [mask-image:radial-gradient(circle_at_right,black,transparent_65%)]" />
+
+      {/* The same masthead Ask, Series and Declarations open with. */}
+      <Masthead
+        className="px-4 pt-3 sm:px-6 sm:pt-6"
+        eyebrow="Mapped across the Bible"
+        title={
+          <>
+            The <em>Word</em>
+          </>
+        }
+        description="Every scripture Rev. Peter has opened in his messages, mapped across the Bible."
+      >
             {stats && (
               <dl className="mt-8 grid max-w-2xl grid-cols-3 gap-3">
                 {[
@@ -59,32 +84,30 @@ export default function WordLanding({ stats }) {
                 ))}
               </dl>
             )}
-          </div>
-        </section>
-      </div>
+      </Masthead>
 
       <div className="mx-auto max-w-4xl px-4 sm:px-8">
         {/* Browsing comes first: someone opening The Word wants to go to a verse,
             not read the rankings. Above xl the left pane already holds the nav. */}
         <section aria-labelledby="browse-heading" className="pt-10 xl:hidden">
-          <h2 id="browse-heading" className="font-display text-2xl font-semibold tracking-tight text-brand-ink">
-            Browse the Bible
-          </h2>
-          <p className="mt-1.5 text-sm text-brand-gray">Tap a book to open its chapters</p>
-          <BibleNav className="-mx-3 mt-2" />
+          <SectionHead
+            id="browse-heading"
+            eyebrow="66 books"
+            title="Browse the Bible"
+            note="Tap a book to open its chapters. The darker it is, the more he preaches from it."
+          />
+          <BibleNav variant="tiles" className="mt-6" />
         </section>
 
         {stats?.passages?.length > 0 && (
           <section aria-labelledby="passages-heading" className="pt-14">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <h2 id="passages-heading" className="font-display text-2xl font-semibold tracking-tight text-brand-ink">
-                  Most-preached passages
-                </h2>
-                <p className="mt-1.5 text-sm text-brand-gray">The verses he opens in the most messages</p>
-              </div>
-              <TranslationToggle value={translation} onChange={setTranslation} />
-            </div>
+            <SectionHead
+              id="passages-heading"
+              eyebrow="Opened most often"
+              title="Most-preached passages"
+              note="The verses he opens in the most messages"
+              action={<TranslationToggle value={translation} onChange={setTranslation} />}
+            />
             <ul className="mt-6 grid gap-3 sm:grid-cols-2">
               {stats.passages.map((p) => (
                 <li key={p.label}>
@@ -109,9 +132,7 @@ export default function WordLanding({ stats }) {
 
         {stats?.chapters?.length > 0 && (
           <section aria-labelledby="chapters-heading" className="pt-14">
-            <h2 id="chapters-heading" className="font-display text-2xl font-semibold tracking-tight text-brand-ink">
-              Chapters Rev returns to
-            </h2>
+            <SectionHead id="chapters-heading" eyebrow="Returned to" title="Chapters Rev. Peter returns to" />
             <ul className="mt-6 space-y-2">
               {stats.chapters.map((c) => (
                 <li key={`${c.id}-${c.chapter}`}>
@@ -135,17 +156,17 @@ export default function WordLanding({ stats }) {
 
         {stats?.books?.length > 0 && (
           <section aria-labelledby="books-heading" className="pt-14">
-            <h2 id="books-heading" className="font-display text-2xl font-semibold tracking-tight text-brand-ink">
-              The books Rev preaches from most
-            </h2>
+            <SectionHead id="books-heading" eyebrow="Ranked" title="The books he preaches from most" />
             <ol className="mt-6 grid gap-3 sm:grid-cols-2">
               {stats.books.map((b, i) => (
                 <li key={b.id}>
                   <Link
                     href={`/word/${b.slug}`}
-                    className="group flex items-center gap-4 rounded-2xl border border-brand-navy/10 bg-white p-4 transition-[border-color,box-shadow,transform] hover:border-brand-navy/25 hover:shadow-lift active:scale-[0.99]"
+                    className="group flex items-center gap-4 rounded-2xl border border-brand-navy/10 bg-white p-4 shadow-subtle transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-brand-navy/25 hover:shadow-lift active:scale-[0.99]"
                   >
-                    <span className="w-6 text-right font-display text-xl tabular-nums text-brand-navy/40">{i + 1}</span>
+                    <span className="w-8 text-right font-display text-2xl leading-none tabular-nums text-brand-mist">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-baseline justify-between gap-3">
                         <span className="font-display text-xl text-brand-ink">{b.name}</span>

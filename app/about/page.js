@@ -234,7 +234,7 @@ export default async function AboutPage() {
     <ToolShell kind="about" title="About & feedback">
     <div className="min-h-0 flex-1 overflow-y-auto overflow-x-clip bg-white custom-scrollbar">
       {/* ── hero ── */}
-      <section className="px-3 pt-3 sm:px-5 sm:pt-5">
+      <section className="px-4 pt-3 sm:px-5 sm:pt-5">
         <div className="relative mx-auto max-w-[1400px] overflow-hidden rounded-[1.75rem] bg-brand-deep sm:rounded-[2.5rem]">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0">
             <div className="absolute -left-48 -top-48 h-[36rem] w-[36rem] rounded-full bg-brand-navy blur-3xl" />
@@ -366,7 +366,7 @@ export default async function AboutPage() {
       </section>
 
       {/* ── method ── */}
-      <section className="px-3 sm:px-5">
+      <section className="px-4 sm:px-5">
         <div className="relative mx-auto max-w-[1400px] overflow-hidden rounded-[1.75rem] bg-brand-sky px-6 py-16 sm:rounded-[2.5rem] sm:px-10 sm:py-20 lg:px-16 lg:py-24">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0">
             <div className="absolute -right-40 -top-40 h-[30rem] w-[30rem] rounded-full bg-white blur-3xl" />

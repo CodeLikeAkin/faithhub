@@ -13,9 +13,10 @@ import DeclarationLine from "@/components/declarations/DeclarationLine";
 import SpeakMode from "@/components/declarations/SpeakMode";
 import {
   THEMES,
-  fetchThemeCount,
-  fetchThemePage,
+  dayNumber,
+  fetchThemeForDay,
   themeBySlug,
+  themeOfDay,
   fetchTodaysDeclaration,
   normalizeDeclaration,
   streakLabel,
@@ -28,13 +29,16 @@ import { cleanTitle } from "@/lib/titles";
 import { parseYoutubeUrl } from "@/lib/youtube";
 import { scrollToElement } from "@/lib/scroll";
 import { cn } from "@/lib/utils";
+import { DotGrid, Eyebrow, QuoteGlyph, Rings } from "@/components/Decor";
 
 /**
  * Declarations — a library of Rev. Peter's declarations to speak.
  *
  *   /declarations                     "What are you facing?" + today's declaration (navy
- *                                     masthead), theme chips with that theme's newest
- *                                     declarations in place, My declarations
+ *                                     masthead), theme chips led by today's theme with
+ *                                     that theme's 8 for the day in place (same for
+ *                                     everyone, new each day — lib/declarations.js
+ *                                     fetchThemeForDay), My declarations
  *   /declarations?theme=<slug>        …with that theme chosen
  *   /declarations?facing=<text>       …with declarations for that situation
  *   /declarations?speak=today|mine    …opened straight into Speak mode
@@ -65,7 +69,6 @@ function setParams(changes) {
 
 export default function DeclarationsPage() {
   const [today, setToday] = useState(undefined); // undefined = loading, null = unavailable
-  const [counts, setCounts] = useState({});
   const [facing, setFacing] = useState(null); // { query, status, response, items, hasMore, loadingMore, error }
   const [speak, setSpeak] = useState(null); // { key, title, items }
   const [watching, setWatching] = useState(null);
@@ -73,26 +76,37 @@ export default function DeclarationsPage() {
   const saved = useSavedDeclarations();
   const streak = useStreak();
   const resultsRef = useRef(null);
-  const [theme, setTheme] = useState(THEMES[0].slug);
+  // The day (Lagos calendar) and the theme leading it are set on the client:
+  // a server render near midnight could disagree and break hydration.
+  const [day, setDay] = useState(null);
+  const [todayTheme, setTodayTheme] = useState(null);
+  const [theme, setTheme] = useState(null); // null until the day is known
   const [themeItems, setThemeItems] = useState(null); // null = loading
-  const themeInfo = themeBySlug(theme) || THEMES[0];
+  const themeInfo = themeBySlug(theme) || themeBySlug(todayTheme) || THEMES[0];
 
-  // The chosen theme's newest declarations (a topic_tags filter), shown in place.
+  // The open theme's 8 for today — a topic_tags filter (CLAUDE.md rule 2),
+  // the same 8 for everyone, new ones tomorrow.
   useEffect(() => {
+    if (!theme || day == null) return;
     let live = true;
     setThemeItems(null);
-    fetchThemePage(theme, 0, 8)
+    fetchThemeForDay(theme, day)
       .then((items) => live && setThemeItems(items))
       .catch(() => live && setThemeItems([]));
     return () => {
       live = false;
     };
-  }, [theme]);
+  }, [theme, day]);
 
   const pickTheme = (slug) => {
     setTheme(slug);
-    setParams({ theme: slug === THEMES[0].slug ? null : slug });
+    setParams({ theme: slug === todayTheme ? null : slug });
   };
+
+  // Today's theme leads the chip row; the rest keep their usual order.
+  const chipThemes = todayTheme
+    ? [themeBySlug(todayTheme), ...THEMES.filter((t) => t.slug !== todayTheme)]
+    : THEMES;
 
   useEffect(() => {
     document.title = "Declarations · FaithHub";
@@ -100,9 +114,6 @@ export default function DeclarationsPage() {
     fetchTodaysDeclaration()
       .then((d) => !cancelled && setToday(d))
       .catch(() => !cancelled && setToday(null));
-    Promise.all(THEMES.map((t) => fetchThemeCount(t.slug).then((n) => [t.slug, n]))).then(
-      (pairs) => !cancelled && setCounts(Object.fromEntries(pairs))
-    );
     return () => {
       cancelled = true;
     };
@@ -164,8 +175,12 @@ export default function DeclarationsPage() {
   const handledParams = useRef({ facing: false, speak: false });
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const d = dayNumber();
+    const lead = themeOfDay(d);
+    setDay(d);
+    setTodayTheme(lead);
     const t = themeBySlug(params.get("theme"));
-    if (t) setTheme(t.slug);
+    setTheme(t ? t.slug : lead);
     const q = params.get("facing");
     if (q && !handledParams.current.facing) {
       handledParams.current.facing = true;
@@ -204,16 +219,29 @@ export default function DeclarationsPage() {
         </>
       }
     >
-      <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
+      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
         <div className="mx-auto w-full max-w-5xl px-4 pb-28 pt-3 sm:px-8 sm:pt-8">
           <Masthead
             eyebrow="Declarations"
-            title="Speak Life"
+            title={
+              <>
+                Speak <em>Life</em>
+              </>
+            }
             description="Say it plainly. You’ll get declarations from Rev. Peter’s messages that speak to it, and a short word for you."
             aside={
               today !== null && (
-                <section aria-labelledby="today-heading" className="rounded-2xl border border-white/15 bg-white/[0.08] p-5 sm:p-6">
-                  <h2 id="today-heading" className="text-xs font-bold uppercase tracking-[0.18em] text-white/60">
+                <section
+                  aria-labelledby="today-heading"
+                  className="relative isolate overflow-hidden rounded-2xl border border-white/15 bg-white/[0.06] p-5 backdrop-blur-sm sm:p-6"
+                >
+                  <QuoteGlyph className="pointer-events-none absolute -right-2 top-4 -z-10 h-16 w-24 text-white/[0.035]" />
+                  {/* Set like the Eyebrow (rule + caps), kept an h2 for the outline. */}
+                  <h2
+                    id="today-heading"
+                    className="inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-white/65"
+                  >
+                    <span aria-hidden="true" className="h-px w-8 bg-white/40" />
                     Today&rsquo;s declaration
                   </h2>
                   {today === undefined ? (
@@ -290,6 +318,8 @@ export default function DeclarationsPage() {
                    until there's a word to search on (see the API's
                    MIN_MESSAGE_LENGTH). */
                 minLength={3}
+                /* "Say it plainly": a need in a sentence or two, not a story. */
+                maxLength={300}
               />
             </div>
           </Masthead>
@@ -333,13 +363,17 @@ export default function DeclarationsPage() {
                          this person. */
                       <p className="mt-3 text-base leading-relaxed text-brand-gray">{facing.response}</p>
                     ) : (
-                      <div className="mt-3 rounded-[1.5rem] bg-brand-sky/60 p-5 sm:p-6">
-                        <p className="text-sm font-semibold text-brand-navy">A word for you</p>
-                        <p className="mt-2 whitespace-pre-line text-base leading-relaxed text-brand-ink/90">{facing.response}</p>
+                      /* The Vision page's pull quote: sky gradient, a navy-to-mist
+                         bar down the left, a faint quote mark in the corner. */
+                      <div className="relative isolate mt-3 overflow-hidden rounded-[1.5rem] bg-gradient-to-br from-brand-sky to-brand-sky/40 py-5 pl-6 pr-6 sm:py-6 sm:pl-8 sm:pr-14">
+                        <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-brand-navy to-brand-mist" />
+                        <QuoteGlyph className="absolute right-4 top-4 -z-10 h-6 w-8 text-brand-navy/15" />
+                        <Eyebrow>A word for you</Eyebrow>
+                        <p className="mt-3 whitespace-pre-line text-base leading-relaxed text-brand-ink/90">{facing.response}</p>
                       </div>
                     ))}
                   <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-                    <h3 className="font-display text-2xl font-semibold text-brand-ink">Declarations to speak</h3>
+                    <h3 className="font-display text-3xl font-medium tracking-tight text-brand-ink">Declarations to speak</h3>
                     <Button variant="dark" size="sm" icon={false} onClick={() => openSpeak("facing")} className="py-2.5">
                       <Volume2 className="h-4 w-4" aria-hidden="true" />
                       Speak these
@@ -367,7 +401,7 @@ export default function DeclarationsPage() {
               row stays pinned while the list below it scrolls. */}
           <div className="sticky top-0 z-10 -mx-3 mt-8 bg-white/95 px-3 py-3 backdrop-blur sm:-mx-8 sm:px-8">
             <div role="group" aria-label="Themes" className="fh-no-scrollbar flex snap-x gap-2 overflow-x-auto">
-              {THEMES.map((t) => {
+              {chipThemes.map((t) => {
                 const on = t.slug === theme;
                 return (
                   <button
@@ -386,10 +420,10 @@ export default function DeclarationsPage() {
                     )}
                   >
                     {t.name}
-                    {counts[t.slug] != null && (
-                      <span className={cn("text-xs font-normal tabular-nums", on ? "text-white/70" : "text-brand-gray")}>
-                        {counts[t.slug].toLocaleString()}
-                      </span>
+                    {/* No counts: nobody reads 3,000 declarations. The chip
+                        only says which theme leads today. */}
+                    {t.slug === todayTheme && (
+                      <span className={cn("text-xs font-normal", on ? "text-white/70" : "text-brand-gray")}>Today</span>
                     )}
                   </button>
                 );
@@ -397,19 +431,29 @@ export default function DeclarationsPage() {
             </div>
           </div>
 
-          <div className="mt-3 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_17rem]">
+          {/* The Vision backdrop, anchored to the cards rather than the top of
+              the page (a "facing" answer above pushes them down): a sky wash
+              running full width behind them, and dot grids out in the side
+              gutters on wide screens. The declarations themselves stay on
+              their white card. */}
+          <div className="relative isolate mt-3 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_17rem]">
+            <div aria-hidden="true" className="pointer-events-none absolute -inset-x-[50vw] -bottom-24 -top-4 -z-10 bg-gradient-to-b from-white via-brand-sky/70 to-white" />
+            <DotGrid className="right-full top-10 -z-10 mr-6 hidden h-[30rem] w-[22rem] [mask-image:radial-gradient(circle_at_left,black,transparent_70%)] xl:block" />
+            <DotGrid className="left-full top-64 -z-10 ml-6 hidden h-[30rem] w-[22rem] [mask-image:radial-gradient(circle_at_right,black,transparent_70%)] xl:block" />
             <section
               aria-labelledby="theme-heading"
-              className="fh-rise rounded-[1.75rem] border border-brand-navy/10 bg-white p-5 sm:p-7"
+              className="fh-rise rounded-[1.75rem] border border-brand-navy/10 bg-white p-5 shadow-card sm:p-7"
             >
               <div className="flex flex-wrap items-end justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="text-sm text-brand-gray">{themeInfo.sub}</p>
-                  <h2 id="theme-heading" className="mt-1 font-display text-2xl font-semibold tracking-tight text-brand-ink">
+                  <Eyebrow>{themeInfo.sub}</Eyebrow>
+                  <h2 id="theme-heading" className="mt-3 font-display text-3xl font-medium tracking-tight text-brand-ink sm:text-4xl">
                     {themeInfo.name}
                   </h2>
-                  {counts[theme] != null && (
-                    <p className="mt-1 text-sm text-brand-gray">{counts[theme].toLocaleString()} declarations from the messages</p>
+                  {theme && (
+                    <p className="mt-1 text-sm text-brand-gray">
+                      {theme === todayTheme ? "Today’s theme · " : ""}8 to speak today, new ones tomorrow
+                    </p>
                   )}
                 </div>
                 <Button
@@ -442,10 +486,10 @@ export default function DeclarationsPage() {
               )}
 
               <Link
-                href={`/declarations/${theme}`}
+                href={`/declarations/${themeInfo.slug}`}
                 className="group mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-navy"
               >
-                {counts[theme] != null ? `See all ${counts[theme].toLocaleString()} on ${themeInfo.name}` : `See all on ${themeInfo.name}`}
+                See every declaration on {themeInfo.name}
                 <ArrowRight size={14} aria-hidden="true" className="transition-transform group-hover:translate-x-0.5" />
               </Link>
             </section>
@@ -453,11 +497,13 @@ export default function DeclarationsPage() {
             {/* My declarations + streak */}
             <section
               aria-labelledby="mine-heading"
-              className="fh-rise flex flex-col gap-4 rounded-[1.75rem] border border-brand-navy/10 bg-brand-sky/50 p-5 sm:p-6"
+              className="fh-rise relative isolate flex flex-col gap-4 overflow-hidden rounded-[1.75rem] border border-brand-navy/10 bg-gradient-to-br from-white to-brand-sky p-5 shadow-card sm:p-6"
               style={{ "--i": 1 }}
             >
+              <Rings className="pointer-events-none absolute -bottom-24 -right-24 -z-10 h-64 w-64 text-brand-navy/[0.08]" />
               <div className="min-w-0">
-                <h2 id="mine-heading" className="font-display text-2xl font-semibold text-brand-ink">
+                <Eyebrow>Your set</Eyebrow>
+                <h2 id="mine-heading" className="mt-3 font-display text-2xl font-medium tracking-tight text-brand-ink">
                   My declarations
                 </h2>
                 <p className="mt-2 text-sm text-brand-gray">

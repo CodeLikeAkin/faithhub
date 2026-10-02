@@ -199,6 +199,7 @@ export default function Navbar() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Ask anything Rev. Peter has taught…"
               aria-label="Ask anything Rev. Peter has taught"
+              maxLength={500}
               enterKeyHint="search"
               className="min-w-0 flex-1 bg-transparent py-2.5 text-base text-brand-ink placeholder:text-brand-gray/80 focus:outline-none"
             />
@@ -222,8 +223,8 @@ export default function Navbar() {
         aria-modal="true"
         aria-label="Menu"
         {...(!isOpen ? { inert: "", "aria-hidden": true } : {})}
-        className={`fixed inset-y-0 left-0 z-50 w-[min(20rem,86vw)] bg-brand-deep shadow-2xl transition-transform duration-300 md:hidden ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed inset-y-0 left-0 z-50 w-[min(20rem,86vw)] bg-brand-deep transition-[transform,box-shadow] duration-300 md:hidden ${
+          isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full shadow-none"
         }`}
         style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
       >

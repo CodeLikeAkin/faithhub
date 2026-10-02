@@ -40,7 +40,7 @@ export function scopePhrase(scope) {
  * The scope switch inside the composer: Everything / This series / This
  * message. A single available scope renders as a quiet static label.
  */
-export default function ScopeChip({ scopes, value, onChange, relative = false, dropUp = false, compact = false }) {
+export default function ScopeChip({ scopes, value, onChange, relative = false, dropUp = false, compact = false, iconOnly = false }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
   const buttonRef = useRef(null);
@@ -83,7 +83,7 @@ export default function ScopeChip({ scopes, value, onChange, relative = false, d
         title={scopeDetail(current)}
       >
         <Icon size={15} aria-hidden="true" />
-        <span className={compact ? "hidden sm:inline" : undefined}>{label}</span>
+        {!iconOnly && <span className={compact ? "hidden sm:inline" : undefined}>{label}</span>}
       </span>
     );
   }
@@ -109,12 +109,15 @@ export default function ScopeChip({ scopes, value, onChange, relative = false, d
         aria-expanded={open}
         aria-label={`Search in: ${scopeKind(current, relative)} — ${scopeDetail(current)}. Change`}
         onClick={() => setOpen((o) => !o)}
+        title={iconOnly ? label : undefined}
         className="inline-flex h-9 max-w-full items-center gap-1.5 rounded-full bg-brand-sky px-3 text-sm font-medium text-brand-navy transition hover:bg-brand-mist/60 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy"
       >
         <Icon size={15} aria-hidden="true" className="flex-shrink-0" />
-        <span className={cn("truncate", compact ? "hidden max-w-[9rem] sm:inline" : "max-w-[12rem]")}>
-          {label}
-        </span>
+        {!iconOnly && (
+          <span className={cn("truncate", compact ? "hidden max-w-[9rem] sm:inline" : "max-w-[12rem]")}>
+            {label}
+          </span>
+        )}
         <ChevronDown size={14} aria-hidden="true" className={cn("flex-shrink-0 transition-transform", open && "rotate-180")} />
       </button>
 

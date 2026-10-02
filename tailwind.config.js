@@ -74,10 +74,10 @@ module.exports = {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
         },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
+        /* No `card` colour: nothing used it, and its name collided with the
+           `card` elevation below — `shadow-card` also emitted the shadow-colour
+           utility, tinting every resting card's shadow white (invisible on
+           white pages, a white haze on the navy mastheads). */
         /* HOF NG brand palette — hofng.org is the source of truth */
         brand: {
           navy: "#173A68",  /* primary — the logo blue */

@@ -81,7 +81,7 @@ function TitleEditor({ m, onSaved }) {
           error={error}
           hint="Changes the name on FaithHub only; YouTube keeps its own. Keep the series name in it, so new parts still match."
         >
-          <Input id="msg-title" value={text} onChange={(e) => setText(e.target.value)} autoFocus />
+          <Input id="msg-title" maxLength={300} value={text} onChange={(e) => setText(e.target.value)} autoFocus />
         </Field>
         <div className="flex gap-2">
           <Btn size="sm" icon={Check} busy={busy} disabled={text.trim().length < 4} onClick={save}>

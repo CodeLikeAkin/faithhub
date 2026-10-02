@@ -114,8 +114,15 @@ export default function BookView({ slug }) {
   return (
     <div className="mx-auto max-w-4xl px-4 pb-24 pt-8 sm:px-8 sm:pt-12">
       <header>
-        <p className="text-sm text-brand-gray">{sectionFor(book)?.name}</p>
-        <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight text-brand-ink sm:text-4xl">{book.name}</h1>
+        {/* Set as the Vision eyebrow (rule + caps), still the way back to the Bible. */}
+        <Link
+          href="/word"
+          className="inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-brand-navy hover:underline"
+        >
+          <span aria-hidden="true" className="h-px w-8 bg-brand-navy/40" />
+          {sectionFor(book)?.name}
+        </Link>
+        <h1 className="mt-3 font-display text-4xl font-medium leading-[1.04] tracking-tight text-brand-ink sm:text-5xl">{book.name}</h1>
         <p className="mt-3 text-sm text-brand-gray">
           {s
             ? `Opened in ${s.sermons.toLocaleString()} messages · ${s.refs.toLocaleString()} references`
@@ -123,6 +130,7 @@ export default function BookView({ slug }) {
             ? "Rev. Peter hasn’t preached from this book in the messages indexed so far."
             : " "}
         </p>
+        <div aria-hidden="true" className="mt-6 h-px bg-gradient-to-r from-brand-navy/30 via-brand-navy/10 to-transparent" />
       </header>
 
       {loading && !rows && (
@@ -137,7 +145,7 @@ export default function BookView({ slug }) {
       {view && (
         <>
           <section aria-labelledby="chapters-heading" className="pt-10">
-            <h2 id="chapters-heading" className="font-display text-2xl font-semibold tracking-tight text-brand-ink">
+            <h2 id="chapters-heading" className="font-display text-3xl font-medium tracking-tight text-brand-ink">
               Chapters
             </h2>
             <p className="mt-1.5 text-sm text-brand-gray">Tap a chapter to read it. The darker it is, the more messages open it.</p>
@@ -148,7 +156,7 @@ export default function BookView({ slug }) {
 
           {view.passages.length > 0 && (
             <section aria-labelledby="passages-heading" className="pt-12">
-              <h2 id="passages-heading" className="font-display text-2xl font-semibold tracking-tight text-brand-ink">
+              <h2 id="passages-heading" className="font-display text-3xl font-medium tracking-tight text-brand-ink">
                 Most-opened passages
               </h2>
               <ul className="mt-5 space-y-1.5">
@@ -172,7 +180,7 @@ export default function BookView({ slug }) {
 
           {view.messages.length > 0 && (
             <section aria-labelledby="messages-heading" className="pt-12">
-              <h2 id="messages-heading" className="font-display text-2xl font-semibold tracking-tight text-brand-ink">
+              <h2 id="messages-heading" className="font-display text-3xl font-medium tracking-tight text-brand-ink">
                 Messages that open {book.name}
               </h2>
               <p className="mt-1.5 text-sm text-brand-gray">Most references first</p>

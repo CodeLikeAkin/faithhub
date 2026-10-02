@@ -56,13 +56,37 @@ function Passage({ book, group, text, onWatch }) {
 
       <ul className="mt-5 divide-y divide-brand-navy/10 rounded-2xl border border-brand-navy/10">
         {shown.map(({ sermon, ts, theme }) => (
-          <li key={sermon.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
+          // A phone gets a compact row — play | text | open — instead of two
+          // pill buttons under every message, which doubled each row's height.
+          <li key={sermon.id} className="flex items-center gap-3 p-4 sm:justify-between">
+            {sermon.youtube_video_id && (
+              <button
+                type="button"
+                onClick={() =>
+                  onWatch({ video_id: sermon.youtube_video_id, start_seconds: ts || 0, sermon_title: sermon.title })
+                }
+                aria-label={ts != null ? `Watch at ${fmtTime(ts)}` : "Watch the message"}
+                className="grid h-10 w-10 flex-shrink-0 place-items-center self-start rounded-full bg-brand-navy text-white transition-[background-color,transform] hover:bg-brand-deep active:scale-95 sm:hidden"
+              >
+                <Play size={14} fill="currentColor" aria-hidden="true" className="ml-0.5" />
+              </button>
+            )}
+            <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold leading-snug text-brand-ink">{cleanTitle(sermon.title)}</p>
-              <p className="mt-0.5 text-xs text-brand-gray">{sermonDate(sermon)}</p>
+              <p className="mt-0.5 text-xs text-brand-gray">
+                {sermonDate(sermon)}
+                {ts != null && <span className="sm:hidden"> · at {fmtTime(ts)}</span>}
+              </p>
               {theme && <p className="mt-1.5 text-sm text-brand-ink/75">Why he read it: {theme}</p>}
             </div>
-            <div className="flex flex-shrink-0 gap-2">
+            <Link
+              href={`/sermon/${sermon.id}${ts != null ? `?t=${Math.floor(ts)}` : ""}`}
+              aria-label={`Open the lesson: ${cleanTitle(sermon.title)}`}
+              className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-full text-brand-navy/50 transition-colors hover:bg-brand-sky hover:text-brand-navy sm:hidden"
+            >
+              <ArrowRight size={18} aria-hidden="true" />
+            </Link>
+            <div className="hidden flex-shrink-0 gap-2 sm:flex">
               {sermon.youtube_video_id && (
                 <button
                   type="button"
@@ -70,10 +94,10 @@ function Passage({ book, group, text, onWatch }) {
                     onWatch({ video_id: sermon.youtube_video_id, start_seconds: ts || 0, sermon_title: sermon.title })
                   }
                   aria-label={ts != null ? `Watch at ${fmtTime(ts)}` : "Watch the message"}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-full bg-brand-navy px-3.5 text-sm font-semibold tabular-nums text-white transition-colors hover:bg-brand-deep"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-full bg-brand-navy px-3.5 text-sm font-semibold text-white transition-colors hover:bg-brand-deep"
                 >
                   <Play size={12} fill="currentColor" aria-hidden="true" />
-                  {ts != null ? fmtTime(ts) : "Watch"}
+                  Watch
                 </button>
               )}
               <Link
@@ -197,13 +221,18 @@ export default function ChapterView({ slug, chapter }) {
     <div className="mx-auto max-w-3xl px-4 pb-24 pt-8 sm:px-8 sm:pt-12">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <Link href={`/word/${book.slug}`} className="text-sm font-semibold text-brand-navy hover:underline">
+          {/* Set as the Vision eyebrow (rule + caps), still the way back to the book. */}
+          <Link
+            href={`/word/${book.slug}`}
+            className="inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-brand-navy hover:underline"
+          >
+            <span aria-hidden="true" className="h-px w-8 bg-brand-navy/40" />
             {book.name}
           </Link>
-          <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight text-brand-ink sm:text-4xl">
+          <h1 className="mt-3 font-display text-4xl font-medium leading-[1.04] tracking-tight text-brand-ink sm:text-5xl">
             {book.name} {ch}
           </h1>
-          <p className="mt-3 text-lg text-brand-gray">
+          <p className="mt-3 text-sm text-brand-gray">
             {loading && !rows
               ? " "
               : messageCount

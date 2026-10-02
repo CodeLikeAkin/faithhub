@@ -368,6 +368,7 @@ export default function MessagesBoard({ messages, initial }) {
             <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
             <Input
               type="search"
+              maxLength={100}
               aria-label="Find a message by title, series or YouTube id"
               placeholder="Find by title, series or YouTube id"
               value={q}

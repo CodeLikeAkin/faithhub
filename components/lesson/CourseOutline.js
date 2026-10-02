@@ -60,12 +60,17 @@ export default function CourseOutline({ series, parts, activeId, onSelect, class
     >
       <div className="flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-3.5">
         <div className="min-w-0 flex-1">
-          <p className="text-sm text-brand-gray">
+          {/* On a phone the series name is already the link just above, so this
+              card only says where you are in it. */}
+          <p className="font-display text-lg font-medium text-brand-ink sm:hidden">
+            Part {parts[idx]?.part_number} of {parts.length}
+          </p>
+          <p className="hidden text-sm text-brand-gray sm:block">
             Part {parts[idx]?.part_number} of {parts.length}
           </p>
           <Link
             href={`/series/${series.id}`}
-            className="block truncate font-display text-lg font-medium text-brand-ink hover:text-brand-navy"
+            className="hidden truncate font-display text-lg font-medium text-brand-ink hover:text-brand-navy sm:block"
           >
             {seriesName(series.title)}
           </Link>

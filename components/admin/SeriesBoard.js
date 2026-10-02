@@ -94,7 +94,7 @@ function Proposal({ p, onCreated }) {
   return (
     <li className="rounded-3xl border border-brand-navy/[0.07] bg-white p-5 shadow-[0_1px_2px_rgba(16,42,78,0.04)]">
       <Field id={id} label="Series name" hint="Future uploads join this series when this name appears in their YouTube title.">
-        <Input id={id} value={title} onChange={(e) => setTitle(e.target.value)} />
+        <Input id={id} maxLength={150} value={title} onChange={(e) => setTitle(e.target.value)} />
       </Field>
       {p.notes.length > 0 && (
         <ul className="mt-3 space-y-1">
@@ -158,7 +158,7 @@ export default function SeriesBoard({ series, proposals }) {
           </h2>
           <div className="relative w-full sm:w-80">
             <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-            <Input aria-label="Filter series by name" placeholder="Filter by name" value={q} onChange={(e) => setQ(e.target.value)} className="pl-10" />
+            <Input aria-label="Filter series by name" placeholder="Filter by name" maxLength={100} value={q} onChange={(e) => setQ(e.target.value)} className="pl-10" />
           </div>
         </div>
         {shown.length ? (

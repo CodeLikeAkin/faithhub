@@ -100,7 +100,7 @@ function SermonPicker({ sermon, onPick }) {
   return (
     <div className={cn(card, "space-y-4 p-6")}>
       <Field id="review-search" label="Which message?" hint="Type words from its YouTube title.">
-        <Input id="review-search" autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="e.g. Enlarged Day 2" />
+        <Input id="review-search" autoFocus maxLength={100} value={q} onChange={(e) => setQ(e.target.value)} placeholder="e.g. Enlarged Day 2" />
       </Field>
       <Notice tone="error">{error}</Notice>
       {results &&
@@ -192,7 +192,7 @@ function DeclarationRow({ d, onSaved, onDeleted }) {
           {editing ? (
             <div className="space-y-3">
               <Field id={`dt-${d.id}`} label="Declaration" error={error}>
-                <TextArea id={`dt-${d.id}`} rows={3} value={text} onChange={(e) => setText(e.target.value)} />
+                <TextArea id={`dt-${d.id}`} rows={3} maxLength={600} value={text} onChange={(e) => setText(e.target.value)} />
               </Field>
               <fieldset>
                 <legend className="text-sm font-semibold text-brand-ink">Themes</legend>
@@ -384,10 +384,10 @@ function WordRow({ w, onSaved, onDeleted }) {
       {editing ? (
         <div className="mt-3 space-y-3">
           <Field id={`wm-${w.id}`} label="Meaning" error={error}>
-            <TextArea id={`wm-${w.id}`} rows={4} value={meaning} onChange={(e) => setMeaning(e.target.value)} />
+            <TextArea id={`wm-${w.id}`} rows={4} maxLength={3000} value={meaning} onChange={(e) => setMeaning(e.target.value)} />
           </Field>
           <Field id={`wn-${w.id}`} label="Reviewer note" hint="Visible only here. Leave empty when nothing needs flagging.">
-            <TextArea id={`wn-${w.id}`} rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
+            <TextArea id={`wn-${w.id}`} rows={2} maxLength={2000} value={note} onChange={(e) => setNote(e.target.value)} />
           </Field>
           <div className="flex gap-2">
             <Btn size="sm" icon={Save} busy={busy} onClick={save}>
@@ -559,7 +559,7 @@ function Notes({ sermon }) {
           </div>
         </div>
       ) : (
-        <TextArea aria-label="Study notes" rows={20} value={text} onChange={(e) => setText(e.target.value)} className="font-mono text-sm" />
+        <TextArea aria-label="Study notes" rows={20} maxLength={60000} value={text} onChange={(e) => setText(e.target.value)} className="font-mono text-sm" />
       )}
       {dirty && <p className="text-sm font-medium text-[#7a4f00]">You have changes that aren&apos;t saved yet.</p>}
     </section>

@@ -50,6 +50,7 @@ export default function LoginForm() {
         autoComplete="current-password"
         autoFocus
         required
+        maxLength={200}
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         aria-invalid={error ? "true" : undefined}

@@ -326,8 +326,10 @@ export default function ToolShell({
             {...(!docked && !sheetOpen ? { inert: "", "aria-hidden": true } : {})}
             {...(sheetOpen ? { role: "dialog", "aria-modal": true } : {})}
             className={cn(
-              "fixed inset-x-0 bottom-0 top-[calc(env(safe-area-inset-top)+2.75rem)] z-40 flex min-h-0 flex-col overflow-hidden rounded-t-[1.75rem] bg-white shadow-2xl outline-none transition-transform duration-300",
-              sheetOpen ? "translate-y-0" : "pointer-events-none translate-y-full",
+              "fixed inset-x-0 bottom-0 top-[calc(env(safe-area-inset-top)+2.75rem)] z-40 flex min-h-0 flex-col overflow-hidden rounded-t-[1.75rem] bg-white outline-none transition-[transform,box-shadow] duration-300",
+              // The shadow only while open: parked below the screen it would
+              // still cast a grey band up over the bottom of every page.
+              sheetOpen ? "translate-y-0 shadow-2xl" : "pointer-events-none translate-y-full shadow-none",
               "lg:pointer-events-auto lg:static lg:z-auto lg:w-[360px] lg:flex-shrink-0 lg:translate-y-0 lg:rounded-none lg:border-l lg:border-brand-navy/10 lg:shadow-none lg:transition-none xl:w-[400px]",
               panelVisibleDocked ? "lg:flex" : "lg:hidden"
             )}
@@ -363,8 +365,10 @@ export default function ToolShell({
         aria-label="Menu"
         {...(!railOpen ? { inert: "", "aria-hidden": true } : {})}
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-[min(20rem,86vw)] bg-brand-deep shadow-2xl transition-transform duration-300 lg:hidden",
-          railOpen ? "translate-x-0" : "-translate-x-full"
+          "fixed inset-y-0 left-0 z-50 w-[min(20rem,86vw)] bg-brand-deep transition-[transform,box-shadow] duration-300 lg:hidden",
+          // Shadow only while open — parked off-screen it bled a grey strip
+          // down the left edge of every page on a phone.
+          railOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full shadow-none"
         )}
         style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
       >

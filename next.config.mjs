@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // A second dev server in the same folder (e.g. a preview next to your own)
+  // can set NEXT_DIST_DIR so the two don't overwrite each other's build files.
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   // The admin console and its API are private: never cached, never indexed.
   async headers() {
     const privateHeaders = [

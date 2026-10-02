@@ -12,23 +12,9 @@ import {
 } from "@/lib/declarations";
 import { cleanTitle } from "@/lib/titles";
 import { cn } from "@/lib/utils";
+import { DotGrid, Eyebrow, QuoteGlyph, Rings } from "@/components/Decor";
 
 const WORD_MS = 300; // roughly the pace of a declaration spoken aloud
-
-function Rings() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 400 400"
-      fill="none"
-      className="pointer-events-none absolute -right-28 top-1/2 h-[28rem] w-[28rem] -translate-y-1/2 text-white/[0.12]"
-    >
-      {[46, 80, 114, 148, 182].map((r) => (
-        <circle key={r} cx="200" cy="200" r={r} stroke="currentColor" strokeWidth="1.2" />
-      ))}
-    </svg>
-  );
-}
 
 /**
  * Today's declaration, to be spoken. "Speak it" lights the words up one at a
@@ -84,12 +70,19 @@ export default function TodayCard({ className, style }) {
     <article
       style={style}
       className={cn(
-        "relative flex min-h-[16rem] flex-col gap-4 overflow-hidden rounded-[1.75rem] bg-brand-navy p-6 text-white sm:p-8",
+        "relative flex min-h-[16rem] flex-col gap-4 overflow-hidden rounded-[1.75rem] bg-brand-deep p-6 text-white shadow-card sm:p-8",
         className
       )}
     >
-      <Rings />
-      <p className="relative text-xs font-bold uppercase tracking-[0.18em] text-white/65">Today&rsquo;s declaration</p>
+      {/* The Vision page's dark panel: two glows, a fading dot grid, rings. */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        <div className="absolute -right-32 -top-32 h-[24rem] w-[24rem] rounded-full bg-brand-navy blur-3xl" />
+        <div className="absolute -bottom-40 -left-24 h-[20rem] w-[20rem] rounded-full bg-brand-mist/[0.12] blur-3xl" />
+        <DotGrid dark className="inset-0 [mask-image:radial-gradient(ellipse_at_top_right,black,transparent_55%)]" />
+        <Rings className="absolute -right-28 top-1/2 h-[28rem] w-[28rem] -translate-y-1/2 text-white/[0.08]" />
+        <QuoteGlyph className="absolute -right-3 top-6 h-20 w-28 text-white/[0.035] sm:h-24 sm:w-32" />
+      </div>
+      <Eyebrow tone="dark" className="relative">Today&rsquo;s declaration</Eyebrow>
       {decl === undefined ? (
         <div aria-hidden="true" className="relative mt-auto space-y-3">
           <div className="h-6 w-4/5 rounded-full fh-skeleton-dark" />

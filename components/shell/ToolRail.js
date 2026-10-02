@@ -123,16 +123,21 @@ export default function ToolRail({
         <Link
           href="/"
           onClick={onNavigate}
-          className="flex min-w-0 items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          className="flex min-w-0 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
           <Image
             src="/hofng-logo-white.png"
             alt="Heritage of Faith — Home"
             width={208}
             height={146}
-            className="h-8 w-auto"
+            className="h-8 w-auto flex-shrink-0"
             priority
           />
+          {/* Logo | FaithHub, the same lockup as the admin console's sidebar.
+              The icon-only rail has no room for it, so it shows only when
+              the labels do. */}
+          <span aria-hidden="true" className={cn("h-7 w-px flex-shrink-0 bg-white/20", SHOW_BLOCK[mode])} />
+          <span className={cn("truncate text-sm font-bold text-white", SHOW_BLOCK[mode])}>FaithHub</span>
         </Link>
         {onToggleCollapse && (
           <button

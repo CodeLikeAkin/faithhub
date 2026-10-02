@@ -5,6 +5,7 @@ import ContinueCard from "@/components/home/ContinueCard";
 import LatestShelf from "@/components/home/LatestShelf";
 import GoDeeper from "@/components/home/GoDeeper";
 import VisionStrip from "@/components/home/VisionStrip";
+import { DotGrid } from "@/components/Decor";
 
 /**
  * Home, inside the same frame as every other page: the church photo as a
@@ -14,8 +15,14 @@ import VisionStrip from "@/components/home/VisionStrip";
 export default function Home() {
   return (
     <ToolShell kind="home" title="Home">
-      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 pb-12 pt-3 sm:gap-6 sm:px-6 sm:pt-6 lg:px-8">
+      <div className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
+        {/* The Vision page's backdrop: a sky wash under the middle of the
+            page and dot grids pinned to opposite edges, fading inward. */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-[26rem] h-[70rem] bg-gradient-to-b from-white via-brand-sky/70 to-white" />
+        <DotGrid className="left-0 top-[30rem] h-[36rem] w-[36rem] max-w-full [mask-image:radial-gradient(circle_at_left,black,transparent_65%)]" />
+        <DotGrid className="right-0 top-[64rem] h-[32rem] w-[32rem] max-w-full [mask-image:radial-gradient(circle_at_right,black,transparent_65%)]" />
+
+        <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 pb-12 pt-3 sm:gap-6 sm:px-6 sm:pt-6 lg:px-8">
           <HomeHero />
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
             <TodayCard className="fh-rise" style={{ "--i": 1 }} />
