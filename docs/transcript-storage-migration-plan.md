@@ -1,7 +1,9 @@
 # Moving transcripts out of the database — plan and handoff
 
 **Written:** 2026-10-02
-**Status:** agreed, not started
+**Status:** steps 1, 4, 5, 6 done and verified. Step 3 written but inert until step 2 runs.
+Steps 2 and 7 need SQL run by hand in the Supabase dashboard. Step 8 not started —
+nothing has been deleted. See §8 for what the first session through here corrected.
 **Why it exists:** the Supabase database is over its free-plan limit. This plan frees ~78 MB
 permanently by moving sermon transcripts to file storage. It is written so a new session can
 pick it up cold.
@@ -233,3 +235,82 @@ separate.
 Say "start step 1". It is read-only, cannot break anything, and once it finishes there is a real
 backup of all 741 transcripts on disk for the first time — worth having whether or not the rest
 of the migration goes ahead.
+
+---
+
+## 8. Corrections from the session that executed steps 1-6 (2026-10-02)
+
+Measured, not estimated. Where this section and the sections above disagree, this one is right.
+
+**The space freed is ~25-35 MB, not ~78 MB.** §1 took the `sermons` table's 80 MB, subtracted
+1.5 MB of indexes and treated the rest as transcript text. Measured from the export, the raw
+bytes are: `transcript` 50.7 MB (32%), `transcript_segments` 105.6 MB (67%), everything else
+1.5 MB. 157.8 MB of raw data occupies ~78 MB on disk, so Postgres compresses it about 2:1 — and
+`transcript_segments`, which this plan explicitly defers, is twice the size of the transcript.
+At 120-150 MB/year growth this buys roughly 2-3 months, not a year. The deferred
+`transcript_segments` migration is the larger prize.
+
+**It is 724 transcripts, not 741.** Seventeen rows have none. Step 5's "all 741 must match" is
+wrong; the correct target is 724.
+
+**No transcript is NULL.** All 741 rows are non-null; the 17 without text hold an empty string.
+This made two checks in `lib/admin-dashboard.js` wrong before the migration: the library count
+used `.not('transcript','is',null)` and so reported 741 of 741 transcribed, and the
+"published with no transcript" alarm used `.is('transcript', null)`, which matches nothing and
+could never fire. Both now read `transcript_chars` and both are fixed.
+
+**There are two git repos, not one.** `faithhub/` and `.claude/faithhub-pipeline/` are separate
+repos, and the presence checks are split across both. Step 0 means two branches and rollback
+means two reverts. Both are on `feature/transcripts-to-storage`.
+
+**§5 is wrong about the admin message list.** `app/admin/(console)/messages/page.js:27` does not
+pull transcripts: `m.transcript` is already a boolean computed in SQL by the `admin_messages`
+RPC, which used `octet_length(s.transcript) > 0`. There was no speed win to collect. The three
+live admin RPCs do read the column, though, and are migrated in
+`supabase/migrations/admin_transcript_chars.sql` — `admin_sermon_pieces`, `admin_careful_pass`
+and `admin_messages`. `admin_careful_pass()` with no arguments was dropped by admin_stage3.sql;
+only the `p_library` overload is live.
+
+**The plan had no write path.** Steps 2-7 only covered readers, so every sermon transcribed after
+the migration would have written its text straight back into the database. `saveSermon` now also
+writes to storage and sets `transcript_chars`, and `lib/supabase.js` has a
+`WRITE_TRANSCRIPT_COLUMN` flag — set it to false as part of step 8 and the pipeline stops putting
+transcript text in the database at all. The upload inside `saveSermon` is non-fatal only while
+that flag is true; the code throws instead once there is no column to fall back to.
+
+**Storage had no buckets at all** — not just no transcripts bucket. `feedback_attachments.sql`
+was therefore never run, and because the feedback route logs and skips failed uploads, every
+feedback screenshot has been silently discarded. Separate bug, not part of this migration.
+
+**Stale duplicates carry the same filters and none of them are migrated:**
+`.claude/faithhub-pipeline-admin/` (own git repo, last touched 2026-09-24), plus `faithhub-admin/`,
+`faithhub-admin-merge/` and `faithhub-redesign/`. The live pair is `faithhub/` and
+`.claude/faithhub-pipeline/`; the app references only the latter.
+
+### Still to do before step 8
+
+1. **Run these in the Supabase SQL editor, in order** — DDL cannot go through PostgREST, and
+   there is no Postgres connection string in any env file:
+   `transcript_chars.sql`, `transcript_storage_bucket.sql`, `admin_transcript_chars.sql`.
+   Until the first of these runs, every switched presence check fails and the branch is
+   non-functional. `main` is untouched, so the live site is unaffected.
+2. **Step 7** — process one real sermon end to end. Blocked on the above.
+3. **`index.js` (lines 178, 239) and `_stage-ambidextrous.js` / `_stage-series.js` still read the
+   transcript column** and are not in §5's inventory. They look like the legacy entry point and
+   scratch files, so they were left alone rather than changed blind — but they will silently
+   break after step 8. Decide whether they are dead before deleting the column.
+4. **Re-run `transcripts-verify.js` immediately before step 8.** It catches a sermon transcribed
+   since the export, whose only copy would otherwise be destroyed.
+
+### Tools added (in `.claude/faithhub-pipeline/`)
+
+| Script | Step |
+|---|---|
+| `export-db.js --table sermons` | 1 — already existed; verified, paged, backpressure-safe |
+| `transcripts-export.js --in <folder>` | 1 — splits the NDJSON into per-sermon files + checksums |
+| `transcripts-upload.js --in <folder>` | 4 — uploads to the private bucket, upserts, re-runnable |
+| `transcripts-verify.js` | 5 — compares storage against the database, character for character |
+
+The backup is at `C:\Users\Trade\Desktop\Faithhub-backups\transcripts-pre-migration-2026-10-02\`
+(158 MB NDJSON + 724 text files + manifest). It is still the only copy outside Supabase, and the
+disk it sits on had 3.6 GB free — worth moving somewhere synced.
