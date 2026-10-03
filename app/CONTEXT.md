@@ -95,6 +95,16 @@ Flow:
 - NEVER hand a segment to an LLM without its speaker. ~90 sermons are Pastor Funlola Alabi's or a
   guest's, and celebration/panel videos are church members (`lib/speakers.js`). They call Rev.
   Peter "Dad", so an unlabelled tribute comes back as his own teaching.
+- `/api/ask` reads `chatHistory` too (since 2026-10-03; it used to get only `message`). The planner
+  turns a follow-up into a full question, and a follow-up about "that message" is searched within
+  the messages the last answer cited (`sermons` on each AI turn, from `lib/studies.js`).
+- A named preacher or message title narrows the search (`lib/ask-scope.js` → `filter_sermon_ids`):
+  names and titles are only in YouTube titles, which the search never reads. If nothing in those
+  messages matches, it searches the whole library and the prompt says so. The prompt must never
+  claim a preacher or message isn't in the library.
+- The RPC's keyword leg ANDs every word, so `/api/ask` also runs an all-but-one-words keyword
+  query alongside it (`mostWordsMatches`, 3s cap). Plain any-word OR is too slow (3-7s, timeouts).
+- Measure Ask changes with `scripts/ask-eval` (95 questions, hand-graded; usage in the header of `run.mjs`).
 - Cap chat history at last 6 messages before sending
 - If `sermon_segments` table is empty (not yet backfilled), falls back to raw `transcript_segments` from sermons table
 

@@ -88,6 +88,17 @@ survives as if complete. A transient 503 ("high demand") is retried once, 1.5s l
 anything has streamed. Also `retryBlock`, `deleteStudy` / `restoreStudy` (Undo),
 `scopesFor(context)`, `latestStudyFor()`.
 
+**History goes to every scope**, Everything included: the last 3 answered exchanges in the same
+study and scope, each AI turn carrying `sermons` (the messages its `[N]`s cited). `/api/ask`
+used to get no history, so "Which message was that in?" answered a different question.
+
+### `ask-scope.js`
+Narrows an Ask question to the messages it names. `buildCatalog(rows)` (id, title, clean title,
+speaker), `matchPreacher(said, catalog)` (sound-alike match: r/l swap and dropped w/y/h, so
+Elua/Erua → Eluwa, Oyemadey, "Gbemi", "fun lola"; Rev. Peter / Dad → null, he's the default) and
+`matchTitles(said, catalog)` (every meaningful word in the title, numbers exact, ≤24 hits).
+The Groq planner reports the name/title as typed; this file does the matching, deterministically.
+
 **Open study (sessionStorage `hof-ask-open-study`).** `openStudyId()` / `rememberOpenStudy()` /
 `forgetOpenStudy()`: `/ask` remembers the study it's showing for the browser session, so a bare
 `/ask` (rail, nav, back from another tool) resumes it instead of opening a blank search box.

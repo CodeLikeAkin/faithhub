@@ -1,0 +1,18 @@
+[
+  {"title":"Fixed: keyword search finds segments with most of the words.",
+   "body":"Alongside the main search, Ask now looks for segments containing all but one of the search's important words. The database's own keyword search needs every word, which is why 51 of 90 searches got nothing from it. A plain any-word search was tried first: it took 3–7 seconds, once timed out, and ranked the right segment 18th. All-but-one runs in 0.4–2.3 seconds, alongside the main search with a 3-second cap, and put the right segment 1st or 2nd for the generator, six-volunteers and £75,000 recalls. No database change.",
+   "evidence":"mostWordsMatches() in app/api/ask/route.js."},
+  {"title":"Fixed: voice slips and spoken message names.",
+   "body":"The question-reading step now builds the search from the corrected wording (\"see\", not \"sell\"), counts a spoken programme day (\"forty days of transformation day one\") as a message name, and translates Yoruba or Pidgin. A question of three or more words that matches a title word for word also narrows to that message.",
+   "evidence":"A1, F7, I3."},
+  {"title":"Fixed: it no longer prints its instructions, and always answers in English.",
+   "body":"The instructions now forbid repeating themselves, and a guard on the answer stream stops it if it starts to anyway. The stray \"SERMON:\" label and a \"[previous answer]\" pseudo-citation are stripped from answers.",
+   "evidence":"J2, B1, G5."},
+  {"title":"Found and fixed: the tests used up Groq's free daily allowance.",
+   "body":"Groq's free plan allows 200,000 tokens a day per model, shared with the live site's declarations and series summaries. The conversation-aware question-reading prompt cost ~1,800 tokens a question, and three test runs exhausted it, so late answers were searched without it. The prompt is now ~1,070 tokens (40% less). When the first model is rate-limited or returns broken JSON, a second model with its own allowance takes over, then a plain-text attempt, all within 10 seconds.",
+   "evidence":"ASK_PLAN_PROMPT and ASK_PLAN_ATTEMPTS in lib/groq.js. Live declarations and Ask were also affected while the allowance was spent; it refills on a rolling 24-hour window."},
+  {"title":"Still open.",
+   "body":"Recalling a line the transcriber misheard (B10, \"F doesn't finish in my generator\") still depends on how the planner rewords the question. Follow-up answers sometimes pad with an unrelated point or leave a sentence uncited (G5). A tribute-video answer still names whose father it was (B3). The planner model declines political questions, which then fall back to the question as typed. That was fine here."},
+  {"title":"How this run was measured",
+   "body":"The full 95 were asked once with fixes 4–6. Then 16 answers were asked again after two changes made during the run: the slimmer planner prompt, after the Groq allowance ran out mid-run, and the wider follow-up scope. Those 16 are the ten that ran without the planner, plus A1, B7, B10, H3, G1 and G5. The other 79 answers are from the first pass."}
+]
