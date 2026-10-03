@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
 import { createClient } from '@supabase/supabase-js';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
+import { detectSpeaker, isMultiVoice } from '@/lib/speakers';
+import { proseName } from '@/lib/voice';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -131,16 +133,18 @@ export async function POST(req) {
     }
 
     // Sermon titles carry the preacher's name inline, e.g.
-    // "... | Pastor Funlola Alabi | 21st June 2026" — extract it instead of
-    // assuming every series was preached by Rev. Peter Ayo Alabi.
+    // "... | Pastor Funlola Alabi | 21st June 2026". detectSpeaker() reads it
+    // the same way the rest of the app does, and proseName() turns it into what
+    // stewards call them: Dad, Mom, or a guest's own title and name. Titles with
+    // no name are Rev. Peter's (the app-wide default); tribute and panel videos
+    // are several speakers, so they credit no one.
     const preacherNames = new Set();
-    const preacherPattern = /(Rev(?:erend|\.)?|Pastor|Bishop|Dr\.?)\s+[A-Z][\w'.-]*(?:\s+[A-Z][\w'.-]*){0,3}/g;
     for (const t of sermonTitles) {
-      const matches = t.match(preacherPattern) || [];
-      for (const m of matches) preacherNames.add(m.trim());
+      if (isMultiVoice(t)) continue;
+      preacherNames.add(proseName(detectSpeaker(t).name, 'notes'));
     }
     const preacherContext = preacherNames.size > 0
-      ? `This series was preached by ${[...preacherNames].join(' and ')}. Focus on the core themes of their teachings.`
+      ? `This series was preached by ${[...preacherNames].join(' and ')}. Call them exactly that — "Dad" is what we call Rev. Peter Alabi and "Mom" is what we call Pastor Funlola Alabi; never write their formal names. Focus on the core themes of their teachings.`
       : 'Focus on the core themes of the teachings.';
 
     const hasExcerpts = excerptText.length > 0;
@@ -158,6 +162,7 @@ export async function POST(req) {
 VOICE — this is the most important rule:
 - Write in the first person plural: "us", "we", "our". The preacher teaches US and guides US through the series. NEVER write "the congregation", "believers", "the audience", or "listeners" as if the reader were outside looking in.
 - Warm, faith-filled, and spiritually encouraging — yet concrete and specific, never vague or flowery.
+- No em dashes (—). Use a comma, a colon or a new sentence.
 - Only use what's actually in the excerpts below — never invent teaching content that isn't there.
 
 ${preacherContext} Only credit the preacher(s) named above — do not invent or assume any other preacher.`

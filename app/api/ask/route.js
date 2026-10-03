@@ -9,7 +9,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { voicePromptSection } from '@/lib/voice';
+import { STEWARD_HOLD_BACK, proseName, stewardLingoSection, stripFormalNames, voicePromptSection } from '@/lib/voice';
 import { planAskSearch } from '@/lib/groq';
 import { cleanTitle } from '@/lib/titles';
 import { detectSpeaker, isMultiVoice } from '@/lib/speakers';
@@ -746,19 +746,19 @@ RESPONSE SHAPE
 - Open with a direct, one-sentence answer to the question.
 - Then paragraphs of flowing prose that develop it, drawing threads from the different messages.
 - LEAD WITH THE TEACHING, NOT THE SOURCE. Do not open sentences by naming the message
-  ("In [message], Rev. Peter states…", "From [message], he teaches…"). State what he
+  ("In [message], Dad states…", "From [message], he teaches…"). State what he
   teaches as living truth and let the [N] citation carry the source — the reader already
   sees the message name on the citation itself. Name a specific message inside a sentence
   only when the message itself is the point (e.g. a whole message given to this subject),
   and then only by its clean title (the words after SERMON:, never the label itself), never a raw upload tag.
-- EXCEPTION — if one or more of the segments has Rev. Peter enumerating points himself
+- EXCEPTION — if one or more of the segments has the preacher enumerating points himself
   (e.g. "number one... number two...", "the first thing is... secondly..."), preserve
   that structure as a numbered list in his order, each item citing its segment(s),
   rather than flattening it into prose.
-- Prefer Rev. Peter's own phrasing — quote his exact words when they're memorable.
+- Prefer the preacher's own phrasing — quote their exact words when they're memorable.
 - Develop each point you make — name it, then explain or quote what he actually said
   about it, rather than compressing it to a single clause before moving on.
-- Refer to him as "Rev. Peter". Warm, faith-filled, never academic or robotic.
+- Name the preachers as HOW WE NAME THE PREACHERS says. Warm, faith-filled, never academic or robotic.
 - Never say "the transcript says" or "according to the segment" — teach it as living truth.
 - Don't pad with content that isn't in the segments — but don't under-write what is.`;
 
@@ -780,7 +780,7 @@ RESPONSE SHAPE — THEY ARE LOOKING FOR THE MESSAGES
 - You do not know where in a video each moment falls — never guess a timestamp or say "early on".
   The citation itself takes them to the exact moment.
 - If nothing clearly matches, say that plainly first, then mention at most the closest thing.
-- Refer to him as "Rev. Peter". Warm and direct, never academic.
+- Name the preachers as HOW WE NAME THE PREACHERS says. Warm and direct, never academic.
 - Never say "the transcript says" or "according to the segment".`;
 
     // Who the question named, so the answer is about them — and, when their
@@ -792,10 +792,12 @@ RESPONSE SHAPE — THEY ARE LOOKING FOR THE MESSAGES
           .map((s) => `  - ${s.clean}${s.speaker && s.speaker !== 'Rev. Peter Alabi' ? ` (${s.speaker})` : ''}`)
           .join('\n')
       : '';
+    // What the answer calls them: "our Senior Pastor", not "Pastor Funlola Alabi".
+    const scopeWho = scope ? proseName(scope.preacher || scope.label) : '';
     const scopeWhat = !scope
       ? ''
       : scope.kind === 'preacher'
-        ? scope.label
+        ? scopeWho
         : scope.kind === 'previous'
           ? 'the messages your earlier answers in this conversation came from'
           : `"${scope.label}"`;
@@ -808,14 +810,14 @@ THE MESSAGES THEY ASKED ABOUT
 ${scopeMissed
   ? `- They asked about ${scopeWhat}. These messages are in the library:
 ${scopeList}
-- But nothing in them matched this question, so the segments below come from OTHER messages. Say that first and plainly (e.g. "${scope.kind === 'preacher' ? scope.label + "'s" : 'Those'} messages don't seem to cover this"). Then, only if a segment below genuinely helps, offer it as what a different message says, naming its own speaker. Never say those messages or that preacher aren't in the library.`
+- But nothing in them matched this question, so the segments below come from OTHER messages. Say that first and plainly (e.g. "${scope.kind === 'preacher' ? scopeWho + "'s" : 'Those'} messages don't seem to cover this"). Then, only if a segment below genuinely helps, offer it as what a different message says, naming its own speaker. Never say those messages or that preacher aren't in the library.`
   : `- This question is about ${scopeWhat}. The search was limited to these messages, and every segment below comes from them:
 ${scopeList}${scope.kind === 'preacher' || scope.preacher
-  ? `\n- Answer about ${scope.preacher || scope.label}'s teaching and name them as the speaker. This is not Rev. Peter.`
+  ? `\n- Answer about ${scopeWho}'s teaching and name them as the speaker. This is not Dad.`
   : ''}`}
 `;
 
-    const systemPrompt = `You are a warm, discerning Bible study companion for Heritage of Faith Church. A believer is asking you about the church's messages, and you are answering their newest question from across those messages — many at once. Most are Rev. Peter Ayoalabi's; some are not, so read the SPEAKER line on every segment.
+    const systemPrompt = `You are a warm, discerning Bible study companion for Heritage of Faith Church. A believer is asking you about the church's messages, and you are answering their newest question from across those messages — many at once. Most are Rev. Peter Ayo Alabi's ("Dad"); some are not, so read the SPEAKER line on every segment.
 
 ═══════════════════════════════════════
 SOURCING — YOUR MOST CRITICAL RULE
@@ -826,7 +828,7 @@ ${mode === 'locate'
   : '- The segments come from DIFFERENT sermons. Weave them into ONE coherent answer.'}
 - Never add outside theology, generic Christian advice, or anything from your training data.
 - If the segments only partially cover the question, answer what they do cover and say plainly what isn't addressed.
-- Never invent or assume what Rev. Peter might teach.
+- Never invent or assume what Dad, or any preacher, might teach.
 - You see only the few segments a search picked, never the whole library. Never say a preacher, message or event isn't in the library, "isn't mentioned" or doesn't exist — say only that these segments don't cover it.
 - Earlier turns of this conversation, if any, are there so you know what "it", "that" or "he" means. Facts and citations still come ONLY from the segments below, never from your earlier answers — never cite the conversation (no "[previous answer]"), and if a point is only in an earlier answer, leave it out.
 - Always answer in English, even when the question is asked in Yoruba, Pidgin or another language.
@@ -841,9 +843,9 @@ ${scopeSection}
 WHO IS SPEAKING — NEVER GET THIS WRONG
 ═══════════════════════════════════════
 - Every segment carries a SPEAKER line, and it is not always Rev. Peter. His wife Pastor Funlola Alabi preaches many of these messages, guest ministers preach some, and in celebration or panel videos ordinary church members take the microphone one after another.
-- Say "Rev. Peter" ONLY for segments whose SPEAKER is Rev. Peter Alabi. Name the others as they are given ("Pastor Funlola Alabi teaches...", "a guest minister, Pastor X, said..."). Never put another person's words in Rev. Peter's mouth — not even to make the answer flow.
-- A segment marked SPEAKER:UNKNOWN comes from a video where several people speak in turn — a tribute, a testimony, a panel. It may be Rev. Peter and it may be a church member talking ABOUT him (they call him "Dad" too), and nothing tells you which. Attribute it to the MESSAGE, never to a person: "in ICONIC, someone recalls…", not "Rev. Peter said…" and not "a church member said…". Never present it as his teaching.
-- If the question asks what REV. PETER teaches and the segments are mostly other speakers, say so rather than blurring the two.
+- Say "Dad" ONLY for segments whose SPEAKER is Rev. Peter Alabi, and "our Senior Pastor" ONLY for Pastor Funlola Alabi. Name guests as they are given ("a guest minister, Pastor X, said..."). Never put another person's words in Dad's mouth — not even to make the answer flow.
+- A segment marked SPEAKER:UNKNOWN comes from a video where several people speak in turn — a tribute, a testimony, a panel. It may be Rev. Peter and it may be a church member talking ABOUT him (they call him "Dad" too), and nothing tells you which. Attribute it to the MESSAGE, never to a person: "in ICONIC, someone recalls…", not "Dad said…" and not "a church member said…". Never present it as his teaching.
+- If the question asks what DAD teaches and the segments are mostly other speakers, say so rather than blurring the two.
 - Some segments are not teaching at all: service housekeeping (meeting times, transport, when to break a fast, what is happening next week) or praying in tongues, which the transcript renders as repeated nonsense words. Never build a point on those and don't cite them.
 
 ═══════════════════════════════════════
@@ -856,7 +858,7 @@ CITATION RULES — MANDATORY
 ═══════════════════════════════════════
 SCRIPTURE CITATION — WHEN AVAILABLE
 ═══════════════════════════════════════
-- A "SCRIPTURES OPENED IN EACH MESSAGE" block may appear above the segments. Each entry is keyed (M1), (M2)… and lists the real verses Rev. Peter cited in that message, sometimes with a short theme label. Every segment is tagged with the same (M#) key, so a segment's own verses are the ones under its matching key.
+- A "SCRIPTURES OPENED IN EACH MESSAGE" block may appear above the segments. Each entry is keyed (M1), (M2)… and lists the real verses the preacher cited in that message, sometimes with a short theme label. Every segment is tagged with the same (M#) key, so a segment's own verses are the ones under its matching key.
 - When a point you're making is clearly what one of those listed verses is about, name the reference inline right where the point is made, e.g. "...righteousness is God's gift by faith (Romans 3:21–26) [3]."
 - Only ever cite a reference listed under that segment's own (M#) key. Never infer, guess, or add a verse that isn't listed for that message — if a point has no listed verse that clearly fits, just use the [N] citation as usual, no verse.
 - Don't force a verse onto every sentence — cite the way a preacher naturally references scripture while teaching, not a footnote on every line.
@@ -865,7 +867,7 @@ ${weakGrounding ? `
 WEAK GROUNDING — THIS QUESTION
 ═══════════════════════════════════════
 - None of the segments below are a confident, on-topic match for this question — they're the closest the search found, but the connection is loose.
-- Say plainly, in one or two sentences, that ${scope?.kind === 'preacher' && !scopeMissed ? `${scope.label}'s` : 'the'} messages don't clearly address this. Do this FIRST, before anything else.
+- Say plainly, in one or two sentences, that ${scope?.kind === 'preacher' && !scopeMissed ? `${scopeWho}'s` : 'the'} messages don't clearly address this. Do this FIRST, before anything else.
 - Do not pad the answer with paragraphs stitched from these loosely-related segments just to seem thorough. If one segment is genuinely worth a short mention after the disclaimer, fine — otherwise stop there.
 ` : ''}
 ${mode === 'locate' ? LOCATE_SHAPE : TEACHING_SHAPE}
@@ -875,7 +877,7 @@ FOLLOW-UP SUGGESTIONS — STRICT
 ═══════════════════════════════════════
 - End with EXACTLY: SUGGESTIONS:["Suggestion one","Suggestion two","Suggestion three"]
 - Each suggestion MUST be answerable from the segments you were given — specific, not generic.
-- Each suggestion is a short tappable phrase or simple question, 4-8 words, ONE idea only — never a compound sentence, never multiple clauses joined by "and"/"or". These are tap targets, not essay prompts.${voicePromptSection()}`;
+- Each suggestion is a short tappable phrase or simple question, 4-8 words, ONE idea only — never a compound sentence, never multiple clauses joined by "and"/"or". These are tap targets, not essay prompts.${stewardLingoSection('answer')}${voicePromptSection()}`;
 
     const scriptureSection = scriptureBlock
       ? `SCRIPTURES OPENED IN EACH MESSAGE — each block is keyed (M#) to the segments below:
@@ -958,7 +960,9 @@ QUESTION: ${message}${readAs}`;
     // …and "[previous answer]", which the model once used to cite its own
     // earlier reply.
     const LABEL_RE = /\bSERMON:\s*|\s?\[previous answer\]/gi;
-    const HOLD_BACK = 32;
+    // …and "our Senior Pastor, Pastor Funlola Alabi," (lib/voice.js), the longest
+    // of the three, which sets how much is held back.
+    const HOLD_BACK = STEWARD_HOLD_BACK;
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -973,7 +977,7 @@ QUESTION: ${message}${readAs}`;
               leaked = true;
               break;
             }
-            pending = pending.replace(LABEL_RE, '');
+            pending = stripFormalNames(pending.replace(LABEL_RE, ''));
             if (pending.length > HOLD_BACK) {
               const out = pending.slice(0, -HOLD_BACK);
               pending = pending.slice(-HOLD_BACK);
@@ -985,7 +989,7 @@ QUESTION: ${message}${readAs}`;
             console.warn('[ask] Answer began repeating the instructions; stopped it.');
             controller.enqueue(encoder.encode("\n\nI can only help with questions about what the church's messages teach."));
           } else if (pending) {
-            controller.enqueue(encoder.encode(pending.replace(LABEL_RE, '')));
+            controller.enqueue(encoder.encode(stripFormalNames(pending.replace(LABEL_RE, ''))));
           }
           // close() only on the success path — closing an errored controller
           // throws "Invalid state" and buries the original failure.

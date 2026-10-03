@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { voicePromptSection } from '@/lib/voice';
+import { STEWARD_HOLD_BACK, stewardLingoSection, stripFormalNames, voicePromptSection } from '@/lib/voice';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
 import { detectSpeaker, isMultiVoice } from '@/lib/speakers';
 
@@ -335,7 +335,7 @@ SPEAKER:${speakerLabel(seg.sermon_title)}
     }, {});
 
     // 7. Improved system prompt
-    const systemPrompt = `You are a warm, knowledgeable Bible study companion for Heritage of Faith Church. You help believers study the exact teaching in this ${singleSermon ? 'message' : 'sermon series'}. Most Heritage of Faith messages are Rev. Peter Ayoalabi's, but not all — his wife Pastor Funlola Alabi preaches many of them, guest ministers preach some, and celebration/panel videos have several church members speaking in turn. Every segment carries a SPEAKER line: read it before attributing anything.
+    const systemPrompt = `You are a warm, knowledgeable Bible study companion for Heritage of Faith Church. You help believers study the exact teaching in this ${singleSermon ? 'message' : 'sermon series'}. Most Heritage of Faith messages are Rev. Peter Ayo Alabi's ("Dad"), but not all — his wife Pastor Funlola Alabi preaches many of them, guest ministers preach some, and celebration/panel videos have several church members speaking in turn. Every segment carries a SPEAKER line: read it before attributing anything.
 
 ═══════════════════════════════════════
 SOURCING — YOUR MOST CRITICAL RULE
@@ -345,10 +345,10 @@ SOURCING — YOUR MOST CRITICAL RULE
 - If the question is not covered in the segments, say warmly:
   "That specific point isn't addressed in these segments. What is taught here is: [cite what's actually there]"
 - Never invent or assume what the speaker might teach
-- Say "Rev. Peter" ONLY for segments whose SPEAKER is Rev. Peter Alabi. Name others as
-  given ("Pastor Funlola Alabi teaches...", "a guest minister, Pastor X, said..."). For
-  SPEAKER:UNKNOWN, attribute to the message itself ("this message says...") rather than
-  guessing who is talking. Never put another person's words in Rev. Peter's mouth.
+- Say "Dad" ONLY for segments whose SPEAKER is Rev. Peter Alabi, and "our Senior Pastor"
+  ONLY for Pastor Funlola Alabi. Name guests as given ("a guest minister, Pastor X,
+  said..."). For SPEAKER:UNKNOWN, attribute to the message itself ("this message says...")
+  rather than guessing who is talking. Never put another person's words in Dad's mouth.
 
 ═══════════════════════════════════════
 CITATION RULES — MANDATORY
@@ -387,7 +387,7 @@ VOICE & TONE
   When they say something memorably, put it in their words, not yours.
 - Warm, faith-filled, conversational — not academic or robotic
 - Never say "the transcript says" or "according to the segment" — teach it as living truth
-- Name whoever the SPEAKER line says (see SOURCING above) — never default to "Rev. Peter"
+- Name whoever the SPEAKER line says, as HOW WE NAME THE PREACHERS says — never default to "Dad"
 
 ═══════════════════════════════════════
 FOLLOW-UP SUGGESTIONS — STRICT RULES
@@ -398,7 +398,7 @@ FOLLOW-UP SUGGESTIONS — STRICT RULES
 - Read the segments first — then generate questions only about what's actually there
 - Never suggest questions about topics not present in the provided segments
 - Do not generate generic Christian questions — they must be specific to this ${singleSermon ? 'message' : 'series'}
-- STRICT LENGTH RULE: each suggestion is a short tappable phrase or simple question, 4-8 words, ONE idea only — never a compound sentence, never multiple clauses joined by "and"/"or". These are tap targets, not essay prompts. Think chip labels, not paragraphs.${voicePromptSection()}`;
+- STRICT LENGTH RULE: each suggestion is a short tappable phrase or simple question, 4-8 words, ONE idea only — never a compound sentence, never multiple clauses joined by "and"/"or". These are tap targets, not essay prompts. Think chip labels, not paragraphs.${stewardLingoSection('answer')}${voicePromptSection()}`;
 
     // 8. Build conversation history. chatHistory is client-supplied, so clamp
     //    each turn's text (it flows into the Gemini prompt) before keeping the
@@ -458,10 +458,17 @@ QUESTION: ${message}`;
       async start(controller) {
         try {
           controller.enqueue(encoder.encode(segmentMapHeader));
+          // The tail is held back so stripFormalNames() (lib/voice.js) sees a
+          // name that straddles two chunks whole.
+          let pending = '';
           for await (const chunk of result.stream) {
-            const content = chunk.text();
-            if (content) controller.enqueue(encoder.encode(content));
+            pending = stripFormalNames(pending + (chunk.text() || ''));
+            if (pending.length > STEWARD_HOLD_BACK) {
+              controller.enqueue(encoder.encode(pending.slice(0, -STEWARD_HOLD_BACK)));
+              pending = pending.slice(-STEWARD_HOLD_BACK);
+            }
           }
+          if (pending) controller.enqueue(encoder.encode(pending));
           // close() only on the success path — closing an errored controller
           // throws "Invalid state" and buries the original failure.
           controller.close();

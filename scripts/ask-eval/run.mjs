@@ -94,7 +94,11 @@ async function ask(message, chatHistory) {
   return { status: 429, error: 'rate limited after retries' };
 }
 
-const PETER_RE = /\b(?:Rev(?:erend|d)?\.?\s*Peter|Dad|Daddy)\b/i;
+// "Dad" only capitalised: answers now call Rev. Peter "Dad" (lib/voice.js), and
+// a tribute's "their dad started a church" is someone's own father, not him.
+const PETER_RE = /\bRev(?:erend|d)?\.?\s*Peter\b|\bDad(?:dy)?\b/;
+// The names answers no longer use (lib/voice.js: Dad, our Senior Pastor).
+const FORMAL_RE = /\bRev(?:erend|d)?\.?\s*Peter\b|\bPastor Funlola(?: Alabi)?\b/i;
 const REFUSE_RE =
   /\b(?:do(?:es)?n['’]t (?:clearly |directly |specifically )?(?:address|cover|speak|mention|discuss|teach|talk)|(?:don['’]t|didn['’]t|couldn['’]t|could not|can['’]t|cannot) (?:find|see|locate)|not (?:clearly |directly )?(?:addressed|covered|mentioned)|no (?:message|segment|teaching|record)s?\b|isn['’]t (?:covered|addressed)|outside (?:of )?(?:what|the))/i;
 
@@ -145,6 +149,12 @@ async function score(turn, r) {
     notes.push(`${retrieved.length}/${entries.length} segments from messages that opened ${e.scripture} (${ids.size} such messages)`);
   }
   if (e.speaker) checks.speakerCredited = new RegExp(e.speaker, 'i').test(r.answer);
+  if (e.calls) checks.stewardName = new RegExp(e.calls).test(r.answer || '');
+  // Noted on every case so old names show up, but only scored where a case
+  // asks for it (group K), so earlier runs stay comparable.
+  const formal = (r.answer || '').match(FORMAL_RE);
+  if (formal) notes.push(`uses the formal name "${formal[0]}"`);
+  if (e.steward) checks.noFormalName = !formal;
   if (e.notPeter) {
     // A sentence that credits Rev. Peter while every segment it cites is
     // someone else's (or a multi-voice video) is a misattribution.

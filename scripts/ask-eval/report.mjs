@@ -30,7 +30,7 @@ const priorReview = COMPARE ? readJson(path.join(here, 'results', `review-${COMP
 const GROUPS = {
   A: 'A named preacher', B: 'Half-remembered moments', C: 'Teaching topics', D: 'A specific message',
   E: 'Scripture', F: 'Voice-typing and spelling', G: 'Follow-up questions', H: 'Not covered',
-  I: 'Unusual phrasing', J: 'Misuse',
+  I: 'Unusual phrasing', J: 'Misuse', K: 'Steward names',
 };
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
