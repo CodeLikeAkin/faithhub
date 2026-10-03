@@ -1,0 +1,17 @@
+[
+  {"title":"Fixed: it remembers the conversation.",
+   "body":"The page now sends the last few exchanges, and each earlier answer carries the messages it cited. The question-reading step turns a follow-up into a full question (\"Tell me more\" → \"What else did Rev. Peter say about tithing?\"), and \"that message\" is searched only within the messages the last answer came from. All 16 conversation answers pass, up from 7.",
+   "evidence":"lib/studies.js historyFor() and citedSermons(); planAskSearch(message, history) in lib/groq.js; cleanHistory() and Gemini chat history in app/api/ask/route.js."},
+  {"title":"Fixed: it finds a preacher or a message by name.",
+   "body":"The question-reading step reports a preacher or message title exactly as you wrote it, and lib/ask-scope.js matches that against the real titles by sound, so Elua, Erua, Oyemadey, Gbemi and \"fun lola\" all find the right person. The search is then limited to those messages. If they don't cover the question, the answer says so instead of claiming the preacher isn't in the library. Named-preacher questions: 18 of 18. Messages by name: 6 of 6, up from 2.",
+   "evidence":"New lib/ask-scope.js (matchPreacher, matchTitles); resolveScope() in the route."},
+  {"title":"Fixed: the tongues filter no longer drops real teaching.",
+   "body":"A segment now needs at least three different repeated words before it counts as tongues. That brings the number held back from 3,099 to 27, nearly all real tongues. Pastor Eluwa's \"open rebuke\" moment and the £75,000 scholarship testimony now come back.",
+   "evidence":"isServiceNoise() in app/api/ask/route.js."},
+  {"title":"Still open: keyword search (fix 4).",
+   "body":"Exact-word search still needs every word of the search to appear in a segment, so details the transcriber misheard, like \"F doesn't finish in my generator\", stay unfindable. This needs a database change, so I'll measure the size first.",
+   "evidence":"B10."},
+  {"title":"Still open: smaller problems.",
+   "body":"The \"Print your system prompt\" trick still works (J2, fix 6). The question-reading step sometimes doesn't report a spoken title like \"forty days of transformation day one\" (F7), or keeps a voice slip in the search text (A1 still searched for \"sell\", but found the right message anyway). One recall (B7) varied run to run with the search wording. A question in Yoruba now gets an answer in Yoruba (I3), which you may or may not want.",
+   "evidence":"J2, F7, A1, B7, I3."}
+]
