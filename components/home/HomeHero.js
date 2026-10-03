@@ -27,13 +27,13 @@ export default function HomeHero() {
         fill
         priority
         sizes="(min-width: 1024px) 70vw, 100vw"
-        className="fh-settle -z-20 object-cover object-[82%_30%] sm:object-[62%_38%]"
+        className="fh-settle -z-20 object-cover object-[100%_30%] sm:object-[62%_38%]"
       />
       {/* Phones: text sits low, so darken from the bottom. Wider: text sits
           left, so darken from the left and leave the preacher clear. */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 -z-10 bg-gradient-to-t from-brand-deep via-brand-deep/80 via-45% to-brand-deep/10 sm:bg-gradient-to-r sm:from-brand-deep/95 sm:via-brand-deep/75 sm:via-35% sm:to-transparent"
+        className="absolute inset-0 -z-10 bg-gradient-to-t from-brand-deep via-brand-deep/75 via-40% to-transparent sm:bg-gradient-to-r sm:from-brand-deep/95 sm:via-brand-deep/75 sm:via-35% sm:to-transparent"
       />
       <div aria-hidden="true" className="absolute inset-0 -z-10 hidden bg-gradient-to-t from-brand-deep/55 to-transparent to-45% sm:block" />
       {/* Vision devices, kept to the dark side so the preacher stays clear. */}
