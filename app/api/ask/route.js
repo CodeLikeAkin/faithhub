@@ -202,7 +202,10 @@ async function resolveScope(plan, history, question) {
   }
   if (preacher) {
     const sermons = pick(preacher.ids);
-    return { kind: 'preacher', label: preacher.name, preacher: preacher.name, guest: sermons.every((s) => s.guest), sermons };
+    // `every` on an empty list is true, and an empty scope is not a guest's —
+    // it would hand the prompt "answer from their segments only" with no
+    // segments attached.
+    return { kind: 'preacher', label: preacher.name, preacher: preacher.name, guest: sermons.length > 0 && sermons.every((s) => s.guest), sermons };
   }
   // A name that isn't Dad and matches nobody is a guest we don't have. Say so
   // rather than quietly answering from Dad and Mom as if they'd been asked for.
