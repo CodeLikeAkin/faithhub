@@ -107,12 +107,12 @@ const TOOLS = [
 
 const METHOD = [
   {
-    title: "Transcribed in full",
-    body: "FaithHub transcribes each service on the Heritage of Faith YouTube channel, then splits the transcript into short passages that can be searched one by one.",
+    title: "Rooted in the messages",
+    body: "Every answer is drawn from messages preached at Heritage of Faith, not from the open internet.",
   },
   {
-    title: "Indexed by what was said",
-    body: "Each Bible verse, declaration and word study is recorded against the message and minute it came from.",
+    title: "Traced to the source",
+    body: "Whatever you read here is tied back to the message and the minute it came from.",
   },
   {
     title: "Cited to the moment",
@@ -224,7 +224,7 @@ export default async function AboutPage() {
   const stats = await getCorpusStats();
 
   const statItems = stats && [
-    { value: fmt(stats.messages), label: "messages transcribed" },
+    { value: fmt(stats.messages), label: "messages in the library" },
     { value: fmt(stats.series), label: "study series" },
     { value: fmt(stats.declarations), label: "declarations gathered" },
     { value: fmt(stats.scriptures), label: "scripture references mapped" },
