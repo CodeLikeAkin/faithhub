@@ -10,7 +10,6 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getDeclarations, planDeclarationSearch, rerankDeclarations } from "@/lib/groq";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
-import { loadLeftOutSafe } from "@/lib/declarations-left-out";
 
 const serviceKey = process.env.SUPABASE_SERVICE_KEY;
 if (!serviceKey) {
@@ -102,6 +101,29 @@ async function hybridLeg(queryEmbedding, queryText, excludeIds, matchCount = 40)
   return data || [];
 }
 
+/**
+ * Keeps only the library declarations in a set of rows (Dad's and Mom's: see
+ * declarations.in_library). Every other search path filters inside its RPC;
+ * this is for `match_declarations`, the vector-only fallback, whose definition
+ * isn't in this repo so the migration couldn't add the condition to it. One
+ * extra query on at most 30 ids, and only on a path that has already had one
+ * RPC fail — see §5 of supabase/migrations/declarations_in_library.sql for how
+ * to retire this.
+ */
+async function keepLibraryRows(rows) {
+  const ids = rows.map((r) => r.id).filter(Boolean);
+  if (!ids.length) return rows;
+  const { data, error } = await supabase.from("declarations").select("id").in("id", ids).eq("in_library", true);
+  if (error) {
+    // Can't confirm which are library rows. Showing a guest's declaration in
+    // the library is the smaller failure here than showing nothing at all.
+    console.error("[declarations] in_library check failed on the vector fallback:", error.message);
+    return rows;
+  }
+  const keep = new Set(data.map((d) => d.id));
+  return rows.filter((r) => keep.has(r.id));
+}
+
 // Reciprocal Rank Fusion across several leg results into one ranked list —
 // one layer up from the RRF match_declarations_hybrid already does between
 // its own semantic/keyword legs (see supabase/migrations/hybrid_search.sql).
@@ -184,13 +206,6 @@ export async function POST(request) {
       );
     }
 
-    // Declarations come from Dad and Mom: guest ministers' and celebration /
-    // panel videos' declarations are excluded from every search below, by id.
-    // (shownIds stays separate: "Show 10 more" and the already-shown lookup
-    // need exactly what the person has seen.)
-    const leftOut = await loadLeftOutSafe();
-    const excludeIds = [...shownIds, ...leftOut.declarationIds];
-
     // The pastoral note depends only on the message, so start it now and let it
     // run alongside the rewrite → embed → search chain instead of after it.
     // "Show 10 more" (shownIds present) never displays a note, so it gets none.
@@ -225,7 +240,7 @@ export async function POST(request) {
       const { data, error } = await supabase.rpc("match_declarations_by_topic", {
         topics,
         match_count: 11,
-        exclude_ids: excludeIds,
+        exclude_ids: shownIds.length > 0 ? shownIds : [],
       });
       if (error) {
         console.error("[declarations] Topic RPC error:", error.message);
@@ -263,11 +278,11 @@ export async function POST(request) {
         const legs = await Promise.all([
           ...lineEmbeddings
             .filter((e) => e !== null)
-            .map((e) => hybridLeg(e, "", excludeIds)),
+            .map((e) => hybridLeg(e, "", shownIds)),
           // Keyword leg on the plan's need-nouns, plus one on the user's own
           // words — catches exact scripture refs/names the lines paraphrase away.
-          plan.keywords.length > 0 ? hybridLeg(null, plan.keywords.join(" or "), excludeIds) : Promise.resolve([]),
-          hybridLeg(null, message, excludeIds),
+          plan.keywords.length > 0 ? hybridLeg(null, plan.keywords.join(" or "), shownIds) : Promise.resolve([]),
+          hybridLeg(null, message, shownIds),
         ]);
 
         candidates = dedupeByText(fuseRanked(legs)).slice(0, 60);
@@ -311,7 +326,7 @@ export async function POST(request) {
             query_embedding: queryEmbedding, // may be null → keyword-only
             query_text: message,
             match_count: 30,
-            exclude_ids: excludeIds,
+            exclude_ids: shownIds.length > 0 ? shownIds : [],
           });
 
           if (error) {
@@ -323,10 +338,10 @@ export async function POST(request) {
                 query_embedding: queryEmbedding,
                 match_threshold: 0.3,
                 match_count: 30,
-                exclude_ids: excludeIds,
+                exclude_ids: shownIds.length > 0 ? shownIds : [],
               });
               if (vecErr) console.error("[declarations] Vector fallback RPC error:", vecErr.message);
-              else if (vec && vec.length > 0) declarations = vec;
+              else if (vec && vec.length > 0) declarations = await keepLibraryRows(vec);
             }
           } else if (data && data.length > 0) {
             declarations = data;
@@ -372,11 +387,9 @@ export async function POST(request) {
           sermons (title)
         `);
 
-      // Guests and celebration videos stay out of the random fallback too
-      // (by sermon: ~30 ids, where the declaration ids would overflow the URL).
-      if (leftOut.sermonIds.length > 0) {
-        query = query.not("sermon_id", "in", `(${leftOut.sermonIds.join(",")})`);
-      }
+      // The library is Dad's and Mom's, so the random fallback is too
+      // (declarations.in_library — see the migration of the same name).
+      query = query.eq("in_library", true);
 
       // Keep the fallback topic-aware: if the topic RPC failed, don't degrade
       // to table-wide random results — stay filtered to what was actually asked for.
