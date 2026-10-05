@@ -1,0 +1,883 @@
+{
+  "label": "steward-names-3",
+  "base": "http://localhost:3930",
+  "at": "2026-10-03T13:14:58.850Z",
+  "results": [
+    {
+      "id": "A8",
+      "group": "A",
+      "note": null,
+      "turns": [
+        {
+          "q": "What did Pastor Funlola teach about good works and salvation?",
+          "expect": {
+            "sermon": [
+              "Funlola"
+            ],
+            "speaker": "Funlola|Senior Pastor",
+            "notPeter": true
+          },
+          "status": 200,
+          "debug": {
+            "planned": true,
+            "search": "good works and salvation",
+            "mode": "teaching",
+            "question": "What did Pastor Funlola teach about good works and salvation?",
+            "scope": {
+              "kind": "preacher",
+              "label": "Pastor Funlola Alabi",
+              "messages": 84,
+              "missed": false
+            },
+            "history": 0,
+            "pool": 64,
+            "segments": 18,
+            "weakGrounding": false,
+            "sims": [
+              0.903,
+              0,
+              0.884,
+              0.871,
+              0.853,
+              0.865,
+              0.863,
+              0.853,
+              0.843,
+              0.844,
+              0.843,
+              0.845,
+              0.838,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "segmentMap": {
+            "1": {
+              "sermon_id": "f3ab39d9-718a-4326-aa7e-86f8226be18d",
+              "video_id": "rRccBtbsTYI",
+              "start_seconds": 3770,
+              "sermon_title": "The Book of Ephesians - Part 11 | Pastor Funlola Alabi | 8th July 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "but they are the proof of salvation. They are not the price we pay to be saved, but they are proof. They are evidence that we are saved. They are evidence. Good works give evidence to our salvation. Is a sign that we have the nature of God. The divine nature of God. The nature of God. God does good…"
+            },
+            "2": {
+              "sermon_id": "a2959c28-63d5-499d-97b3-8fd7b8f5b7d5",
+              "video_id": "2HClbJYZbrU",
+              "start_seconds": 271,
+              "sermon_title": "Power of the Spirit 4 - 2nd Service | Pastor Funlola Alabi | 26th May 2024",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "you are strengthening them you are enlightening them you are encouraging them you exalting them and that is what the power of God is for where the work of ministry is concerned Apostle Paul said God has given me this power to edify you not to destroy you so it's important that we know how to use the…"
+            },
+            "3": {
+              "sermon_id": "f3ab39d9-718a-4326-aa7e-86f8226be18d",
+              "video_id": "rRccBtbsTYI",
+              "start_seconds": 3852,
+              "sermon_title": "The Book of Ephesians - Part 11 | Pastor Funlola Alabi | 8th July 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "That is evidence. Glory to God. Number three, the believer is not saved as a result of good works, but good works are the result of salvation. The believer is not saved as the result of good works. But good works are the result of salvation. Good works are the result of salvation. It's only under th…"
+            },
+            "4": {
+              "sermon_id": "f3ab39d9-718a-4326-aa7e-86f8226be18d",
+              "video_id": "rRccBtbsTYI",
+              "start_seconds": 2351,
+              "sermon_title": "The Book of Ephesians - Part 11 | Pastor Funlola Alabi | 8th July 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "It's a glorious work. >> And that is the work that God has pre-ordained for us to do. So I'm going to share with us six things about good works. Number one, good works are part of God's plan. Good works are part of God's plan. There are some things you must understand about the plan of God. Number o…"
+            },
+            "5": {
+              "sermon_id": "087f948a-887a-454a-b167-12cfc4f89f80",
+              "video_id": "xN_P3ihQ6g8",
+              "start_seconds": 1716,
+              "sermon_title": "The Gospel of Salvation | Pastor Funlola Alabi | 2nd March 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "deliverance from every Walk Of Darkness that is what happens to us as salvation Rescue It says wholeness you were made whole Spirit soul and body everything that requires your wholeness or your Hess required Spirit soul and body was completed on the cross of Calvary you can believe God for Sound Hea…"
+            },
+            "6": {
+              "sermon_id": "9465a35b-46aa-4f94-bb3a-ea3b86c3cc91",
+              "video_id": "4GXs8GdZ784",
+              "start_seconds": 1054,
+              "sermon_title": "RIGHTEOUSNESS - The Gift of No-Condemnation | Pastor Funlola Alabi | 21st September 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "trouble, sorrow, grieviance, iniquity, miserable, pain, painful, perverseness, weariness, wickedness, a mixture of all kinds of things that are just not good. And you see, every time we lift up holy hands, which we must always do to give thanks to God for redemption, for salvation, we must remember…"
+            },
+            "7": {
+              "sermon_id": "9465a35b-46aa-4f94-bb3a-ea3b86c3cc91",
+              "video_id": "4GXs8GdZ784",
+              "start_seconds": 1620,
+              "sermon_title": "RIGHTEOUSNESS - The Gift of No-Condemnation | Pastor Funlola Alabi | 21st September 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "righteousness that they are trying to do in order to be saved. But that is not the way salvation works. That is not the way a man becomes righteous. The Bible says, \"But it is according to his mercy that he saved us. We are saved by the mercy of God.\" What is the basis of all the things that Jesus d…"
+            },
+            "8": {
+              "sermon_id": "9465a35b-46aa-4f94-bb3a-ea3b86c3cc91",
+              "video_id": "4GXs8GdZ784",
+              "start_seconds": 3650,
+              "sermon_title": "RIGHTEOUSNESS - The Gift of No-Condemnation | Pastor Funlola Alabi | 21st September 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "Christian. Be a true Christian. The one whose nature has been changed. The one who when we look at him, we don't behold iniquity and we don't behold perversess. The one that God is in. And God has said to us about himself that the only way to him is Christ Jesus. So as I begin to round off I want yo…"
+            },
+            "9": {
+              "sermon_id": "a7a40dc1-3926-449c-8d1d-90c9f37d6abb",
+              "video_id": "X3n-v3hG4R8",
+              "start_seconds": 980,
+              "sermon_title": "Unity Sunday 2024 | Pastor Funlola Alabi | 29th September 2024",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "forgiv our Acceptance in the Beloved everything was a gift from God and it says in verse 9 it says not of Works lest any man should boast so it's truly a celebration this morning you don't you don't pay for a gift a gift is given to you free of charge and when you get a big gift what do you do you c…"
+            },
+            "10": {
+              "sermon_id": "01105080-b5b6-4e14-b43f-7d3315954587",
+              "video_id": "mhbl7wa_qos",
+              "start_seconds": 751,
+              "sermon_title": "The Gospel of Salvation - Part 6 | Pastor Funlola Alabi | 30th March 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "Christ Jesus we have forgiveness of sin the work of redemption that was done for us has taken away our sins forever we are the forgiven ones he has forgiven us all our trespasses past present and future he has forgiven us all our trespasses so this is the good news that we preach this is the good ne…"
+            },
+            "11": {
+              "sermon_id": "a2959c28-63d5-499d-97b3-8fd7b8f5b7d5",
+              "video_id": "2HClbJYZbrU",
+              "start_seconds": 434,
+              "sermon_title": "Power of the Spirit 4 - 2nd Service | Pastor Funlola Alabi | 26th May 2024",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "like you me say I'm committed to do good works with the power of God that is within me right now in Jesus name amen God bless you may be seated so the primary purpose of the power of the holy spirit in the life of a believer is for the work of ministry Acts 1:8 the Bible says but you shall receive p…"
+            },
+            "12": {
+              "sermon_id": "ef52a7f4-1aae-487e-887b-07a01b3c206c",
+              "video_id": "vPI5x0h6QuM",
+              "start_seconds": 1011,
+              "sermon_title": "The Gospel of Salvation - Part 3 | Pastor Funlola Alabi | 9th March 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "from inception for every man to be saved God is never caught on our we it wasn't when Adam fell that God got into the mode of let's save the world his posture has always been salvation or do you want to tell me that he didn't know that Adam was going to sin and that that sin will pass upon all men T…"
+            },
+            "13": {
+              "sermon_id": "765dc698-9844-4f0e-a274-d4557c1edb33",
+              "video_id": "ZplYhd-jOGs",
+              "start_seconds": 86,
+              "sermon_title": "Prayer as a Thing of The Spirit - Part 2 | Pastor Funlola Alabi | 18th March 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "we can maximize prayer. And that is not all that God does for us. God is so good that he gave us eternal life. All right? And at the point of salvation, he didn't ask us to bring our own faith to receive salvation. He gave us the faith, his own faith with which we receive salvation. And that is the…"
+            },
+            "14": {
+              "sermon_id": "a7a40dc1-3926-449c-8d1d-90c9f37d6abb",
+              "video_id": "X3n-v3hG4R8",
+              "start_seconds": 1395,
+              "sermon_title": "Unity Sunday 2024 | Pastor Funlola Alabi | 29th September 2024",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "God's gift from start to finish God's gift from start to finish he says we don't play the major role if we did we'd probably go around bragging that we have done the whole thing tell your neighbor no Bragging right here he says no we neither make nor save ourselves God does both the making and the s…"
+            },
+            "15": {
+              "sermon_id": "567b2ae1-ee49-469e-9d55-6f150eb28d55",
+              "video_id": "y_yHriN4P98",
+              "start_seconds": 110,
+              "sermon_title": "Family Weekend Charge - HOF Family Weekend 2025 Day 1 | Pastor Funlola Alabi | 22nd March 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "is a product of marriage or rather it should be glory to God he ought to be because that is the way God designed it and if you notice all right for some of you under the sound of my voice you will realize that both you and your siblings all came out of a marital Union between your parents for those…"
+            },
+            "16": {
+              "sermon_id": "4efd81ac-a4cf-445d-aa4e-b8f7e5b35e90",
+              "video_id": "TxBHXEY3IYs",
+              "start_seconds": 1516,
+              "sermon_title": "KERUSSO | PASTOR  FUNLOLA ALABI | 4TH SEPTEMBER 2022",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "you the compassion of our lord jesus christ will fall upon you and you will not leave them without preaching the gospel to them because you are a jerusalem there is nobody else that will preach this gospel except you and me angels will not preach it they cannot preach it this is a message that has b…"
+            },
+            "17": {
+              "sermon_id": "01105080-b5b6-4e14-b43f-7d3315954587",
+              "video_id": "mhbl7wa_qos",
+              "start_seconds": 2349,
+              "sermon_title": "The Gospel of Salvation - Part 6 | Pastor Funlola Alabi | 30th March 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "they chose darkness when they rejected light the word condemn let's look at the meaning the Greek meaning is from the Greek word katako it it means to judge against that is to sentence it means to pass judgment to sentence a person to sentence a person to a life of sin and death it's a sentence that…"
+            },
+            "18": {
+              "sermon_id": "a2959c28-63d5-499d-97b3-8fd7b8f5b7d5",
+              "video_id": "2HClbJYZbrU",
+              "start_seconds": 187,
+              "sermon_title": "Power of the Spirit 4 - 2nd Service | Pastor Funlola Alabi | 26th May 2024",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "perish foolishness but unto us which are saved it is the power of God unto us which are saved it is the power of God so the power of the spirit has been given for the Salvation of men and that is why we must use that power in doing the work of ministry that has taught us over and over again that you…"
+            }
+          },
+          "answer": "Our Senior Pastor teaches that good works are not the price we pay to be saved, but rather they are the result and proof of our salvation.\n\nShe explains that good works serve as evidence that we are saved, a sign that we have received the divine nature of God [1]. Just as God Himself does good works, such as creating the heavens and the earth and declaring it \"very good,\" when we do good works, we are proving that we are like our Father [1]. Forgiving others or being generous are examples of good works that demonstrate the changed nature we have received, as God's nature is generous (John 3:16) [1]. She emphasizes that the believer is not saved as a result of good works, but good works are the result of salvation [1][3]. It is only under the law that people worked for salvation; as new creations, we do good works because we are justified and it is our nature, not to earn God's approval, as He has already approved us [3].\n\nOur Senior Pastor also teaches that good works are part of God's plan, predating our birth, both biological and spiritual [4]. God pre-ordained us unto good works just as He pre-ordained us unto salvation, with His will being for every new creation to do the good works that are in Christ Jesus (Ephesians 2:10) [4][9][16]. These works are not naturally done by people; good works are the result of God working in the believer's heart [3].\n\nSpecifically, the \"good works\" God has ordained for us are primarily the works of ministry, not things like building roads or houses [2]. We are God's workmanship, created in Christ Jesus unto good works, which God had before ordained that we should walk in them (Ephesians 2:10) [2][9][16]. This includes joining Jesus in His work, going about doing good, and healing all oppressed by the devil, because God is with us [14]. Salvation gives purpose and meaning to our lives, directing us to these good works [14].\n\nSalvation itself is entirely a gift from God, received by grace through faith, not by works, so no one can boast (Ephesians 2:8-9) [2][9][16]. It is a complete package, accomplished through Christ's death, burial, and resurrection for the salvation and deliverance of men from sin [5]. Our Senior Pastor highlights that everything pertaining to life and godliness was completed in the work of redemption; there is nothing else God needs to do that He has not already done [5]. We are saved by God's mercy, which is the basis of all Jesus did in redemption, saving us from sin, death, and condemnation [7]. We are made righteous by what Jesus did, specifically by His resurrection (2 Corinthians 5:21) [8]. This righteousness allows us to stand before God as if we never sinned, meaning we are justified by His grace [7].\n\nThe Holy Spirit's power is essential for these good works of ministry. Our Senior Pastor teaches that the primary purpose of the Holy Spirit's power in a believer's life is for the work of ministry (Acts 1:8) [11]. This power is not for show-off, but for good works of ministry, for edification, not destruction [2][18]. When we preach the gospel or disciple others, we are using the power of God correctly [18]. This power makes us witnesses of the finished work of Christ and the work of redemption [11].\n\nIt is crucial to understand that salvation cannot be earned through works, nor is there a second chance after death to work for salvation [17]. God's longsuffering and goodness offer an opportunity for repentance in this life [17].",
+          "suggestions": [
+            "How are good works proof of salvation?",
+            "What is the role of the Holy Spirit?",
+            "How does God's plan include good works?"
+          ],
+          "ms": 16065,
+          "verdict": "PASS",
+          "checks": {
+            "citationsValid": true,
+            "retrieved": true,
+            "cited": true,
+            "speakerCredited": true,
+            "noMisattribution": true,
+            "hasCitations": true
+          },
+          "notes": [
+            "right message at segment #1 of 18"
+          ],
+          "failed": []
+        }
+      ]
+    },
+    {
+      "id": "A17",
+      "group": "A",
+      "note": null,
+      "turns": [
+        {
+          "q": "Pastor Funlola Alabi's teaching on discipleship",
+          "expect": {
+            "sermon": [
+              "Funlola"
+            ],
+            "speaker": "Funlola|Senior Pastor",
+            "notPeter": true
+          },
+          "status": 200,
+          "debug": {
+            "planned": true,
+            "search": "discipleship, following Christ, walking in the steps of the Lord",
+            "mode": "teaching",
+            "question": "What did Pastor Funlola Alabi teach about discipleship?",
+            "scope": {
+              "kind": "preacher",
+              "label": "Pastor Funlola Alabi",
+              "messages": 84,
+              "missed": false
+            },
+            "history": 0,
+            "pool": 61,
+            "segments": 18,
+            "weakGrounding": false,
+            "sims": [
+              0.899,
+              0,
+              0.899,
+              0.893,
+              0.892,
+              0.892,
+              0.888,
+              0.884,
+              0.883,
+              0.882,
+              0.882,
+              0.881,
+              0.881,
+              0.881,
+              0.881,
+              0.88,
+              0.875,
+              0.873
+            ]
+          },
+          "segmentMap": {
+            "1": {
+              "sermon_id": "f67edfce-6fb5-4017-919d-0948c57b3741",
+              "video_id": "ZphBzpZOIdg",
+              "start_seconds": 290,
+              "sermon_title": "Who Is A Disciple | Growing In Discipleship | Pastor Funlola Alabi |7th June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "begin to walk in the realities of the things that you can do. So, it's such a powerful season we are in that as we are learning about new creation realities, we are also learning about discipleship. That we are not just learning to know, but we are learning to do. We are not just learning to have, w…"
+            },
+            "2": {
+              "sermon_id": "30a75bb8-af1a-416e-9d14-db11b04f45d0",
+              "video_id": "1kFulLCC3Uc",
+              "start_seconds": 2057,
+              "sermon_title": "Facts About Discipleship - Part 1 | Growing In Discipleship | Pastor Funlola Alabi | 21st June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "They didn't tell you to come and walk on water, you say you want to walk. Ah, yeah, you start walking. Now you realize, \"Ah, I shouldn't have walked.\" Because the Bible says he started to sink. That was Peter. Peter was the man that was timid. So timid and so good at failing promises. Because he tol…"
+            },
+            "3": {
+              "sermon_id": "f67edfce-6fb5-4017-919d-0948c57b3741",
+              "video_id": "ZphBzpZOIdg",
+              "start_seconds": 635,
+              "sermon_title": "Who Is A Disciple | Growing In Discipleship | Pastor Funlola Alabi |7th June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "of witnesses. That is more to life. There's more. As a person who has heard the gospel of Christ and you are saved, that is not the end. It's just the glorious beginning. There's so much more in Christ that you can be. And that is what discipleship makes of a person. So, discipleship is something th…"
+            },
+            "4": {
+              "sermon_id": "18349ac8-7376-41db-bbb1-61d44f67a134",
+              "video_id": "cUCrGAtA_48",
+              "start_seconds": 1383,
+              "sermon_title": "Facts About Discipleship - Part 2 | Growing In Discipleship | Pastor Funlola Alabi | 28th June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "ministry up on the until this point. You heard one of the testimonies during the announcement. A testimony of changed life. A life that begins to walk with God is a life that will begin to change and transform. It will begin to change and transform. So the every blessing that you see upon the life o…"
+            },
+            "5": {
+              "sermon_id": "18349ac8-7376-41db-bbb1-61d44f67a134",
+              "video_id": "cUCrGAtA_48",
+              "start_seconds": 1470,
+              "sermon_title": "Facts About Discipleship - Part 2 | Growing In Discipleship | Pastor Funlola Alabi | 28th June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "affected his health. Abraham did not die anyhow. He lived long. He lived to a rightful old age. That's what walking with God will do for you. And disciplehip helps you. So again, I'm I'm reminding you to initiate and sustain a walk with God because sometimes some believers think that they can do it…"
+            },
+            "6": {
+              "sermon_id": "18349ac8-7376-41db-bbb1-61d44f67a134",
+              "video_id": "cUCrGAtA_48",
+              "start_seconds": 4059,
+              "sermon_title": "Facts About Discipleship - Part 2 | Growing In Discipleship | Pastor Funlola Alabi | 28th June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "I've emphasized so far. Serve God wholeheartedly. When you are planted in local church, join the structure. What is going on? What is the next step? How can I make progress in my work in the church? And then you serve God wholeheartedly. You commit yourself to it. That's what it means to have a walk…"
+            },
+            "7": {
+              "sermon_id": "f67edfce-6fb5-4017-919d-0948c57b3741",
+              "video_id": "ZphBzpZOIdg",
+              "start_seconds": 462,
+              "sermon_title": "Who Is A Disciple | Growing In Discipleship | Pastor Funlola Alabi |7th June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "waiting on the Lord for so long. It was so that the Bible says from that time Jesus began to preach and to say, \"Repent, for the kingdom of heaven is at hand.\" And that was not all. The Bible says in verse 18 that Jesus walking by the sea of Galilee saw two brethren, Simon called Peter and Andrew hi…"
+            },
+            "8": {
+              "sermon_id": "80969d9c-3333-482e-863a-273ccba9212b",
+              "video_id": "XMYKzv81WP0",
+              "start_seconds": 1512,
+              "sermon_title": "Benefits of Discipleship | Followers of Christ - Part 6 | Pastor Funlola Alabi | 19th July 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "how to get to the bathroom from your bed and you will not hit any cupboard because HUMAN BEINGS ARE CREATURES of habits. Whatever you do habitually becomes a part of you. So when we GOT SAVED, OUR MIND WAS used to certain habits BECAUSE WE HAVE GOTTEN USED TO IT OVER THE YEARS. All the time we were…"
+            },
+            "9": {
+              "sermon_id": "4efd81ac-a4cf-445d-aa4e-b8f7e5b35e90",
+              "video_id": "TxBHXEY3IYs",
+              "start_seconds": 3028,
+              "sermon_title": "KERUSSO | PASTOR  FUNLOLA ALABI | 4TH SEPTEMBER 2022",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "he was received up into heaven and sat on the right hand of of god the sweat is where i'm going he says and they went forth and preached everywhere the lord walking with them and confirming the world with signs following amen you know that that has taught us at home to say amen we and the children w…"
+            },
+            "10": {
+              "sermon_id": "4a5c1aed-b7fe-4a66-b676-fcfd4fc22985",
+              "video_id": "WFmFATjNTwM",
+              "start_seconds": 2159,
+              "sermon_title": "Who Is A Disciple - Part 2 | Growing In Discipleship | Pastor Funlola Alabi | 14th June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "to receive your ministry. You care. Those were things that Jesus They were already offended in Jesus as a person. The fact that he came and they were calling him the savior of the world. They were calling him the son of called himself the son of God. He was They were already offended him offended in…"
+            },
+            "11": {
+              "sermon_id": "80969d9c-3333-482e-863a-273ccba9212b",
+              "video_id": "XMYKzv81WP0",
+              "start_seconds": 1789,
+              "sermon_title": "Benefits of Discipleship | Followers of Christ - Part 6 | Pastor Funlola Alabi | 19th July 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "Glory to Jesus. So, write this down. Disciplehip is the missing link for a man who has received the life of Christ, but is still struggling with the old way of living. Disciplehip is the missing link for a man who has received the life of Christ but is still struggling with the old way of living. I…"
+            },
+            "12": {
+              "sermon_id": "4a5c1aed-b7fe-4a66-b676-fcfd4fc22985",
+              "video_id": "WFmFATjNTwM",
+              "start_seconds": 0,
+              "sermon_title": "Who Is A Disciple - Part 2 | Growing In Discipleship | Pastor Funlola Alabi | 14th June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "So, we're going to continue this morning on discipleship. Have we been blessed so far? Last week we learned about who a disciple is and uh we're just going to continue from there because I didn't finish the message. Amen. The word of God is just so good, so sweet. You can't exhaust it. It's inexhaus…"
+            },
+            "13": {
+              "sermon_id": "7599d2e4-8f8b-48dd-a08f-d2b19cf3c874",
+              "video_id": "DfFGp4rwDjE",
+              "start_seconds": 2430,
+              "sermon_title": "The Gospel of Salvation - Part 7 | Pastor Funlola Alabi | 6th April 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "walk. This is how they sit. This is what they do. Do you understand what I'm saying? You don't start teaching. Going through the process of what? Disciplehip. And that is why we tell you God is not about giving birth and throwing away. He doesn't burn to throw away. You don't preach to an unsaved pe…"
+            },
+            "14": {
+              "sermon_id": "80969d9c-3333-482e-863a-273ccba9212b",
+              "video_id": "XMYKzv81WP0",
+              "start_seconds": 1143,
+              "sermon_title": "Benefits of Discipleship | Followers of Christ - Part 6 | Pastor Funlola Alabi | 19th July 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "have received in Christ. Disciplehip is that process that brings about the manifestation that is the expression where it begins to show that we have received the very life of God. It is what makes eternal life to show in the life of the believer. So when we look at the new creation man, we are able…"
+            },
+            "15": {
+              "sermon_id": "30a75bb8-af1a-416e-9d14-db11b04f45d0",
+              "video_id": "1kFulLCC3Uc",
+              "start_seconds": 3589,
+              "sermon_title": "Facts About Discipleship - Part 1 | Growing In Discipleship | Pastor Funlola Alabi | 21st June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "discipleship will teach you not to live for yourself. Discipleship will teach you to live for posterity. To live for generations that are coming after you. To live beyond you. That's what discipleship will do for you. That's what discipleship will do for you. Fact number three, as I begin to round u…"
+            },
+            "16": {
+              "sermon_id": "30a75bb8-af1a-416e-9d14-db11b04f45d0",
+              "video_id": "1kFulLCC3Uc",
+              "start_seconds": 1217,
+              "sermon_title": "Facts About Discipleship - Part 1 | Growing In Discipleship | Pastor Funlola Alabi | 21st June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "clean by the things that he eats and consumes. Our cleanliness, our holiness is from within. And then he expresses himself outwardly. So as a person begins to feed on new creation realities, you begin to feed on the word of God, you now start seeing yourself in the light of your nature. You start un…"
+            },
+            "17": {
+              "sermon_id": "4a5c1aed-b7fe-4a66-b676-fcfd4fc22985",
+              "video_id": "WFmFATjNTwM",
+              "start_seconds": 3852,
+              "sermon_title": "Who Is A Disciple - Part 2 | Growing In Discipleship | Pastor Funlola Alabi | 14th June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "discipling. As you keep learning the word of God, you are becoming more of a blessing to the people that you are discipling. So, there's no end to that. Humility is very key, teachability is very important where discipleship is concerned. And discipleship is a call to faithfulness where a disciple m…"
+            },
+            "18": {
+              "sermon_id": "102768fa-aecc-49d1-aff3-011b0fdd43cb",
+              "video_id": "rMQUcrPLlf8",
+              "start_seconds": 899,
+              "sermon_title": "How to Prepare and Make the Most of Camp Meeting | Pastor Funlola Alabi | 8th December 2024",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "disciples will become disciplers in the name of Jesus there will be such growth spiritual growth and maturity that will happen to us at c meeting that will not leave us where we are now but rather will take us further in the things of God in the name of Jesus Christ glory to God so there was that mu…"
+            }
+          },
+          "answer": "Our Senior Pastor teaches that discipleship is the structured followership of Jesus Christ that transforms believers to walk in the fullness of God's plan and the realities of eternal life.\n\nDiscipleship is not just about learning to know, but about learning to do and to experience the truths of God's word [1]. When we come to church, we must come to be discipled, allowing change and transformation to take place in our lives as we conform to the image of Christ [1]. Our Senior Pastor emphasizes that salvation is just the glorious beginning; discipleship allows us to become everything more that God has ordained for us in Christ [3]. Jesus Himself dedicated 40 days to prepare for His ministry of preaching the gospel and making disciples, highlighting the seriousness of this assignment (Matthew 4:1-17) [7]. The ultimate call for us is to preach the gospel to people, get them saved, and then get them discipled [7].\n\nThe local church is described as the wisdom of God and the ordained place for discipleship to happen, much like a home provides nourishment and growth for a child (Matthew 28:19-20) [3]. After salvation, being brought into the light means being in a spiritual home where one can grow, develop, and be nurtured [3]. Discipleship is crucial because, without it, a converted person might continue to act according to their old nature; it is essential to teach them how to live this new life in Christ [13]. It helps us unlearn the old ways and deal with the habits formed before salvation (Ephesians 2:1-3) [8][16].\n\nOur Senior Pastor explains that discipleship is \"the missing link\" for a believer who has received Christ's life but still struggles with old ways of living [11]. The power to say no to sin and have dominion over it has already been given to us (Romans 6:14), and discipleship helps manifest this power in changing our minds, speech, actions, and life direction [11][14]. It imparts disciplines that lead to growth and usefulness, akin to the regimented life of a soldier (2 Timothy 2:1-5) [15]. This structured approach helps believers overcome the flesh's resistance to spiritual things like prayer and Bible reading, which can otherwise lead to a carnal life [5]. A walk with God, sustained by discipleship, is a walk of power, prosperity, and greatness, bringing about a total transformation, as seen in the life of Abraham (Genesis 17:1-2) [4][6].\n\nA disciple is a student, and Christianity is scholarly, involving teaching, learning, and training [12]. Humility and teachability are very key for a disciple, who must faithfully pass down exactly what they have been taught, communicating the truth of God's Word rather than personal opinions (2 Timothy 2:1-2) [17]. This process transforms individuals like Peter, who, through discipleship, became a powerful soul winner after previously denying Christ [2]. Ultimately, if more believers are discipled, the world will become a better place because discipleship teaches how to navigate every aspect of life, from being an employer to an employee and living with others [10]. Through discipleship, mistakes and errors no longer count, and old things pass away, making everything new [6].",
+          "suggestions": [
+            "What is the local church's role?",
+            "How does discipleship transform a believer?",
+            "What disciplines does discipleship impart?"
+          ],
+          "ms": 23528,
+          "verdict": "PASS",
+          "checks": {
+            "citationsValid": true,
+            "retrieved": true,
+            "cited": true,
+            "speakerCredited": true,
+            "noMisattribution": true,
+            "hasCitations": true
+          },
+          "notes": [
+            "right message at segment #1 of 18"
+          ],
+          "failed": []
+        }
+      ]
+    },
+    {
+      "id": "F3",
+      "group": "F",
+      "note": null,
+      "turns": [
+        {
+          "q": "pastor fun lola teaching on boldness",
+          "expect": {
+            "sermon": [
+              "Boldness"
+            ],
+            "speaker": "Funlola|Senior Pastor"
+          },
+          "status": 200,
+          "debug": {
+            "planned": true,
+            "search": "be bold, boldness in faith, walking in boldness",
+            "mode": "teaching",
+            "question": "What did Pastor Funlola teach about boldness?",
+            "scope": {
+              "kind": "preacher",
+              "label": "Pastor Funlola Alabi",
+              "messages": 84,
+              "missed": false
+            },
+            "history": 0,
+            "pool": 66,
+            "segments": 18,
+            "weakGrounding": false,
+            "sims": [
+              0.869,
+              0,
+              0.859,
+              0.904,
+              0,
+              0,
+              0.901,
+              0,
+              0.899,
+              0,
+              0,
+              0.899,
+              0.898,
+              0.894,
+              0,
+              0.891,
+              0.887,
+              0.885
+            ]
+          },
+          "segmentMap": {
+            "1": {
+              "sermon_id": "18349ac8-7376-41db-bbb1-61d44f67a134",
+              "video_id": "cUCrGAtA_48",
+              "start_seconds": 3017,
+              "sermon_title": "Facts About Discipleship - Part 2 | Growing In Discipleship | Pastor Funlola Alabi | 28th June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "became bold and full of faith. Struggling Peter became successful. Why? Because he submitted himself to a process of disciplehip. Your life can be better than it is. Things can get better than they are. You can become everything that God has designed for you to become. So I want to run quickly. How…"
+            },
+            "2": {
+              "sermon_id": "b38c51fc-d9c9-4f63-90d9-0a15cfaa87d9",
+              "video_id": "NASEZzjpYc8",
+              "start_seconds": 2220,
+              "sermon_title": "KERUSSO PART 2 | PASTOR FUNLOLA ALABI | 11TH SEPTEMBER 2022",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "is very important as a kuso you cannot afford to be prayerless if you're going to be a preacher of the word you cannot afford to be prayerless it is dangerous because the message you are preaching is not a casual message it is a powerful message it is a message that is a threat to the kingdom of the…"
+            },
+            "3": {
+              "sermon_id": "0dba55ed-6f8f-462c-b22a-2db72afb6771",
+              "video_id": "KiD9Zut6agI",
+              "start_seconds": 1037,
+              "sermon_title": "Dealing With The Things That Rob Us of Boldness | Pastor Funlola Alabi | 1st December 2024",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "and you need to be bold enough to use your faith in every situation and Circumstance that you find yourself so it says you have not received the spirit of bondage again to fear because it's bondage but you have received the spirit of adoption whereby you cry with confidence ABA father father father…"
+            },
+            "4": {
+              "sermon_id": "e18c1037-480f-46ef-b807-f16bfcc2fb99",
+              "video_id": "g0kufow_7A8",
+              "start_seconds": 2463,
+              "sermon_title": "The Shortfall In Labourers - Witnesses Part 11 | Pastor Funlola Alabi | 31st May 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "speak about the one that you know. You are bolder. So boldness is a necessity for soul winning. In Acts 4:3, the Bible says, \"When they saw the boldness of Peter and John, they perceived that they were unlearned and ignorant men, they marveled and took KNOWLEDGE OF THEM, THAT THEY HAD BEEN with Jesu…"
+            },
+            "5": {
+              "sermon_id": "0dba55ed-6f8f-462c-b22a-2db72afb6771",
+              "video_id": "KiD9Zut6agI",
+              "start_seconds": 951,
+              "sermon_title": "Dealing With The Things That Rob Us of Boldness | Pastor Funlola Alabi | 1st December 2024",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "by the spirit of God they are the sons of God the word L is from the Greek word ago as many as are carried by the spirit of the Lord carried in Salvation first of all do you see that he says they are the sons of God for you have not received the spirit of bondage again to fear do you see that but yo…"
+            },
+            "6": {
+              "sermon_id": "d41031dc-7490-49a7-8ccc-e0110f6dfc74",
+              "video_id": "4KxPWiPR36U",
+              "start_seconds": 10,
+              "sermon_title": "RFC 2025 - Day 2 Morning - Avoid Faith-Attacking Clichés | Pastor Funlola Alabi | 19th April 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "You know, we are not just here to hear the word of God work like that told us yesterday. We are here to experience the word. We are here to see the workings of the word. And as we go on this morning, we are going to see the workings of the word. You will be healed in your body if you came here sick.…"
+            },
+            "7": {
+              "sermon_id": "0dba55ed-6f8f-462c-b22a-2db72afb6771",
+              "video_id": "KiD9Zut6agI",
+              "start_seconds": 91,
+              "sermon_title": "Dealing With The Things That Rob Us of Boldness | Pastor Funlola Alabi | 1st December 2024",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "with that kind of a mind in the name of Jesus the spirit of boldness will take you over and you will go on to keep working Bolder and Bolder more confident in who you are as a child of God that you are in the name of Jesus Christ glory to God please you may be seated the anchor text for this subject…"
+            },
+            "8": {
+              "sermon_id": "824f96e2-81c9-4df6-a339-e934d9720ce1",
+              "video_id": "am9r_rDK4hk",
+              "start_seconds": 795,
+              "sermon_title": "HCM 2025 | Day 2 Morning - Faith and Enlargement - Part 1| Pastor Funlola Alabi | 2nd September 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "raised him from the dead he says you shall be saved. Verse 10 says for with the heart man believeth unto righteousness and with the mouth confession is made unto salvation. And verse 11 tells us it says for the scripture said whosoever believeth on him shall not be ashamed. So faith is what we use t…"
+            },
+            "9": {
+              "sermon_id": "e18c1037-480f-46ef-b807-f16bfcc2fb99",
+              "video_id": "g0kufow_7A8",
+              "start_seconds": 2374,
+              "sermon_title": "The Shortfall In Labourers - Witnesses Part 11 | Pastor Funlola Alabi | 31st May 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "Every time you behold the face of God, his boldness rubs off on you. Yes sir. >> I know believers who cannot they cannot preach. THEY CAN'T TELL SOMEBODY JESUS DIED FOR your sins. Not because they don't know, not because they DON'T WANT TO, BUT BECAUSE THEY THEY ARE NOT BOLD ENOUGH TO PREACH. There'…"
+            },
+            "10": {
+              "sermon_id": "824f96e2-81c9-4df6-a339-e934d9720ce1",
+              "video_id": "am9r_rDK4hk",
+              "start_seconds": 1437,
+              "sermon_title": "HCM 2025 | Day 2 Morning - Faith and Enlargement - Part 1| Pastor Funlola Alabi | 2nd September 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "you just want to see will they use it? And when you see them use it, ah, I don't know about you, but it gladdens my heart when I give somebody something and I see them use it. I'm happy. It speaks volumes. And that's what God is pleased when we use our faith. When you use when we use the faith that…"
+            },
+            "11": {
+              "sermon_id": "01f0374c-5b03-4296-b1be-730d188c4787",
+              "video_id": "-uMsmRwXXWQ",
+              "start_seconds": 2266,
+              "sermon_title": "The Blood of the Everlasting Covenant | Pastor Funlola Alabi | 13th November 2024",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "faith of Abraham who is the father of us all you know the way God did the work of Salvation he did it in such a way that he was able to kill two beds with one stone with the death of Christ and faith that came as a result God made sure that the Covenant was caught with Abraham when he was after he w…"
+            },
+            "12": {
+              "sermon_id": "c3b00923-3b85-432b-b46a-4d617095e399",
+              "video_id": "8tgJ1s81qac",
+              "start_seconds": 104,
+              "sermon_title": "Supernatural Boldness - Putting your Confidence in GOD | Pastor Funlola Alabi | 24th November 2024",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "we've been looking at Supernatural boldness and I'm going to be ministering to us a message titled Supernatural boldness putting your confidence in God putting your confidence in God you know your boldness in in life is an Evidence of who your confidence is in boldness in life is a testament and an…"
+            },
+            "13": {
+              "sermon_id": "b9d43018-20f6-43ac-af33-2e804822b5a3",
+              "video_id": "X6OSVuDW6u0",
+              "start_seconds": 15,
+              "sermon_title": "Difference Between Natural and Supernatural Boldness 1 | Pastor Funlola Alabi | 17th November 2024",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "so we are going into the ministry of the world right now is still our month of Supernatural boldness what a blessing you know we need boldness for everything in life we need boldness for living we need boldness for fulfilling the work of ministry our calling in Christ Jesus we need boldness to stand…"
+            },
+            "14": {
+              "sermon_id": "976b0e10-068b-4cfe-b164-b2584a7f4c36",
+              "video_id": "HDIxf0KiPqk",
+              "start_seconds": 1392,
+              "sermon_title": "HCM 2025 | Day 3 Morning - Faith and Enlargement-Part 2 | Pastor Funlola Alabi | 3rd September 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "confident. Be bold in Jesus name. Be confident. Be bold. Be confident. Be bold. Be confident. Be bold. Be confident. Be bold. Be confident. Be bold. Be confident. Be bold. Be confident. Be bold. Be bold. Be confident. Be bold. Be bold. Be confident. Be bold in Jesus name. Everybody pray in the Holy…"
+            },
+            "15": {
+              "sermon_id": "30a75bb8-af1a-416e-9d14-db11b04f45d0",
+              "video_id": "1kFulLCC3Uc",
+              "start_seconds": 1967,
+              "sermon_title": "Facts About Discipleship - Part 1 | Growing In Discipleship | Pastor Funlola Alabi | 21st June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "So, Jesus found him as a sinful man, Peter. Peter, the sinful man. Peter, the unsuccessful man. Peter, the man that is not good at anything. >> >> And then he took him up. That's what discipleship does. He took him up, but he didn't send him out to start preaching immediately. He took him up and he…"
+            },
+            "16": {
+              "sermon_id": "976b0e10-068b-4cfe-b164-b2584a7f4c36",
+              "video_id": "HDIxf0KiPqk",
+              "start_seconds": 1286,
+              "sermon_title": "HCM 2025 | Day 3 Morning - Faith and Enlargement-Part 2 | Pastor Funlola Alabi | 3rd September 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "it doesn't remain small. Be bold and confident. Bold and confident. Bold and confident. Be bold. Be confident. Be bold. Be confident. Be bold. Be confident. Be bold. Be confident. Be bold. Be confident. Be bold. Be confident. Be bold. Be confident. Be bold. Be confident. Be bold. Be confident. Be bo…"
+            },
+            "17": {
+              "sermon_id": "b9d43018-20f6-43ac-af33-2e804822b5a3",
+              "video_id": "X6OSVuDW6u0",
+              "start_seconds": 210,
+              "sermon_title": "Difference Between Natural and Supernatural Boldness 1 | Pastor Funlola Alabi | 17th November 2024",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "lifespan of challenges you determine how long you will stay in that condition but as you expose yourself to the light of the world this month you will come to that place of boldness where you'll be able to speak to things you'll be able to speak to the mountains in your life command them to move be…"
+            },
+            "18": {
+              "sermon_id": "ee2fca48-a65f-4035-afca-872d0509242c",
+              "video_id": "lKx8oUOGIN0",
+              "start_seconds": 15,
+              "sermon_title": "Supernatural Boldness - Putting your Confidence in GOD 2 | Pastor Funlola Alabi | 24th November 2024",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "so we have been looking at Supernatural boldness confidence in God Amen um learning about the power of the words that were spoken by Peter and John in Acts chapter 4 verse 7 to verse 13 and how the things that they said you know contributed to the people the rulers saying that they were bold men say…"
+            }
+          },
+          "answer": "Our Senior Pastor teaches that boldness is essential for a believer's life, including for fulfilling God's plans and ministry, and it stems from confidence in God and fellowship with Him [3][12][13].\n\nShe explains that boldness can be understood through several key points:\n1.  **Boldness can be seen** Our Senior Pastor notes that boldness is visible, not primarily through facial expressions, but through the words spoken. The unfettered outspokenness of Peter and John, for instance, demonstrated their boldness [17][18]. It is primarily expressed through speaking freely and without hindrance [13][18]. However, boldness is also expressed through the actions one takes, the choices one makes, and the direction one follows in life [18].\n2.  **Supernatural boldness does not come from any natural source** This type of boldness is a gift from God, received through His Holy Spirit. Peter and John's boldness was observed because \"they had been with Jesus\" (Acts 4:13), indicating that their supernatural boldness was traceable to their fellowship with Him [4][7][17][18].\n3.  **Boldness implies unwavering confidence and unshakeable assurance** It is an indication of what or whom you rely on [18]. Your boldness in life is an evidence and testament of where your confidence lies [12]. As believers, our confidence should be placed in God alone because He is our Father, and we are marked by the blood of the everlasting covenant [12]. Trusting in God empowers our boldness in life [12].\n4.  **Fellowship with God is crucial for boldness** If you find it difficult to speak about Jesus, checking the state of your fellowship with God is important [4]. Your ministration should be an outflow of your personal fellowship with God, as you cannot effectively witness to something or someone you do not know [9]. Consistent fellowship with the Lord, through a vibrant prayer life and engaging with His Word, strengthens you, refreshes you, and makes you bold to speak about Jesus [2][4][9]. Every time you behold God's face, His boldness rubs off on you, and increasing in knowledge of God makes you bolder to speak about Him [9].\n5.  **Cultivating a walk with God** Our Senior Pastor emphasizes establishing a personal devotion routine, often called quiet time, where you read your Bible and pray daily [1]. This practice is vital for spiritual growth, understanding God's Word and ways, and allowing His truth to direct your life [1]. Being prayerless is dangerous for a preacher of the Word because the message is powerful and a threat to the kingdom of darkness, requiring fortification and spiritual soundness [2].\n\nOur Senior Pastor also highlights that God is pleased when we use the faith He has given us, which results in us acting and living like Him and experiencing His results [8][10]. Boldness is the antidote to fear, which can incapacitate and limit a person [5]. She encourages believers to be bold and confident, knowing that anything done on a supernatural level will yield supernatural manifestations and results [14][16].",
+          "suggestions": [],
+          "ms": 10046,
+          "verdict": "PASS",
+          "checks": {
+            "citationsValid": true,
+            "retrieved": true,
+            "cited": true,
+            "speakerCredited": true,
+            "hasCitations": true
+          },
+          "notes": [
+            "right message at segment #3 of 18"
+          ],
+          "failed": []
+        }
+      ]
+    },
+    {
+      "id": "K1",
+      "group": "K",
+      "note": null,
+      "turns": [
+        {
+          "q": "What did Mom teach about good works and salvation?",
+          "expect": {
+            "sermon": [
+              "Funlola"
+            ],
+            "speaker": "Senior Pastor",
+            "notPeter": true,
+            "steward": true
+          },
+          "status": 200,
+          "debug": {
+            "planned": true,
+            "search": "good works and salvation",
+            "mode": "teaching",
+            "question": "What did Mom teach about good works and salvation?",
+            "scope": {
+              "kind": "preacher",
+              "label": "Pastor Funlola Alabi",
+              "messages": 84,
+              "missed": false
+            },
+            "history": 0,
+            "pool": 64,
+            "segments": 18,
+            "weakGrounding": false,
+            "sims": [
+              0.903,
+              0,
+              0.884,
+              0.871,
+              0.853,
+              0.865,
+              0.863,
+              0.853,
+              0.843,
+              0.844,
+              0.843,
+              0.845,
+              0.838,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "segmentMap": {
+            "1": {
+              "sermon_id": "f3ab39d9-718a-4326-aa7e-86f8226be18d",
+              "video_id": "rRccBtbsTYI",
+              "start_seconds": 3770,
+              "sermon_title": "The Book of Ephesians - Part 11 | Pastor Funlola Alabi | 8th July 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "but they are the proof of salvation. They are not the price we pay to be saved, but they are proof. They are evidence that we are saved. They are evidence. Good works give evidence to our salvation. Is a sign that we have the nature of God. The divine nature of God. The nature of God. God does good…"
+            },
+            "2": {
+              "sermon_id": "a2959c28-63d5-499d-97b3-8fd7b8f5b7d5",
+              "video_id": "2HClbJYZbrU",
+              "start_seconds": 271,
+              "sermon_title": "Power of the Spirit 4 - 2nd Service | Pastor Funlola Alabi | 26th May 2024",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "you are strengthening them you are enlightening them you are encouraging them you exalting them and that is what the power of God is for where the work of ministry is concerned Apostle Paul said God has given me this power to edify you not to destroy you so it's important that we know how to use the…"
+            },
+            "3": {
+              "sermon_id": "f3ab39d9-718a-4326-aa7e-86f8226be18d",
+              "video_id": "rRccBtbsTYI",
+              "start_seconds": 3852,
+              "sermon_title": "The Book of Ephesians - Part 11 | Pastor Funlola Alabi | 8th July 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "That is evidence. Glory to God. Number three, the believer is not saved as a result of good works, but good works are the result of salvation. The believer is not saved as the result of good works. But good works are the result of salvation. Good works are the result of salvation. It's only under th…"
+            },
+            "4": {
+              "sermon_id": "f3ab39d9-718a-4326-aa7e-86f8226be18d",
+              "video_id": "rRccBtbsTYI",
+              "start_seconds": 2351,
+              "sermon_title": "The Book of Ephesians - Part 11 | Pastor Funlola Alabi | 8th July 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "It's a glorious work. >> And that is the work that God has pre-ordained for us to do. So I'm going to share with us six things about good works. Number one, good works are part of God's plan. Good works are part of God's plan. There are some things you must understand about the plan of God. Number o…"
+            },
+            "5": {
+              "sermon_id": "087f948a-887a-454a-b167-12cfc4f89f80",
+              "video_id": "xN_P3ihQ6g8",
+              "start_seconds": 1716,
+              "sermon_title": "The Gospel of Salvation | Pastor Funlola Alabi | 2nd March 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "deliverance from every Walk Of Darkness that is what happens to us as salvation Rescue It says wholeness you were made whole Spirit soul and body everything that requires your wholeness or your Hess required Spirit soul and body was completed on the cross of Calvary you can believe God for Sound Hea…"
+            },
+            "6": {
+              "sermon_id": "9465a35b-46aa-4f94-bb3a-ea3b86c3cc91",
+              "video_id": "4GXs8GdZ784",
+              "start_seconds": 1054,
+              "sermon_title": "RIGHTEOUSNESS - The Gift of No-Condemnation | Pastor Funlola Alabi | 21st September 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "trouble, sorrow, grieviance, iniquity, miserable, pain, painful, perverseness, weariness, wickedness, a mixture of all kinds of things that are just not good. And you see, every time we lift up holy hands, which we must always do to give thanks to God for redemption, for salvation, we must remember…"
+            },
+            "7": {
+              "sermon_id": "9465a35b-46aa-4f94-bb3a-ea3b86c3cc91",
+              "video_id": "4GXs8GdZ784",
+              "start_seconds": 1620,
+              "sermon_title": "RIGHTEOUSNESS - The Gift of No-Condemnation | Pastor Funlola Alabi | 21st September 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "righteousness that they are trying to do in order to be saved. But that is not the way salvation works. That is not the way a man becomes righteous. The Bible says, \"But it is according to his mercy that he saved us. We are saved by the mercy of God.\" What is the basis of all the things that Jesus d…"
+            },
+            "8": {
+              "sermon_id": "9465a35b-46aa-4f94-bb3a-ea3b86c3cc91",
+              "video_id": "4GXs8GdZ784",
+              "start_seconds": 3650,
+              "sermon_title": "RIGHTEOUSNESS - The Gift of No-Condemnation | Pastor Funlola Alabi | 21st September 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "Christian. Be a true Christian. The one whose nature has been changed. The one who when we look at him, we don't behold iniquity and we don't behold perversess. The one that God is in. And God has said to us about himself that the only way to him is Christ Jesus. So as I begin to round off I want yo…"
+            },
+            "9": {
+              "sermon_id": "a7a40dc1-3926-449c-8d1d-90c9f37d6abb",
+              "video_id": "X3n-v3hG4R8",
+              "start_seconds": 980,
+              "sermon_title": "Unity Sunday 2024 | Pastor Funlola Alabi | 29th September 2024",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "forgiv our Acceptance in the Beloved everything was a gift from God and it says in verse 9 it says not of Works lest any man should boast so it's truly a celebration this morning you don't you don't pay for a gift a gift is given to you free of charge and when you get a big gift what do you do you c…"
+            },
+            "10": {
+              "sermon_id": "01105080-b5b6-4e14-b43f-7d3315954587",
+              "video_id": "mhbl7wa_qos",
+              "start_seconds": 751,
+              "sermon_title": "The Gospel of Salvation - Part 6 | Pastor Funlola Alabi | 30th March 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "Christ Jesus we have forgiveness of sin the work of redemption that was done for us has taken away our sins forever we are the forgiven ones he has forgiven us all our trespasses past present and future he has forgiven us all our trespasses so this is the good news that we preach this is the good ne…"
+            },
+            "11": {
+              "sermon_id": "a2959c28-63d5-499d-97b3-8fd7b8f5b7d5",
+              "video_id": "2HClbJYZbrU",
+              "start_seconds": 434,
+              "sermon_title": "Power of the Spirit 4 - 2nd Service | Pastor Funlola Alabi | 26th May 2024",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "like you me say I'm committed to do good works with the power of God that is within me right now in Jesus name amen God bless you may be seated so the primary purpose of the power of the holy spirit in the life of a believer is for the work of ministry Acts 1:8 the Bible says but you shall receive p…"
+            },
+            "12": {
+              "sermon_id": "ef52a7f4-1aae-487e-887b-07a01b3c206c",
+              "video_id": "vPI5x0h6QuM",
+              "start_seconds": 1011,
+              "sermon_title": "The Gospel of Salvation - Part 3 | Pastor Funlola Alabi | 9th March 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "from inception for every man to be saved God is never caught on our we it wasn't when Adam fell that God got into the mode of let's save the world his posture has always been salvation or do you want to tell me that he didn't know that Adam was going to sin and that that sin will pass upon all men T…"
+            },
+            "13": {
+              "sermon_id": "765dc698-9844-4f0e-a274-d4557c1edb33",
+              "video_id": "ZplYhd-jOGs",
+              "start_seconds": 86,
+              "sermon_title": "Prayer as a Thing of The Spirit - Part 2 | Pastor Funlola Alabi | 18th March 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "we can maximize prayer. And that is not all that God does for us. God is so good that he gave us eternal life. All right? And at the point of salvation, he didn't ask us to bring our own faith to receive salvation. He gave us the faith, his own faith with which we receive salvation. And that is the…"
+            },
+            "14": {
+              "sermon_id": "a7a40dc1-3926-449c-8d1d-90c9f37d6abb",
+              "video_id": "X3n-v3hG4R8",
+              "start_seconds": 1395,
+              "sermon_title": "Unity Sunday 2024 | Pastor Funlola Alabi | 29th September 2024",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "God's gift from start to finish God's gift from start to finish he says we don't play the major role if we did we'd probably go around bragging that we have done the whole thing tell your neighbor no Bragging right here he says no we neither make nor save ourselves God does both the making and the s…"
+            },
+            "15": {
+              "sermon_id": "567b2ae1-ee49-469e-9d55-6f150eb28d55",
+              "video_id": "y_yHriN4P98",
+              "start_seconds": 110,
+              "sermon_title": "Family Weekend Charge - HOF Family Weekend 2025 Day 1 | Pastor Funlola Alabi | 22nd March 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "is a product of marriage or rather it should be glory to God he ought to be because that is the way God designed it and if you notice all right for some of you under the sound of my voice you will realize that both you and your siblings all came out of a marital Union between your parents for those…"
+            },
+            "16": {
+              "sermon_id": "4efd81ac-a4cf-445d-aa4e-b8f7e5b35e90",
+              "video_id": "TxBHXEY3IYs",
+              "start_seconds": 1516,
+              "sermon_title": "KERUSSO | PASTOR  FUNLOLA ALABI | 4TH SEPTEMBER 2022",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "you the compassion of our lord jesus christ will fall upon you and you will not leave them without preaching the gospel to them because you are a jerusalem there is nobody else that will preach this gospel except you and me angels will not preach it they cannot preach it this is a message that has b…"
+            },
+            "17": {
+              "sermon_id": "01105080-b5b6-4e14-b43f-7d3315954587",
+              "video_id": "mhbl7wa_qos",
+              "start_seconds": 2349,
+              "sermon_title": "The Gospel of Salvation - Part 6 | Pastor Funlola Alabi | 30th March 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "they chose darkness when they rejected light the word condemn let's look at the meaning the Greek meaning is from the Greek word katako it it means to judge against that is to sentence it means to pass judgment to sentence a person to sentence a person to a life of sin and death it's a sentence that…"
+            },
+            "18": {
+              "sermon_id": "a2959c28-63d5-499d-97b3-8fd7b8f5b7d5",
+              "video_id": "2HClbJYZbrU",
+              "start_seconds": 187,
+              "sermon_title": "Power of the Spirit 4 - 2nd Service | Pastor Funlola Alabi | 26th May 2024",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "perish foolishness but unto us which are saved it is the power of God unto us which are saved it is the power of God so the power of the spirit has been given for the Salvation of men and that is why we must use that power in doing the work of ministry that has taught us over and over again that you…"
+            }
+          },
+          "answer": "Our Senior Pastor teaches that salvation is a gift from God, received by grace through faith, and that good works are the result and proof of this salvation, rather than the means by which it is obtained.\n\nShe emphasizes that we are saved by God's mercy and grace, not by any good deeds or attempts to keep the law (Ephesians 2:8-9) [2][7][9][16]. Salvation is a gift, freely given, and we don't pay for it; therefore, there is no room for boasting in our own efforts [9]. The complete work of redemption, which secures our salvation, was accomplished by Jesus Christ on the cross, providing everything that pertains to life and godliness [5][7]. Understanding this work of redemption through faith in Christ Jesus is the foundational knowledge for many aspects of our lives, including family and marriage [15]. Our Senior Pastor reminds us that we are to be grateful for salvation above all else, as it is the \"door or key\" that opens the door to every other blessing we enjoy in Christ [6]. She also makes it clear that there is no second chance for salvation after death; the choice to accept God's gift must be made \"here and now\" [17].\n\nConversely, good works are the natural outcome and evidence of a transformed life. They are the proof of our salvation and a sign that we have received God's divine nature [1][3]. Just as God Himself does good works, when believers extend forgiveness or demonstrate generosity, they are proving that their nature has been changed to be like their Father (John 3:16) [1]. We do good works not to earn God's approval, but because we are already justified and approved by Him, and it is now our nature [3].\n\nThese good works are not an afterthought but are deeply embedded in God's eternal plan. Our Senior Pastor teaches that we are God's workmanship, \"created in Christ Jesus unto good works, which God has before ordained that we should walk in them\" (Ephesians 2:10) [2][9][16]. This plan for our good works predates our birth, both biological and spiritual, meaning God had specific assignments prepared for us even before we were born again [4][9][14][16]. God's will is that every new creation should engage in these good works [4].\n\nWhen speaking of \"good works,\" our Senior Pastor primarily refers to the \"good works of ministry,\" rather than merely building roads or houses [2]. We are created to join Jesus in His work of \"doing good and healing all that were oppressed of the devil\" (Acts 10:38) [9][14]. The power of God, received through the Holy Spirit, is essential for these good works of ministry. This power is given to believers to be witnesses (Acts 1:8) and is intended for the salvation of men and for edification, not for destruction (2 Corinthians 13:10) [11][18]. It enables us to preach the gospel, pray for the sick, and disciple others, and God also provides ministry gifts to equip us for this calling [13][18].",
+          "suggestions": [
+            "How is salvation a complete package?",
+            "What are the good works of ministry?",
+            "How do we receive forgiveness of sin?"
+          ],
+          "ms": 18833,
+          "verdict": "PASS",
+          "checks": {
+            "citationsValid": true,
+            "retrieved": true,
+            "cited": true,
+            "speakerCredited": true,
+            "noFormalName": true,
+            "noMisattribution": true,
+            "hasCitations": true
+          },
+          "notes": [
+            "right message at segment #1 of 18"
+          ],
+          "failed": []
+        }
+      ]
+    }
+  ]
+}

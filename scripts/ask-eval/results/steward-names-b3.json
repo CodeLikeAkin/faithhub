@@ -1,0 +1,220 @@
+{
+  "label": "steward-names-b3",
+  "base": "http://localhost:3930",
+  "at": "2026-10-03T12:48:46.199Z",
+  "results": [
+    {
+      "id": "B3",
+      "group": "B",
+      "note": "Spoken by a family member at a celebration, not by Rev. Peter",
+      "turns": [
+        {
+          "q": "The message where his dad started a church in the house",
+          "expect": {
+            "sermon": [
+              "ICONIC"
+            ],
+            "notPeter": true
+          },
+          "status": 200,
+          "debug": {
+            "planned": true,
+            "search": "started a church in the house",
+            "mode": "locate",
+            "question": "Where did Rev. Peter speak about starting a church in the house?",
+            "scope": null,
+            "history": 0,
+            "pool": 60,
+            "segments": 18,
+            "weakGrounding": false,
+            "sims": [
+              0.871,
+              0.865,
+              0.878,
+              0,
+              0.876,
+              0,
+              0,
+              0.875,
+              0.875,
+              0,
+              0.874,
+              0,
+              0,
+              0.873,
+              0,
+              0.872,
+              0.872,
+              0
+            ]
+          },
+          "segmentMap": {
+            "1": {
+              "sermon_id": "9c18d73d-f2cf-4dba-bc8d-b9fbf8531618",
+              "video_id": "wwP8bGn2IjM",
+              "start_seconds": 18933,
+              "sermon_title": "HOFCHURCHNG | 40 DOT IMMERSION | REV PETER ALABI | 15TH JULY 2023",
+              "speaker": null,
+              "text": "so much so that they now had to send to Jerusalem for the apostles to come so when you go anywhere you go and start something there then you will send for us then we will come or we'll send any of the leaders to come you get what I'm saying now oh yeah oh yeah that's the way it should be because we…"
+            },
+            "2": {
+              "sermon_id": "de0508c1-dcaf-4208-b825-9dd83ef62061",
+              "video_id": "0wsGAXULCGk",
+              "start_seconds": 7235,
+              "sermon_title": "A Supernatural Life - Part 4 | Rev Peter Alabi | 7th May 2025",
+              "speaker": null,
+              "text": "are the high priest of my confession. And in the name of the Lord Jesus Christ, I repent and I set myself free from all those negative words. In the name of the Lord Jesus. And then you stand there. You say, \"Father, as a partaker of the heavenly calling, according to Hebrews 3, under your lordship,…"
+            },
+            "3": {
+              "sermon_id": "e2d2131a-f44b-49a2-96e3-4bec8da7c2ec",
+              "video_id": "Uf81Ip8GvWU",
+              "start_seconds": 1925,
+              "sermon_title": "RFC 2025 - Day 1 Evening - 5 Elements of Faith | Rev Peter Alabi | 18th April 2025",
+              "speaker": null,
+              "text": "your own. Some things just begin to occur to you. They occur to you like that. David said in Psalm 122:1, I was glad when they said to me, \"Let us go into the house of the Lord.\" Psalm 55:14, \"We took sweet counsel together, and we went to the house of the Lord in company. Don't come alone. Let us n…"
+            },
+            "4": {
+              "sermon_id": "686e4bf7-4cb9-479c-b630-55f7cb3cbd69",
+              "video_id": "9TgXgSUQRt8",
+              "start_seconds": 15794,
+              "sermon_title": "HCM 2025 | Day 5 -  Finance Convention 2025 | Rev Peter Alabi | 5th September 2025",
+              "speaker": null,
+              "text": "he will he will rent house he will leave he will settle as if he's a normal migrant like everybody else but he has come for one day because of one particular day that he's building up onto >> and that day is the day where the president will be in a particular place so he can shoot him and kill him f…"
+            },
+            "5": {
+              "sermon_id": "e18c1037-480f-46ef-b807-f16bfcc2fb99",
+              "video_id": "g0kufow_7A8",
+              "start_seconds": 290,
+              "sermon_title": "The Shortfall In Labourers - Witnesses Part 11 | Pastor Funlola Alabi | 31st May 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "all right the media you know sanctuary keepers they make sure that the auditorium is clean and conducive enough for us to sit and have a great time in service. There are many operations that goes on in the church to make church run. But you know we never miss words to say that all those things that…"
+            },
+            "6": {
+              "sermon_id": "92ee509a-9ed3-4fde-a6f6-63d73d1b1261",
+              "video_id": "YDcvHBYFaQE",
+              "start_seconds": 10430,
+              "sermon_title": "HOFCHURCHNG |WONDERS OF PERSONAL FELLOWSHIP | DAY 38 |40 DAYS OF TRANSFORMATION 2024 |21ST AUG. 2024",
+              "speaker": null,
+              "text": "now you can be a member of that physical Gathering joining them online but what you are joining is not an online Gathering you are online joining a physical Gathering because you are not physically available there so they can't say what where is your church he say we don't have a physical Beauty we…"
+            },
+            "7": {
+              "sermon_id": "a5617efe-8376-4c98-a5bb-9925bdf767d8",
+              "video_id": "t5fsRq9i7os",
+              "start_seconds": 6373,
+              "sermon_title": "HOFCHURCHNG | DAY 5 | 40 DAYS OF TRANSFORMATION 2024 |19TH JULY 2024",
+              "speaker": null,
+              "text": "that's why we confess him as Lord that he's Lord now means he rules you and therefore you follow him you can't confess him as Lord and continue to follow the dictates of another god regardless of your age. He say also but their parents don't want them to practice Christianity. Well, there is what is…"
+            },
+            "8": {
+              "sermon_id": "5dd3191a-2a82-4963-8557-578414f7ba5a",
+              "video_id": "mJI1pU89V3o",
+              "start_seconds": 1569,
+              "sermon_title": "Praying With Prayer | Rev'd Peter Alabi | 9th of January 2022",
+              "speaker": null,
+              "text": "building paul said he said we are laborers together with god ye are god's husbandry god's vineyard and ye are god's building we are god's house hallelujah somebody say i'm god's house in first peter 2 5 peter said he also as lively or living stones i built up a spiritual house to offer spiritual sac…"
+            },
+            "9": {
+              "sermon_id": "10435a29-e28c-435b-9674-f13bd1d56ac5",
+              "video_id": "K8_YWhLqpa0",
+              "start_seconds": 2936,
+              "sermon_title": "How GOD Calls and Why GOD Calls Into The Ministry | YMTS 3 | Rev Peter Alabi | 20th May 2026",
+              "speaker": null,
+              "text": "local church. You will be amazed. You'll be amazed. This is a welltaught church. >> And I mean well taught if I say so myself. I'm telling you. Hallelujah. And it's been a long time I've done that teaching series, spiritual home training, but I promise you in 2026 there will be another installment o…"
+            },
+            "10": {
+              "sermon_id": "b832bc68-5dd9-4eaa-989f-ae6a4cb8a5db",
+              "video_id": "OAqWGqa7dLQ",
+              "start_seconds": 0,
+              "sermon_title": "ICONIC: Celebrating life and decades of Kingdom impact",
+              "speaker": "Various speakers",
+              "text": "for every generation they're a man who god chooses to use i am the righteousness of god in christ i declare in the name of jesus christ that my members are instruments of righteousness onto holiness god chooses to bless his people be blessed be blessed in the name of jesus the response to god's call…"
+            },
+            "11": {
+              "sermon_id": "766a52ff-7d34-4fdd-8df1-d0c8036bbcd0",
+              "video_id": "V9IJjL5rKNI",
+              "start_seconds": 2798,
+              "sermon_title": "The Counsel of GOD - 2nd Service | Rev Peter Alabi | 14th July 2024",
+              "speaker": null,
+              "text": "God these days there are people who start churches as a business you see as a Christian I believe if you let God guide you when you enter the Gathering of any place where they call they say it's a church supposedly the Holy Ghost can help you tell whether there is a calling there or not it can help…"
+            },
+            "12": {
+              "sermon_id": "b832bc68-5dd9-4eaa-989f-ae6a4cb8a5db",
+              "video_id": "OAqWGqa7dLQ",
+              "start_seconds": 116,
+              "sermon_title": "ICONIC: Celebrating life and decades of Kingdom impact",
+              "speaker": "Various speakers",
+              "text": "you know in my dad's 70s he you know started a church in the house so and that was basically because he's been winning souls in the environment in his neighborhood so we just thought instead of him going all over the place so built a church for him in the house where he disciples his converts and he…"
+            },
+            "13": {
+              "sermon_id": "a5617efe-8376-4c98-a5bb-9925bdf767d8",
+              "video_id": "t5fsRq9i7os",
+              "start_seconds": 6459,
+              "sermon_title": "HOFCHURCHNG | DAY 5 | 40 DAYS OF TRANSFORMATION 2024 |19TH JULY 2024",
+              "speaker": null,
+              "text": "a church just started the church of Jesus Christ? Firstly, next thing you hear people are selling houses, selling lands, bringing the produce to the apostles feet so that the needs of people can be met. Which need? It's like we just started church today and now say there is such a need that requires…"
+            },
+            "14": {
+              "sermon_id": "c88a8a59-4be7-4191-821d-a9929a5d85dd",
+              "video_id": "59gsCIHaa0I",
+              "start_seconds": 1703,
+              "sermon_title": "Apostolic Christianity Part 1 | Rev Peter Alabi | 15th May 2024",
+              "speaker": null,
+              "text": "you must know that in our local church we are not the only children in God's family there are many many many children of God across the nations of the world spread across I remember at the inaugural service of our Oxford Church two weeks ago I remember after we finished the service on Sunday the res…"
+            },
+            "15": {
+              "sermon_id": "a3f56335-a6aa-42a8-8cb8-6202c5ddd5e6",
+              "video_id": "6yd3PgGPT30",
+              "start_seconds": 2161,
+              "sermon_title": "HOFCHURCHNG | DAY 40 - MORNING SESSION | 40 DAYS OF TRANSFORMATION 2025 | 31ST DECEMBER 2025",
+              "speaker": null,
+              "text": "40 duty no that's not how how it is doneh so it just simply means you there's you can take some rest you know not from spiritual things but just you get what I mean and all that so but please stay away from those things still wait on the lord I'm just talking about for the sake of strength and energ…"
+            },
+            "16": {
+              "sermon_id": "913be6ec-05d2-49f4-a024-5c68454a0d9b",
+              "video_id": "qf8ECByy070",
+              "start_seconds": 5696,
+              "sermon_title": "Dealing with Unbelief - Part 2 | Rev Peter Alabi | 22nd January 2025",
+              "speaker": null,
+              "text": "church I said if I was a founder or a pastor of of a church I would be coming to church regularly because I used to come to regularly even when I was not a pastor all right even after I left home why I grew up that way that was a good tradition they pass down to us I listen to what I'm saying I say…"
+            },
+            "17": {
+              "sermon_id": "35c1e9e3-25be-419c-b15e-4ea551123a81",
+              "video_id": "7ikShQi33n4",
+              "start_seconds": 11874,
+              "sermon_title": "Are You a Strong Believer? Immersion Service | Rev Peter Alabi | 3rd May 2026",
+              "speaker": null,
+              "text": "Some of you are asking now, can you trust God for your first house uh in the next 12 months? I really believe God can give you a house in 12 months. I love the brother. He stood up over there. Those trying to start up again, it's okay if they won that race. See, now let let me tell you how can you g…"
+            },
+            "18": {
+              "sermon_id": "686e4bf7-4cb9-479c-b630-55f7cb3cbd69",
+              "video_id": "9TgXgSUQRt8",
+              "start_seconds": 17712,
+              "sermon_title": "HCM 2025 | Day 5 -  Finance Convention 2025 | Rev Peter Alabi | 5th September 2025",
+              "speaker": null,
+              "text": "two you become four. It starts as a watch party until it becomes a house church. >> You are now four. You are now five. One day we say oh you are four you are five there. Wow. Oh yeah. Take manual you to teach those five people. Teach them. Teach them the word of God. The five of you. You don't need…"
+            }
+          },
+          "answer": "In *ICONIC: Celebrating Life and Decades of Kingdom Impact*, someone recalls their father starting a church in the house [10][12].\n\nHere's more on that:\n*   **ICONIC: Celebrating Life and Decades of Kingdom Impact** In this message, an unknown speaker remembers their father, in his 70s, starting a church in the house because he had been winning souls in his neighborhood. This house church became a place where he discipled his converts [10][12].\n*   **40 Dot Immersion** Dad teaches about starting a house church with a \"military mindset.\" He explains that a watch party can become a cell or house church, and that a gathering begins with two or three people [1].\n*   **Wonders of Personal Fellowship** Dad emphasizes that joining an online gathering is joining a physical one, but it's not a permanent arrangement. The goal is to grow to the point where one can start a house church, which involves calling people to join you – even just two or three people [6].\n*   **HCM 2025** Dad discusses evangelism strategies, suggesting that remote work allows believers to travel, settle in a new place, and build relationships in their neighborhood. He envisions forming a gym club or other community activities leading to the start of a house church, similar to how the early church spread [4][18].",
+          "suggestions": [
+            "How to start a house church?",
+            "What is the primary calling of believers?",
+            "Why did the early church sell properties?"
+          ],
+          "ms": 13352,
+          "verdict": "PASS",
+          "checks": {
+            "citationsValid": true,
+            "retrieved": true,
+            "cited": true,
+            "noMisattribution": true,
+            "hasCitations": true
+          },
+          "notes": [
+            "right message at segment #10 of 18"
+          ],
+          "failed": []
+        }
+      ]
+    }
+  ]
+}
