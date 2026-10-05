@@ -10,6 +10,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getDeclarations, planDeclarationSearch, rerankDeclarations } from "@/lib/groq";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { loadLeftOutSafe } from "@/lib/declarations-left-out";
 
 const serviceKey = process.env.SUPABASE_SERVICE_KEY;
 if (!serviceKey) {
@@ -183,6 +184,13 @@ export async function POST(request) {
       );
     }
 
+    // Declarations come from Dad and Mom: guest ministers' and celebration /
+    // panel videos' declarations are excluded from every search below, by id.
+    // (shownIds stays separate: "Show 10 more" and the already-shown lookup
+    // need exactly what the person has seen.)
+    const leftOut = await loadLeftOutSafe();
+    const excludeIds = [...shownIds, ...leftOut.declarationIds];
+
     // The pastoral note depends only on the message, so start it now and let it
     // run alongside the rewrite → embed → search chain instead of after it.
     // "Show 10 more" (shownIds present) never displays a note, so it gets none.
@@ -217,7 +225,7 @@ export async function POST(request) {
       const { data, error } = await supabase.rpc("match_declarations_by_topic", {
         topics,
         match_count: 11,
-        exclude_ids: shownIds.length > 0 ? shownIds : [],
+        exclude_ids: excludeIds,
       });
       if (error) {
         console.error("[declarations] Topic RPC error:", error.message);
@@ -255,11 +263,11 @@ export async function POST(request) {
         const legs = await Promise.all([
           ...lineEmbeddings
             .filter((e) => e !== null)
-            .map((e) => hybridLeg(e, "", shownIds)),
+            .map((e) => hybridLeg(e, "", excludeIds)),
           // Keyword leg on the plan's need-nouns, plus one on the user's own
           // words — catches exact scripture refs/names the lines paraphrase away.
-          plan.keywords.length > 0 ? hybridLeg(null, plan.keywords.join(" or "), shownIds) : Promise.resolve([]),
-          hybridLeg(null, message, shownIds),
+          plan.keywords.length > 0 ? hybridLeg(null, plan.keywords.join(" or "), excludeIds) : Promise.resolve([]),
+          hybridLeg(null, message, excludeIds),
         ]);
 
         candidates = dedupeByText(fuseRanked(legs)).slice(0, 60);
@@ -303,7 +311,7 @@ export async function POST(request) {
             query_embedding: queryEmbedding, // may be null → keyword-only
             query_text: message,
             match_count: 30,
-            exclude_ids: shownIds.length > 0 ? shownIds : [],
+            exclude_ids: excludeIds,
           });
 
           if (error) {
@@ -315,7 +323,7 @@ export async function POST(request) {
                 query_embedding: queryEmbedding,
                 match_threshold: 0.3,
                 match_count: 30,
-                exclude_ids: shownIds.length > 0 ? shownIds : [],
+                exclude_ids: excludeIds,
               });
               if (vecErr) console.error("[declarations] Vector fallback RPC error:", vecErr.message);
               else if (vec && vec.length > 0) declarations = vec;
@@ -363,6 +371,12 @@ export async function POST(request) {
           topic_tags,
           sermons (title)
         `);
+
+      // Guests and celebration videos stay out of the random fallback too
+      // (by sermon: ~30 ids, where the declaration ids would overflow the URL).
+      if (leftOut.sermonIds.length > 0) {
+        query = query.not("sermon_id", "in", `(${leftOut.sermonIds.join(",")})`);
+      }
 
       // Keep the fallback topic-aware: if the topic RPC failed, don't degrade
       // to table-wide random results — stay filtered to what was actually asked for.
@@ -436,11 +450,11 @@ export async function POST(request) {
     // If nothing actually matched what the user shared, don't have the model
     // write a "personal to what they said" reply around unrelated declarations
     // — that's the same fabrication risk /ask and /series-chat already refuse.
-    // Say so plainly and let the (still real, still Rev. Peter's) declarations
+    // Say so plainly and let the (still real, still Heritage of Faith) declarations
     // below stand on their own as general encouragement.
     if (noRelevantMatch) noteAbort.abort();
     const botResponse = noRelevantMatch
-      ? "Nothing in Rev. Peter's messages speaks directly to that. Here are some general declarations to stand on in the meantime."
+      ? "Nothing in our messages speaks directly to that. Here are some general declarations to stand on in the meantime."
       : await replyPromise;
 
     return NextResponse.json({

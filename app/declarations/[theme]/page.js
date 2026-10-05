@@ -133,7 +133,7 @@ export default function ThemePage() {
                 <h1 className="font-display text-3xl font-semibold tracking-tight text-brand-ink sm:text-4xl">{theme.name}</h1>
                 <p className="mt-3 text-lg text-brand-gray">
                   {theme.sub}
-                  {count != null && ` · ${count.toLocaleString()} declarations from Rev. Peter’s messages`}
+                  {count != null && ` · ${count.toLocaleString()} declarations from Heritage of Faith messages`}
                 </p>
               </header>
               <ThemeChips active={theme.slug} className="mt-8" />

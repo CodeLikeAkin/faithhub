@@ -32,7 +32,7 @@ import { cn } from "@/lib/utils";
 import { DotGrid, Eyebrow, QuoteGlyph, Rings } from "@/components/Decor";
 
 /**
- * Declarations — a library of Rev. Peter's declarations to speak.
+ * Declarations — a library of declarations from Heritage of Faith messages to speak.
  *
  *   /declarations                     "What are you facing?" + today's declaration (navy
  *                                     masthead), theme chips led by today's theme with
@@ -228,7 +228,7 @@ export default function DeclarationsPage() {
                 Speak <em>Life</em>
               </>
             }
-            description="Say it plainly. You’ll get declarations from Rev. Peter’s messages that speak to it, and a short word for you."
+            description="Say it plainly. You’ll get declarations from Heritage of Faith messages that speak to it, and a short word for you."
             aside={
               today !== null && (
                 <section
