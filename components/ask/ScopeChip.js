@@ -19,7 +19,7 @@ export function scopeName(scope, relative) {
 }
 
 function scopeDetail(scope) {
-  if (!scope || scope.type === "all") return "Every message Rev. Peter has taught";
+  if (!scope || scope.type === "all") return "Every message Rev. Peter and Pastor Funlola have taught";
   return displayTitle(scope.label);
 }
 

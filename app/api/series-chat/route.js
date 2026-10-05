@@ -227,10 +227,18 @@ export async function POST(req) {
         .sort((a, b) => a.part_number - b.part_number)
         .map((ss) => ss.sermons);
 
+      // Answers come from Dad and Mom: a guest minister's parts and the
+      // celebration/panel videos are skipped, unless that would skip the whole
+      // series (Fully Persuaded is all Pastor Eluwa's, so it answers from him).
+      // Part numbers stay as the series page shows them.
+      const numbered = sortedSermons.map((s, i) => ({ s, n: i + 1 }));
+      const own = numbered.filter(({ s }) => !detectSpeaker(s.title).isGuest && !isMultiVoice(s.title));
+      const used = own.length ? own : numbered;
+
       scopeTitle = series.title;
-      sermonIds = sortedSermons.map((s) => s?.id).filter(Boolean);
+      sermonIds = used.map(({ s }) => s?.id).filter(Boolean);
       overviewText = `SERMON SERIES: ${series.title}
-Parts: ${sortedSermons.map((s, i) => `Part ${i + 1} — ${s.title}`).join(', ')}`;
+Parts: ${used.map(({ s, n }) => `Part ${n} — ${s.title}`).join(', ')}`;
     }
 
     // 2. Embed user question

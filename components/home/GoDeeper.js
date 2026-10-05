@@ -96,7 +96,7 @@ export default function GoDeeper({ startIndex = 0 }) {
           href={`/ask?q=${encodeURIComponent(STARTER_QUESTIONS[0])}`}
           icon={Sparkles}
           title="Ask the Word"
-          desc="Any question, answered from Rev. Peter’s own words, with the moments to watch."
+          desc="Any question, answered from Rev. Peter’s and Pastor Funlola’s own words, with the moments to watch."
           foot={<span className="truncate italic">&ldquo;{STARTER_QUESTIONS[0]}&rdquo;</span>}
         />
         <Tool

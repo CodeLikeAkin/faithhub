@@ -13,7 +13,7 @@ import { STEWARD_HOLD_BACK, proseName, stewardLingoSection, stripFormalNames, vo
 import { planAskSearch } from '@/lib/groq';
 import { cleanTitle } from '@/lib/titles';
 import { detectSpeaker, isMultiVoice } from '@/lib/speakers';
-import { buildCatalog, matchPreacher, matchTitles } from '@/lib/ask-scope';
+import { buildCatalog, excludedFromDefault, guestNames, matchPreacher, matchTitles, namesDefaultSpeaker } from '@/lib/ask-scope';
 import { rateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -159,6 +159,7 @@ function cleanHistory(raw) {
  *   previous — a follow-up about the messages the last answer came from
  *   message  — a message / series / event named by title
  *   preacher — a minister other than Rev. Peter named
+ *   unknown-guest — a name was given that matches no one we have
  * Returns { kind, label, ids, sermons } or null for a whole-library search.
  */
 async function resolveScope(plan, history, question) {
@@ -199,7 +200,15 @@ async function resolveScope(plan, history, question) {
     const both = preacher ? titled.filter((s) => preacher.ids.includes(s.id)) : [];
     return { kind: 'message', label: plan.message || question, preacher: preacher?.name || null, sermons: both.length ? both : titled };
   }
-  if (preacher) return { kind: 'preacher', label: preacher.name, preacher: preacher.name, sermons: pick(preacher.ids) };
+  if (preacher) {
+    const sermons = pick(preacher.ids);
+    return { kind: 'preacher', label: preacher.name, preacher: preacher.name, guest: sermons.every((s) => s.guest), sermons };
+  }
+  // A name that isn't Dad and matches nobody is a guest we don't have. Say so
+  // rather than quietly answering from Dad and Mom as if they'd been asked for.
+  if (plan.preacher && !namesDefaultSpeaker(plan.preacher)) {
+    return { kind: 'unknown-guest', label: plan.preacher, guests: guestNames(catalog), sermons: [] };
+  }
   return null;
 }
 
@@ -457,6 +466,14 @@ export async function POST(req) {
     // 1b. Did they name a preacher, a message, or "that message"? The search
     //     can't see names or titles, so narrow it to those messages instead.
     const scope = await resolveScope(plan, history, message);
+    if (scope?.kind === 'unknown-guest') {
+      const list = scope.guests.length ? ` The guest ministers I have are ${scope.guests.join(', ')}.` : '';
+      console.log(`[ask] Named preacher "${scope.label}" matches no guest; telling the user.`);
+      return plainStreamResponse(
+        `I couldn't find a guest minister named "${scope.label}" in these messages.${list} Ask for one of them by name, or find the guest speakers on the Series page.`,
+        debugHeaders({ planned: !!plan, search: plan?.search, mode: plan?.mode, scope: { kind: scope.kind, label: scope.label }, pool: 0, segments: 0 })
+      );
+    }
     const scopeIds = scope ? scope.sermons.map((s) => s.id) : null;
 
     // 2. Embed it (keyword-only fallback if the embed service is down)
@@ -479,6 +496,16 @@ export async function POST(req) {
     let candidatePool = null;
     let weakGrounding = false;
     let scopeMissed = false;
+
+    // Unless the question names someone, answers come from Dad and Mom only:
+    // guest ministers and celebration / panel videos are left out (a failed
+    // catalog load leaves nothing excluded, as before).
+    let leftOut = new Set();
+    try {
+      leftOut = excludedFromDefault(await loadCatalog());
+    } catch {
+      /* resolveScope already logged it */
+    }
 
     for (const filterIds of scopeIds ? [scopeIds, null] : [null]) {
       if (filterIds === null && scopeIds) {
@@ -553,6 +580,7 @@ export async function POST(req) {
         // subject to be similar to. The floor only guards whole-library search.
         const grounded = candidatePool.filter((r) => {
           if (filterIds) return true;
+          if (leftOut.has(r.sermon_id)) return false;
           if (r.vec_similarity === undefined) return true; // vector-only fallback, already thresholded
           return r.vec_similarity === 0 || r.vec_similarity >= MIN_VEC_SIMILARITY;
         });
@@ -602,11 +630,11 @@ export async function POST(req) {
       // stays a normal streamed "done" response.
       if (embedFailed) {
         return serviceErrorResponse(
-          "I'm having trouble reaching the study service right now, so I can't search Rev. Peter's messages for this yet. Please try again in a moment."
+          "I'm having trouble reaching the study service right now, so I can't search the messages for this yet. Please try again in a moment."
         );
       }
       return plainStreamResponse(
-        "I couldn't find where Rev. Peter teaches on that across the messages I have indexed. Try rephrasing, or ask about a related idea — faith, prayer, righteousness, the Holy Spirit, giving, and more are all covered deeply.",
+        "I couldn't find where Dad or Mom teach on that across the messages I have indexed. Try rephrasing, or ask about a related idea — faith, prayer, righteousness, the Holy Spirit, giving, and more are all covered deeply.",
         debugHeaders({ planned: !!plan, search: searchText, mode, scope: scope ? { kind: scope.kind, label: scope.label, missed: scopeMissed } : null, pool: candidatePool?.length ?? 0, segments: 0 })
       );
     }
@@ -814,6 +842,8 @@ ${scopeList}
   : `- This question is about ${scopeWhat}. The search was limited to these messages, and every segment below comes from them:
 ${scopeList}${scope.kind === 'preacher' || scope.preacher
   ? `\n- Answer about ${scopeWho}'s teaching and name them as the speaker. This is not Dad.`
+  : ''}${scope.guest
+  ? `\n- ${scopeWho} is a guest minister. Answer from their segments only. Make ONE of the three SUGGESTIONS a new question that asks what Dad teaches on the same subject (it is the one suggestion that need not come from these segments).`
   : ''}`}
 `;
 
@@ -876,7 +906,7 @@ ${mode === 'locate' ? LOCATE_SHAPE : TEACHING_SHAPE}
 FOLLOW-UP SUGGESTIONS — STRICT
 ═══════════════════════════════════════
 - End with EXACTLY: SUGGESTIONS:["Suggestion one","Suggestion two","Suggestion three"]
-- Each suggestion MUST be answerable from the segments you were given — specific, not generic.
+- Each suggestion MUST be answerable from the segments you were given — specific, not generic (apart from the one a guest-minister section above asks for).
 - Each suggestion is a short tappable phrase or simple question, 4-8 words, ONE idea only — never a compound sentence, never multiple clauses joined by "and"/"or". These are tap targets, not essay prompts.${stewardLingoSection('answer')}${voicePromptSection()}`;
 
     const scriptureSection = scriptureBlock

@@ -38,7 +38,7 @@ export default function AskEmptyState({ onAsk, busy, studies, inputRef, onDelete
             Ask the <em>Word</em>
           </>
         }
-        description="Ask anything Rev. Peter has taught. Every answer comes from his recorded messages, with the moments to watch."
+        description="Ask anything Rev. Peter and Pastor Funlola have taught. Every answer comes from their recorded messages, with the moments to watch. To hear a guest minister, ask for them by name."
       >
         <div className="mt-7 max-w-3xl text-left">
           <Composer

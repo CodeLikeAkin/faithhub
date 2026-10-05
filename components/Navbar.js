@@ -197,8 +197,8 @@ export default function Navbar() {
               ref={searchInputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Ask anything Rev. Peter has taught…"
-              aria-label="Ask anything Rev. Peter has taught"
+              placeholder="Ask anything the pastors have taught…"
+              aria-label="Ask anything the pastors have taught"
               maxLength={500}
               enterKeyHint="search"
               className="min-w-0 flex-1 bg-transparent py-2.5 text-base text-brand-ink placeholder:text-brand-gray/80 focus:outline-none"

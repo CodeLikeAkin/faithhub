@@ -309,7 +309,7 @@ function AskView() {
             scope={scope}
             onScopeChange={(s) => setScopeType(s.type)}
             placeholder="Ask a follow-up…"
-            hint="Answers come only from Rev. Peter’s recorded messages — every claim is cited."
+            hint="Answers come from Rev. Peter’s and Pastor Funlola’s messages. For a guest minister, ask by name. Every claim is cited."
             inputRef={inputRef}
           />
         </>
