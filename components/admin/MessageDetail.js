@@ -26,7 +26,7 @@ import { StatusBadge } from "@/components/admin/ui";
 import { Btn, Chip, ConfirmBtn, Field, Input, Notice } from "@/components/admin/controls";
 import { adminFetch } from "@/lib/admin-client";
 import { fmtDate, timeAgo } from "@/lib/admin-format";
-import { isDeadVideo, preachedOn, speakerOf, splitTitle } from "@/lib/admin-titles";
+import { askStatus, isDeadVideo, preachedOn, speakerOf, splitTitle } from "@/lib/admin-titles";
 import { cn } from "@/lib/utils";
 
 const nf = new Intl.NumberFormat("en-GB");
@@ -112,6 +112,7 @@ function TitleEditor({ m, onSaved }) {
 // ─── Publish ───────────────────────────────────────────────────────────────
 
 function PublishCard({ m, missing, onChange }) {
+  const ask = askStatus(m.title);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(null);
 
@@ -144,6 +145,16 @@ function PublishCard({ m, missing, onChange }) {
             Visitors won&apos;t see it on the home page or in {m.series.length ? "its series" : "the series pages"} until you
             publish it. It can already turn up in Ask the Word, Declarations and The Word.
           </p>
+          {ask && (
+            <p className="rounded-xl bg-white/10 px-3 py-2 text-sm leading-relaxed text-white">
+              <span className="font-semibold">{ask.text}.</span>{" "}
+              {ask.kind === "unnamed"
+                ? "Ask the Word counts this as one of Dad's messages. If someone else preached it, add their name to the title first."
+                : ask.kind === "panel"
+                  ? "Ask the Word, Declarations and series answers leave out celebration and panel videos. If this is a normal message, fix the title first."
+                  : "Ask the Word, Declarations and series answers skip it unless a question names the guest. If that's wrong, fix the title first."}
+            </p>
+          )}
           <p className="text-sm text-white">
             {missing.length ? (
               <>
@@ -409,6 +420,7 @@ export default function MessageDetail({ message }) {
   }
 
   const speaker = speakerOf(m.title);
+  const ask = askStatus(m.title);
   const preached = preachedOn(m);
   const video = VIDEO[m.video_status] || { tone: "neutral", text: "Video not checked yet" };
 
@@ -461,6 +473,7 @@ export default function MessageDetail({ message }) {
           </dl>
           <div className="flex flex-wrap items-center gap-2">
             {m.published ? <Chip tone="good">Published</Chip> : <Chip tone="warn">Waiting to publish</Chip>}
+            {ask && <Chip tone={ask.kind === "unnamed" ? "outline" : "warn"}>{ask.text}</Chip>}
             <span className="inline-flex items-center gap-1.5 text-sm text-slate-600">
               <StatusBadge tone={video.tone} className="h-4 w-4 [&_svg]:h-2.5 [&_svg]:w-2.5" />
               {video.text}

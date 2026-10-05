@@ -6,7 +6,7 @@ import { BookOpen, Captions, ChevronRight, Eye, EyeOff, FileText, Flame, Languag
 import YtThumb from "@/components/YtThumb";
 import { Btn, Chip, ConfirmBtn, Input, Notice, Select } from "@/components/admin/controls";
 import { adminFetch } from "@/lib/admin-client";
-import { isDeadVideo, preachedOn, speakerOf, splitTitle } from "@/lib/admin-titles";
+import { askStatus, isDeadVideo, preachedOn, speakerOf, splitTitle } from "@/lib/admin-titles";
 import { cn } from "@/lib/utils";
 
 const PAGE = 40;
@@ -125,6 +125,10 @@ function Row({ m, checked, onToggle }) {
   const { title, context } = splitTitle(m.title);
   const meta = [speakerOf(m.title), preachedOn(m)].filter(Boolean).join(", ");
   const job = JOB[m.job_status];
+  // Guests and celebration videos are kept out of Ask the Word and Declarations;
+  // an unnamed title (counted as Dad) is only worth a look before it goes live.
+  const ask = askStatus(m.title);
+  const askChip = ask && (ask.kind !== "unnamed" || !m.published) ? ask : null;
   return (
     <li className="grid grid-cols-[auto_88px_minmax(0,1fr)] items-start gap-x-4 gap-y-3 px-4 py-4 transition-colors hover:bg-brand-sky/40 sm:grid-cols-[auto_128px_minmax(0,1fr)] sm:px-6 xl:grid-cols-[auto_128px_minmax(0,1fr)_auto] xl:items-center xl:gap-x-6">
       <input
@@ -156,6 +160,7 @@ function Row({ m, checked, onToggle }) {
             <Chip tone="outline">Not in a series</Chip>
           )}
           {!m.published && <Chip tone="warn">Waiting to publish</Chip>}
+          {askChip && <Chip tone={askChip.kind === "unnamed" ? "outline" : "warn"}>{askChip.text}</Chip>}
           {isDeadVideo(m.video_status) && <Chip tone="bad">Video won&apos;t play</Chip>}
           {job && <Chip tone={job.tone}>{job.text}</Chip>}
         </div>
