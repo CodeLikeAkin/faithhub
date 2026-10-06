@@ -109,7 +109,7 @@ export default function Composer({
       maxLength={maxLength}
       enterKeyHint="send"
       className={cn(
-        "min-w-0 flex-1 resize-none bg-transparent text-brand-ink placeholder:text-brand-gray/70 focus:outline-none",
+        "min-w-0 flex-1 resize-none bg-transparent text-brand-ink placeholder:text-brand-gray focus:outline-none",
         hero
           ? "block w-full px-2 py-1.5 text-lg leading-relaxed sm:text-xl max-h-[200px]"
           : "py-2 text-base leading-relaxed max-h-[120px]",

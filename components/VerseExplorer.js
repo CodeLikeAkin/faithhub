@@ -171,7 +171,7 @@ export default function VerseExplorer({ sermonId, scriptures: preloaded, embedde
           <p className="mt-2 text-base leading-relaxed text-brand-ink">
             {vt.verses.map((v) => (
               <span key={v.number}>
-                <sup className="text-brand-navy/50 font-bold mr-1">{v.number}</sup>
+                <sup className="text-brand-navy/70 font-bold mr-1">{v.number}</sup>
                 {v.text}{" "}
               </span>
             ))}

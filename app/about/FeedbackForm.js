@@ -228,7 +228,7 @@ export default function FeedbackForm() {
   }
 
   const inputClasses =
-    "w-full rounded-xl border border-brand-navy/15 bg-white px-4 py-3 text-base text-brand-ink placeholder:text-brand-gray/70 transition-colors focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/20";
+    "w-full rounded-xl border border-brand-navy/15 bg-white px-4 py-3 text-base text-brand-ink placeholder:text-brand-gray transition-colors focus:border-brand-navy focus:outline-none focus:ring-2 focus:ring-brand-navy/20";
 
   const full = shots.length >= MAX_SHOTS;
 

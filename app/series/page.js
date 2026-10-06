@@ -436,7 +436,7 @@ export default function SeriesBrowsePage() {
               // Room on the right only while the clear button shows — the
               // placeholder needs every pixel on a phone.
               className={cn(
-                "h-12 w-full rounded-full border border-white bg-white pl-11 text-base text-brand-ink shadow-[0_18px_40px_-20px_rgba(0,0,0,0.6)] placeholder:text-brand-gray/80 focus:outline-none focus:ring-4 focus:ring-white/25 [&::-webkit-search-cancel-button]:hidden",
+                "h-12 w-full rounded-full border border-white bg-white pl-11 text-base text-brand-ink shadow-[0_18px_40px_-20px_rgba(0,0,0,0.6)] placeholder:text-brand-gray focus:outline-none focus:ring-4 focus:ring-white/25 [&::-webkit-search-cancel-button]:hidden",
                 query ? "pr-11" : "pr-4"
               )}
             />
@@ -604,7 +604,7 @@ export default function SeriesBrowsePage() {
                                   href={`/sermon/${p.id}`}
                                   className="flex items-center gap-3 py-1.5 transition-colors hover:text-brand-navy"
                                 >
-                                  <span className="w-5 flex-shrink-0 text-xs font-bold tabular-nums text-brand-navy/50">{p.n}</span>
+                                  <span className="w-5 flex-shrink-0 text-xs font-bold tabular-nums text-brand-navy/70">{p.n}</span>
                                   <span className="min-w-0 text-sm leading-snug text-brand-ink min-[1120px]:truncate">{p.title}</span>
                                 </Link>
                               </li>

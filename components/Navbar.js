@@ -201,7 +201,7 @@ export default function Navbar() {
               aria-label="Ask anything the pastors have taught"
               maxLength={500}
               enterKeyHint="search"
-              className="min-w-0 flex-1 bg-transparent py-2.5 text-base text-brand-ink placeholder:text-brand-gray/80 focus:outline-none"
+              className="min-w-0 flex-1 bg-transparent py-2.5 text-base text-brand-ink placeholder:text-brand-gray focus:outline-none"
             />
             <button
               type="submit"

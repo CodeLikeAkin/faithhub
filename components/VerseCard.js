@@ -125,7 +125,7 @@ export default function VerseCard({
         <blockquote className="mt-2 font-display text-base leading-relaxed text-brand-ink">
           {shown.map((v) => (
             <span key={v.number}>
-              <sup className="mr-1 font-sans text-xs font-bold text-brand-navy/50">{v.number}</sup>
+              <sup className="mr-1 font-sans text-xs font-bold text-brand-navy/70">{v.number}</sup>
               {v.text}{" "}
             </span>
           ))}
