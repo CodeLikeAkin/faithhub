@@ -20,7 +20,7 @@ const PIECES = [
 ];
 
 function PiecePips({ p }) {
-  if (!p) return <span className="text-xs text-slate-400">Pieces not known</span>;
+  if (!p) return <span className="text-xs text-slate-500">Pieces not known</span>;
   return (
     <ul className="flex gap-1">
       {PIECES.map(({ key, label, icon: Icon }) => {

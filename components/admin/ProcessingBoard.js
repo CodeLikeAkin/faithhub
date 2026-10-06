@@ -181,7 +181,7 @@ function JobRow({ job, events, now, onAction, busyId }) {
                         e.level === "info" && "text-slate-700"
                       )}
                     >
-                      <time className="flex-shrink-0 tabular-nums text-slate-400" dateTime={e.at}>
+                      <time className="flex-shrink-0 tabular-nums text-slate-500" dateTime={e.at}>
                         {new Date(e.at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Lagos" })}
                       </time>
                       <span className="min-w-0 break-words">{e.message}</span>

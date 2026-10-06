@@ -99,7 +99,7 @@ function TitleEditor({ m, onSaved }) {
     <div>
       <h1 className="font-display text-3xl font-medium leading-tight tracking-tight text-brand-ink sm:text-4xl">{title}</h1>
       {context && <p className="mt-1 text-lg text-slate-500">{context}</p>}
-      <p className="mt-2 break-words text-xs text-slate-400" title="The full stored title">
+      <p className="mt-2 break-words text-xs text-slate-500" title="The full stored title">
         {m.title}
       </p>
       <Btn variant="ghost" size="sm" icon={Pencil} className="-ml-3 mt-1" onClick={() => setEditing(true)}>

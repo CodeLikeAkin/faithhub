@@ -33,7 +33,7 @@ export default function MonthlyChart({ months }) {
           {ticks.map((t) => (
             <span
               key={t}
-              className="absolute right-0 translate-y-1/2 text-xs tabular-nums text-slate-400"
+              className="absolute right-0 translate-y-1/2 text-xs tabular-nums text-slate-500"
               style={{ bottom: `${(t / top) * 100}%` }}
             >
               {t}
