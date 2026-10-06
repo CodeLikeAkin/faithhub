@@ -45,7 +45,7 @@ export default function TodayCard({ className, style }) {
         <Rings className="absolute -right-28 top-1/2 h-[28rem] w-[28rem] -translate-y-1/2 text-white/[0.08]" />
         <QuoteGlyph className="absolute -right-3 top-6 h-20 w-28 text-white/[0.035] sm:h-24 sm:w-32" />
       </div>
-      <Eyebrow tone="dark" className="relative">Today&rsquo;s declaration</Eyebrow>
+      <Eyebrow tone="dark" className="relative self-start text-left">Today&rsquo;s declaration</Eyebrow>
       {decl === undefined ? (
         <div aria-hidden="true" className="relative my-auto space-y-3">
           <div className="h-6 w-4/5 rounded-full fh-skeleton-dark" />
