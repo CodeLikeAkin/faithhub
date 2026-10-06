@@ -447,7 +447,7 @@ function Component({ index, icon: Icon, title, children }) {
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-navy text-white shadow-lg shadow-brand-navy/20">
             <Icon className="h-5 w-5" aria-hidden="true" />
           </span>
-          <span aria-hidden="true" className="font-display text-3xl leading-none text-brand-mist">
+          <span aria-hidden="true" className="font-display text-3xl leading-none text-brand-navy/60">
             {index}
           </span>
         </div>

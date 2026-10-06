@@ -67,7 +67,10 @@ export default function AskEmptyState({ onAsk, busy, studies, inputRef, onDelete
               key={t.title}
               className="relative flex flex-col rounded-[1.75rem] border border-brand-navy/10 bg-white p-5 shadow-card"
             >
-              <span aria-hidden="true" className="absolute right-5 top-4 font-display text-3xl leading-none text-brand-mist">
+              {/* navy/60 (#7489A4), not brand-mist: mist is 1.43:1 on a white
+                  card, under the 3:1 AA floor for large text. See the same
+                  numerals in home/GoDeeper, word/WordLanding and VisionContent. */}
+              <span aria-hidden="true" className="absolute right-5 top-4 font-display text-3xl leading-none text-brand-navy/60">
                 {String(i + 1).padStart(2, "0")}
               </span>
               <h3 className="pr-10 font-display text-xl font-medium leading-tight text-brand-ink">{t.title}</h3>

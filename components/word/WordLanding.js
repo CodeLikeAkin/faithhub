@@ -164,7 +164,7 @@ export default function WordLanding({ stats }) {
                     href={`/word/${b.slug}`}
                     className="group flex items-center gap-4 rounded-2xl border border-brand-navy/10 bg-white p-4 shadow-subtle transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-brand-navy/25 hover:shadow-lift active:scale-[0.99]"
                   >
-                    <span className="w-8 text-right font-display text-2xl leading-none tabular-nums text-brand-mist">
+                    <span className="w-8 text-right font-display text-2xl leading-none tabular-nums text-brand-navy/60">
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <span className="min-w-0 flex-1">

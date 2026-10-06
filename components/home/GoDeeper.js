@@ -45,7 +45,7 @@ function Tool({ href, index, icon: Icon, title, desc, foot, style }) {
         <span className="grid h-11 w-11 place-items-center rounded-2xl bg-brand-navy text-white shadow-lg shadow-brand-navy/20">
           <Icon size={19} aria-hidden="true" />
         </span>
-        <span aria-hidden="true" className="font-display text-3xl leading-none text-brand-mist">
+        <span aria-hidden="true" className="font-display text-3xl leading-none text-brand-navy/60">
           {index}
         </span>
       </span>
