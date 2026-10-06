@@ -334,11 +334,23 @@ export default function LessonPage({ sermonId }) {
             </div>
 
             <div className="px-4 sm:px-0">
-              {/* Title and byline only: the series name is already the page's
-                  own title in the bar above, and where you are in it is the
-                  job of the parts navigator at the foot of the page. */}
               <header className="mt-6 sm:mt-8">
-                <h1 className="font-display text-2xl font-medium leading-[1.1] tracking-tight text-brand-ink text-pretty sm:text-3xl">
+                {/* Set as the Vision eyebrow (rule + caps); the series name is
+                    still the way back to the course. */}
+                {series && (
+                  <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-bold uppercase tracking-[0.2em] text-brand-navy">
+                    <span aria-hidden="true" className="h-px w-8 bg-brand-navy/40" />
+                    <Link href={`/series/${series.id}`} className="hover:underline">
+                      {seriesName(series.title)}
+                    </Link>
+                    {part.part_number && header.named && (
+                      <span className="text-brand-gray">
+                        Part {part.part_number} of {parts.length}
+                      </span>
+                    )}
+                  </p>
+                )}
+                <h1 className="mt-3 font-display text-2xl font-medium leading-[1.1] tracking-tight text-brand-ink text-pretty sm:text-3xl">
                   {header.named || !series || !part.part_number ? header.name : `Part ${part.part_number}`}
                 </h1>
                 {byline && <p className="mt-2 text-sm text-brand-gray sm:mt-3">{byline}</p>}

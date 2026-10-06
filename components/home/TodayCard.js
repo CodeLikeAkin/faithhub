@@ -47,14 +47,16 @@ export default function TodayCard({ className, style }) {
       </div>
       <Eyebrow tone="dark" className="relative">Today&rsquo;s declaration</Eyebrow>
       {decl === undefined ? (
-        <div aria-hidden="true" className="relative mt-auto space-y-3">
+        <div aria-hidden="true" className="relative my-auto space-y-3">
           <div className="h-6 w-4/5 rounded-full fh-skeleton-dark" />
           <div className="h-6 w-3/5 rounded-full fh-skeleton-dark" />
         </div>
       ) : (
-        <div className="relative mt-auto w-full">
-          {/* Centered, so the quote mark sits inside the measure rather than
-              hanging into the padding: no text-indent here. */}
+        <div className="relative my-auto w-full">
+          {/* my-auto above, not mt-auto: the card stretches to its grid row,
+              and the slack has to split above and below the declaration or it
+              all piles up under the eyebrow. Centered, so the quote mark sits
+              inside the measure rather than hanging: no text-indent here. */}
           <blockquote className="mx-auto max-w-[30ch] font-display text-xl font-medium leading-snug tracking-tight text-balance sm:text-2xl">
             &ldquo;{decl.declaration_text.trim()}&rdquo;
           </blockquote>
