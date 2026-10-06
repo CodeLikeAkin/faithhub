@@ -231,7 +231,7 @@ export default async function AboutPage() {
   ];
 
   return (
-    <ToolShell kind="about" title="About & feedback">
+    <ToolShell kind="about" title="About & feedback" titleAs="p">
     <div className="min-h-0 flex-1 overflow-y-auto overflow-x-clip bg-white custom-scrollbar">
       {/* ── hero ── */}
       <section className="px-4 pt-3 sm:px-5 sm:pt-5">

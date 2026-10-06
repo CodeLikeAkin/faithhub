@@ -13,8 +13,11 @@ import { DotGrid } from "@/components/Decor";
  * pick up, the newest messages, the four tools, and the vision.
  */
 export default function Home() {
+  // `titleAs="p"` because HomeHero already carries the page's <h1>, the same
+  // way /ask, /series, /word and the lesson pages do. Left at the default the
+  // masthead emitted a second <h1> ("Home"), ahead of the real one in DOM order.
   return (
-    <ToolShell kind="home" title="Home">
+    <ToolShell kind="home" title="Home" titleAs="p">
       <div className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
         {/* The Vision page's backdrop: a sky wash under the middle of the
             page and dot grids pinned to opposite edges, fading inward. */}

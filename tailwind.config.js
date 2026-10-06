@@ -86,7 +86,13 @@ module.exports = {
           sky: "#EAF2FB",   /* light blue tint surface */
           mist: "#C6DAEE",  /* deeper tint for gradients */
           green: "#489E3E", /* secondary — rare accents only */
-          gray: "#7A7A7A",  /* body text */
+          /* body text — darkened from the brand's #7A7A7A, which measured
+             4.29:1 on white and 4.07:1 on `light` below, under WCAG AA's
+             4.5:1 for normal text (axe flagged 25 nodes across five pages).
+             #717171 is the nearest neutral that clears AA on both surfaces
+             (4.88 and 4.63) and is the floor for this token — anything
+             lighter fails on `light`. */
+          gray: "#717171",  /* body text */
           light: "#F8F9FA",
         },
       },

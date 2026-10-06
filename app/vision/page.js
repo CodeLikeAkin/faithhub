@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function VisionPage() {
   return (
-    <ToolShell kind="vision" title="Vision">
+    <ToolShell kind="vision" title="Vision" titleAs="p">
       <VisionContent />
     </ToolShell>
   );
