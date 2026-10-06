@@ -142,27 +142,26 @@ export default function AnswerBlock({
   };
 
   const long = block.question.length > 110;
-  const headingSize = page
-    ? long
-      ? "text-xl"
-      : "text-2xl"
-    : long
-    ? "text-base"
-    : "text-lg";
+  const headingSize = page ? (long ? "text-base sm:text-lg" : "text-lg sm:text-xl") : long ? "text-sm" : "text-base";
+  // People type fast and lowercase; show the question as a sentence.
+  const question = (block.question.charAt(0).toUpperCase() + block.question.slice(1)).replace(/\bi\b(?=['’\s]|$)/g, "I");
 
   return (
     <article id={`q-${block.id}`} data-block={block.id} className="scroll-mt-4">
-      <header>
+      {/* The question is a label over the answer, not a title: quiet sans,
+          an eyebrow and a hairline, so the answer stays the thing you read. */}
+      <header className={cn("border-b border-brand-navy/10", page ? "pb-5" : "pb-4")}>
+        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-gray">Question</p>
         <h2
           title={block.question.length > 280 ? block.question : undefined}
           className={cn(
-            "font-display font-medium leading-[1.12] tracking-tight text-brand-ink text-balance",
+            "mt-1.5 max-w-3xl font-semibold leading-snug text-brand-ink text-pretty",
             headingSize,
             // A pasted essay shouldn't become a page-long heading.
             block.question.length > 280 && "line-clamp-4"
           )}
         >
-          {block.question}
+          {question}
         </h2>
       </header>
 
@@ -179,7 +178,7 @@ export default function AnswerBlock({
       {!isError && !refused && block.status !== "searching" && (
         <div
           className={cn(
-            page ? "mt-9 xl:grid xl:grid-cols-[minmax(0,1fr)_17rem] xl:gap-12" : "mt-7"
+            page ? "mt-7 xl:grid xl:grid-cols-[minmax(0,1fr)_17rem] xl:gap-12" : "mt-7"
           )}
         >
           <div className="min-w-0">

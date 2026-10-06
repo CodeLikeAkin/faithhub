@@ -95,7 +95,7 @@ const StudyDocument = forwardRef(function StudyDocument(
       className={cn("relative min-h-0 flex-1 overflow-y-auto custom-scrollbar", className)}
       style={{ overflowAnchor: "none" }}
     >
-      <div className={page ? "mx-auto w-full max-w-5xl px-4 pb-12 pt-8 sm:px-8 sm:pt-12" : "px-5 pb-10 pt-6"}>
+      <div className={page ? "mx-auto w-full max-w-5xl px-4 pb-12 pt-6 sm:px-8 sm:pt-8" : "px-5 pb-10 pt-6"}>
         {blocks.map((b, i) => (
           <div
             key={b.id}
