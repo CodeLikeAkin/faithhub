@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, ChevronLeft, ChevronRight, Play } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, LayoutGrid, List, Play } from "lucide-react";
 import { fmtTime } from "@/lib/ask-format";
 import { cleanTitle } from "@/lib/titles";
 import { cn } from "@/lib/utils";
@@ -112,22 +112,23 @@ function ViewToggle({ value, onChange }) {
       className="inline-flex flex-shrink-0 rounded-full border border-brand-navy/15 bg-white p-0.5"
     >
       {[
-        ["cards", "Cards", "Thumbnails you swipe through"],
-        ["list", "List", "Every moment on one line"],
-      ].map(([mode, label, hint]) => (
+        ["cards", LayoutGrid, "Cards", "Thumbnails you swipe through"],
+        ["list", List, "List", "Every moment on one line"],
+      ].map(([mode, Icon, label, hint]) => (
         <button
           key={mode}
           type="button"
           role="radio"
           aria-checked={value === mode}
+          aria-label={label}
           title={hint}
           onClick={() => onChange(mode)}
           className={cn(
-            "relative rounded-full px-2.5 py-1 text-xs font-bold transition-colors before:absolute before:-inset-2 before:content-['']",
+            "relative grid h-7 w-7 place-items-center rounded-full transition-colors before:absolute before:-inset-2 before:content-['']",
             value === mode ? "bg-brand-navy text-white" : "text-brand-gray hover:text-brand-navy"
           )}
         >
-          {label}
+          <Icon size={14} aria-hidden="true" />
         </button>
       ))}
     </span>
