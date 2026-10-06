@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Bookmark } from "lucide-react";
 import { fetchTodaysDeclaration, toggleSaved, useSavedDeclarations } from "@/lib/declarations";
 import { cleanTitle } from "@/lib/titles";
 import { cn } from "@/lib/utils";
-import { DotGrid, Eyebrow, QuoteGlyph, Rings } from "@/components/Decor";
+import { Eyebrow } from "@/components/Decor";
 
 /**
  * Today's declaration, to read and keep. Speaking it — the word-by-word pace
@@ -33,18 +34,27 @@ export default function TodayCard({ className, style }) {
     <article
       style={style}
       className={cn(
-        "relative flex min-h-[16rem] flex-col items-center gap-4 overflow-hidden rounded-[1.75rem] bg-brand-deep p-6 text-center text-white shadow-card sm:p-8",
+        "relative isolate flex min-h-[18rem] flex-col items-center gap-4 overflow-hidden rounded-[1.75rem] bg-black text-center text-white shadow-card px-9 pb-9 pt-12 sm:p-8",
         className
       )}
     >
-      {/* The Vision page's dark panel: two glows, a fading dot grid, rings. */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-        <div className="absolute -right-32 -top-32 h-[24rem] w-[24rem] rounded-full bg-brand-navy blur-3xl" />
-        <div className="absolute -bottom-40 -left-24 h-[20rem] w-[20rem] rounded-full bg-brand-mist/[0.12] blur-3xl" />
-        <DotGrid dark className="inset-0 [mask-image:radial-gradient(ellipse_at_top_right,black,transparent_55%)]" />
-        <Rings className="absolute -right-28 top-1/2 h-[28rem] w-[28rem] -translate-y-1/2 text-white/[0.08]" />
-        <QuoteGlyph className="absolute -right-3 top-6 h-20 w-28 text-white/[0.035] sm:h-24 sm:w-32" />
-      </div>
+      {/* Two crops of the same art: the wide strip fits the card from sm up,
+          the squarer one keeps the red frame showing on a phone. Only the
+          visible one loads (display:none images stay lazy). */}
+      <Image
+        src="/declaration-bg-card.webp"
+        alt=""
+        fill
+        sizes="100vw"
+        className="-z-10 bg-black object-fill sm:hidden"
+      />
+      <Image
+        src="/declaration-bg-wide.webp"
+        alt=""
+        fill
+        sizes="(min-width: 1024px) 66vw, 100vw"
+        className="-z-10 hidden bg-black object-fill sm:block"
+      />
       <Eyebrow tone="dark" className="relative self-start text-left">Today&rsquo;s declaration</Eyebrow>
       {decl === undefined ? (
         <div aria-hidden="true" className="relative my-auto space-y-3">

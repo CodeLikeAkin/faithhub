@@ -48,7 +48,7 @@ export default function HomeHero() {
       <div className="mb-auto px-5 pt-6 sm:px-9 sm:pt-8">
         <Eyebrow tone="dark" className="min-h-[1rem] tracking-[0.12em] sm:tracking-[0.2em]">
           {now
-            ? `${greeting(now.getHours())} · ${now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}`
+            ? `${greeting(now.getHours())} · ${now.toLocaleDateString("en-GB", { weekday: "long" })}`
             : "Heritage of Faith Church"}
         </Eyebrow>
       </div>
@@ -85,7 +85,7 @@ export default function HomeHero() {
         </p>
       </div>
 
-      <div className="mx-3 mb-4 mt-1 flex items-center justify-between gap-3 rounded-full sm:mx-4 sm:mb-4 sm:mt-2 sm:border sm:border-white/20 sm:bg-white/[0.14] sm:py-1.5 sm:pl-5 sm:pr-1.5 sm:backdrop-blur-md">
+      <div className="mx-3 mb-4 mt-1 flex items-center justify-between gap-3 rounded-full sm:mx-4 sm:mb-4 sm:mt-2 sm:border sm:border-white/20 sm:bg-white/[0.14] sm:py-1.5 sm:pl-5 sm:pr-1.5">
         <p className="hidden truncate text-xs font-bold uppercase tracking-[0.16em] text-white/75 sm:block">
           Grounded in HOF&apos;s teaching · 2022–2026
         </p>

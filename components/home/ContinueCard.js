@@ -74,10 +74,10 @@ export default function ContinueCard({ className, style }) {
     >
       <Eyebrow className="min-h-[1rem] px-1">{eyebrow}</Eyebrow>
       {item === undefined ? (
-        <div aria-hidden="true" className="aspect-video rounded-2xl fh-skeleton" />
+        <div aria-hidden="true" className="aspect-[2/1] sm:aspect-[3/1] lg:aspect-[2/1] rounded-2xl fh-skeleton" />
       ) : (
         <Link href={item.href} className="group flex flex-1 flex-col gap-3">
-          <span className="relative block aspect-video overflow-hidden rounded-2xl bg-brand-deep">
+          <span className="relative block aspect-[2/1] sm:aspect-[3/1] lg:aspect-[2/1] overflow-hidden rounded-2xl bg-brand-deep">
             <YtThumb
               ids={item.videoIds || item.videoId}
               quality={["maxresdefault", "hq720", "mqdefault"]}
