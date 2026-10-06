@@ -327,6 +327,8 @@ SPEAKER:${speakerLabel(seg.sermon_title)}
     const segmentMap = relevantSegments.reduce((acc, seg, i) => {
       const { name } = detectSpeaker(seg.sermon_title);
       acc[i + 1] = {
+        // Lets the moment card's title link to the message itself (MomentsRow).
+        sermon_id: seg.sermon_id,
         video_id: seg.video_id,
         start_seconds: seg.start_seconds,
         sermon_title: seg.sermon_title,

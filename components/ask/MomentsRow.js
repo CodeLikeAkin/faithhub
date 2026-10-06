@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { ChevronLeft, ChevronRight, Play } from "lucide-react";
 import { fmtTime } from "@/lib/ask-format";
 import { cleanTitle } from "@/lib/titles";
@@ -20,52 +21,69 @@ const BLEED = {
 function MomentCard({ n, seg, onCite, highlighted, describe, density }) {
   const title = describe?.(seg) || cleanTitle(seg.sermon_title);
   const playable = !!seg.video_id;
-  const Tag = playable ? "button" : "div";
+  // Two affordances, not one: the thumbnail plays the cited moment, the title
+  // opens the message itself (its notes, scriptures, words and declarations).
+  const href = seg.sermon_id ? `/sermon/${seg.sermon_id}#notes` : null;
+
+  const thumb = (
+    <span
+      className={cn(
+        "relative block aspect-video overflow-hidden rounded-2xl bg-brand-sky ring-1 transition-[box-shadow] duration-300",
+        highlighted ? "shadow-lg shadow-brand-navy/25 ring-2 ring-brand-navy" : "ring-brand-navy/10"
+      )}
+    >
+      {playable && (
+        <img
+          src={`https://img.youtube.com/vi/${seg.video_id}/hqdefault.jpg`}
+          alt=""
+          loading="lazy"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+        />
+      )}
+      <span className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/0 to-black/0" />
+      <span className="absolute left-2 top-2 grid h-6 min-w-[1.5rem] place-items-center rounded-full bg-white px-1.5 text-xs font-bold text-brand-navy shadow">
+        {n}
+      </span>
+      {playable && (
+        <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-md bg-black/70 px-1.5 py-0.5 text-xs font-bold tabular-nums text-white">
+          <Play size={10} fill="currentColor" aria-hidden="true" />
+          {fmtTime(seg.start_seconds)}
+        </span>
+      )}
+      {playable && (
+        <span className="absolute inset-0 grid place-items-center opacity-0 transition-opacity group-hover:opacity-100">
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-white/95 text-brand-navy shadow-lg">
+            <Play size={17} fill="currentColor" className="translate-x-px" aria-hidden="true" />
+          </span>
+        </span>
+      )}
+    </span>
+  );
 
   return (
-    <Tag
-      {...(playable
-        ? {
-            type: "button",
-            onClick: () => onCite?.(seg),
-            "aria-label": `Play moment ${n}: ${title}, at ${fmtTime(seg.start_seconds)}`,
-          }
-        : {})}
-      className="group block w-full rounded-2xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy focus-visible:ring-offset-2"
-    >
-      <span
-        className={cn(
-          "relative block aspect-video overflow-hidden rounded-2xl bg-brand-sky ring-1 transition-[box-shadow] duration-300",
-          highlighted ? "shadow-lg shadow-brand-navy/25 ring-2 ring-brand-navy" : "ring-brand-navy/10"
-        )}
-      >
-        {playable && (
-          <img
-            src={`https://img.youtube.com/vi/${seg.video_id}/hqdefault.jpg`}
-            alt=""
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-          />
-        )}
-        <span className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/0 to-black/0" />
-        <span className="absolute left-2 top-2 grid h-6 min-w-[1.5rem] place-items-center rounded-full bg-white px-1.5 text-xs font-bold text-brand-navy shadow">
-          {n}
-        </span>
-        {playable && (
-          <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-md bg-black/70 px-1.5 py-0.5 text-xs font-bold tabular-nums text-white">
-            <Play size={10} fill="currentColor" aria-hidden="true" />
-            {fmtTime(seg.start_seconds)}
-          </span>
-        )}
-        {playable && (
-          <span className="absolute inset-0 grid place-items-center opacity-0 transition-opacity group-hover:opacity-100">
-            <span className="grid h-11 w-11 place-items-center rounded-full bg-white/95 text-brand-navy shadow-lg">
-              <Play size={17} fill="currentColor" className="translate-x-px" aria-hidden="true" />
-            </span>
-          </span>
-        )}
-      </span>
-      <span className="mt-2.5 block truncate text-sm font-semibold text-brand-ink">{title}</span>
+    <div className="group block w-full rounded-2xl text-left">
+      {playable ? (
+        <button
+          type="button"
+          onClick={() => onCite?.(seg)}
+          aria-label={`Play moment ${n}: ${title}, at ${fmtTime(seg.start_seconds)}`}
+          className="block w-full rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy focus-visible:ring-offset-2"
+        >
+          {thumb}
+        </button>
+      ) : (
+        thumb
+      )}
+      {href ? (
+        <Link
+          href={href}
+          className="mt-2.5 block truncate rounded text-sm font-semibold text-brand-ink underline-offset-2 hover:text-brand-navy hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy focus-visible:ring-offset-2"
+        >
+          {title}
+        </Link>
+      ) : (
+        <span className="mt-2.5 block truncate text-sm font-semibold text-brand-ink">{title}</span>
+      )}
       {seg.speaker && (
         <span className="mt-0.5 block truncate text-xs font-medium text-brand-gray">{seg.speaker}</span>
       )}
@@ -79,7 +97,7 @@ function MomentCard({ n, seg, onCite, highlighted, describe, density }) {
           &ldquo;{seg.text}&rdquo;
         </span>
       )}
-    </Tag>
+    </div>
   );
 }
 
