@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Play } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Play } from "lucide-react";
 import { fmtTime } from "@/lib/ask-format";
 import { cleanTitle } from "@/lib/titles";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils";
  * it — as a swipeable row of video thumbnails with timestamps. Shown at every
  * screen size, after the answer and its related questions.
  */
+
+const VIEW_KEY = "hof-ask-moments-view"; // "cards" | "list", remembered per browser
 
 const BLEED = {
   page: "-mx-4 px-4 scroll-px-4 sm:-mx-8 sm:px-8 sm:scroll-px-8",
@@ -101,10 +103,133 @@ function MomentCard({ n, seg, onCite, highlighted, describe, density }) {
   );
 }
 
+/** Cards | List — thumbnails you swipe through, or every moment on one line. */
+function ViewToggle({ value, onChange }) {
+  return (
+    <span
+      role="radiogroup"
+      aria-label="How to show the cited moments"
+      className="inline-flex flex-shrink-0 rounded-full border border-brand-navy/15 bg-white p-0.5"
+    >
+      {[
+        ["cards", "Cards", "Thumbnails you swipe through"],
+        ["list", "List", "Every moment on one line"],
+      ].map(([mode, label, hint]) => (
+        <button
+          key={mode}
+          type="button"
+          role="radio"
+          aria-checked={value === mode}
+          title={hint}
+          onClick={() => onChange(mode)}
+          className={cn(
+            "relative rounded-full px-2.5 py-1 text-xs font-bold transition-colors before:absolute before:-inset-2 before:content-['']",
+            value === mode ? "bg-brand-navy text-white" : "text-brand-gray hover:text-brand-navy"
+          )}
+        >
+          {label}
+        </button>
+      ))}
+    </span>
+  );
+}
+
+/**
+ * List view: one line per cited moment. No thumbnail to wait for and no
+ * sideways scrolling, so all of an answer's moments are visible at once
+ * instead of the two a phone fits in the card row. Same two affordances as
+ * the card — play the moment, or open the message.
+ */
+function MomentRow({ n, seg, onCite, describe, highlighted }) {
+  const title = describe?.(seg) || cleanTitle(seg.sermon_title);
+  const playable = !!seg.video_id;
+  const href = seg.sermon_id ? `/sermon/${seg.sermon_id}#notes` : null;
+
+  return (
+    <li
+      data-n={n}
+      className={cn(
+        "flex items-center gap-3 border-b border-brand-navy/10 py-2.5 transition-[box-shadow] first:border-t",
+        // A ring, not a fill: tinting the row put brand-gray on brand-sky at
+        // 4.32:1, under AA. This also matches how the card marks itself.
+        highlighted && "rounded-lg ring-2 ring-inset ring-brand-navy"
+      )}
+    >
+      <span
+        aria-hidden="true"
+        className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-full bg-brand-sky text-xs font-bold text-brand-navy"
+      >
+        {n}
+      </span>
+      <div className="min-w-0 flex-1">
+        {href ? (
+          <Link
+            href={href}
+            // Two lines, not one: these titles differ only in their trailing
+            // "- Part 4", which is exactly what a single truncated line eats.
+            className="block text-sm font-semibold leading-snug text-brand-ink underline-offset-2 line-clamp-2 hover:text-brand-navy hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy"
+          >
+            {title}
+          </Link>
+        ) : (
+          <span className="block text-sm font-semibold leading-snug text-brand-ink line-clamp-2">{title}</span>
+        )}
+        {(seg.speaker || playable) && (
+          <span className="mt-0.5 block truncate text-xs text-brand-gray">
+            {seg.speaker}
+            {seg.speaker && playable && " · "}
+            {playable && fmtTime(seg.start_seconds)}
+          </span>
+        )}
+      </div>
+      {playable && (
+        <button
+          type="button"
+          onClick={() => onCite?.(seg)}
+          aria-label={`Play moment ${n}: ${title}, at ${fmtTime(seg.start_seconds)}`}
+          className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full bg-brand-navy text-white transition-[background-color,transform] hover:bg-brand-deep active:scale-95"
+        >
+          <Play size={12} fill="currentColor" aria-hidden="true" className="ml-px" />
+        </button>
+      )}
+      {href && (
+        <Link
+          href={href}
+          aria-label={`Open the message: ${title}`}
+          className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full text-brand-navy/70 transition-colors hover:bg-brand-sky hover:text-brand-navy"
+        >
+          <ArrowRight size={16} aria-hidden="true" />
+        </Link>
+      )}
+    </li>
+  );
+}
+
 export default function MomentsRow({ segmentMap, onCite, highlighted, describe, density = "page", className }) {
   const entries = Object.entries(segmentMap || {});
   const rowRef = useRef(null);
   const [edges, setEdges] = useState({ left: false, right: false });
+  // Cards stay the default: the thumbnails are the trust signal. List is for
+  // when you want to see every moment behind an answer at once.
+  const [view, setView] = useState("cards");
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(VIEW_KEY);
+      if (saved === "cards" || saved === "list") setView(saved);
+    } catch {
+      /* private mode — the default stands */
+    }
+  }, []);
+
+  const changeView = useCallback((next) => {
+    setView(next);
+    try {
+      localStorage.setItem(VIEW_KEY, next);
+    } catch {
+      /* nothing to remember it with */
+    }
+  }, []);
 
   const measure = useCallback(() => {
     const el = rowRef.current;
@@ -125,14 +250,16 @@ export default function MomentsRow({ segmentMap, onCite, highlighted, describe, 
   // only — never moves the reader's vertical position).
   useEffect(() => {
     const row = rowRef.current;
-    if (highlighted == null || !row) return;
+    // List view has nothing to scroll sideways, and scrolling it vertically
+    // would move the reader's place in the answer. The row ring is enough.
+    if (view !== "cards" || highlighted == null || !row) return;
     const card = row.querySelector(`[data-n="${highlighted}"]`);
     if (!card) return;
     const left = card.offsetLeft; // the row is `relative`, so this is row-local
     if (left < row.scrollLeft || left + card.offsetWidth > row.scrollLeft + row.clientWidth) {
       row.scrollTo({ left: Math.max(0, left - 16), behavior: "smooth" });
     }
-  }, [highlighted]);
+  }, [highlighted, view]);
 
   if (!entries.length) return null;
 
@@ -152,51 +279,70 @@ export default function MomentsRow({ segmentMap, onCite, highlighted, describe, 
           </span>{" "}
           from {messages} {messages === 1 ? "message" : "messages"}
         </p>
-        {page && (edges.left || edges.right) && (
-          <div className="hidden gap-1.5 sm:flex">
-            {[
-              [-1, ChevronLeft, "Earlier moments", edges.left],
-              [1, ChevronRight, "More moments", edges.right],
-            ].map(([dir, Icon, label, enabled]) => (
-              <button
-                key={dir}
-                type="button"
-                onClick={() => nudge(dir)}
-                disabled={!enabled}
-                aria-label={label}
-                className="grid h-8 w-8 place-items-center rounded-full border border-brand-navy/15 text-brand-navy transition-colors hover:bg-brand-sky disabled:opacity-30"
-              >
-                <Icon size={16} aria-hidden="true" />
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="flex flex-shrink-0 items-center gap-2">
+          {entries.length > 1 && <ViewToggle value={view} onChange={changeView} />}
+          {page && view === "cards" && (edges.left || edges.right) && (
+            <div className="hidden gap-1.5 sm:flex">
+              {[
+                [-1, ChevronLeft, "Earlier moments", edges.left],
+                [1, ChevronRight, "More moments", edges.right],
+              ].map(([dir, Icon, label, enabled]) => (
+                <button
+                  key={dir}
+                  type="button"
+                  onClick={() => nudge(dir)}
+                  disabled={!enabled}
+                  aria-label={label}
+                  className="grid h-8 w-8 place-items-center rounded-full border border-brand-navy/15 text-brand-navy transition-colors hover:bg-brand-sky disabled:opacity-30"
+                >
+                  <Icon size={16} aria-hidden="true" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-      <ul
-        ref={rowRef}
-        onScroll={measure}
-        className={cn(
-          "relative mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-          BLEED[density]
-        )}
-      >
-        {entries.map(([n, seg]) => (
-          <li
-            key={n}
-            data-n={n}
-            className={cn("flex-shrink-0 snap-start", page ? "w-56 sm:w-60" : "w-44")}
-          >
-            <MomentCard
+
+      {view === "list" ? (
+        <ol className="mt-3">
+          {entries.map(([n, seg]) => (
+            <MomentRow
+              key={n}
               n={n}
               seg={seg}
               onCite={onCite}
               describe={describe}
-              density={density}
               highlighted={String(highlighted) === String(n)}
             />
-          </li>
-        ))}
-      </ul>
+          ))}
+        </ol>
+      ) : (
+        <ul
+          ref={rowRef}
+          onScroll={measure}
+          className={cn(
+            "relative mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+            BLEED[density]
+          )}
+        >
+          {entries.map(([n, seg]) => (
+            <li
+              key={n}
+              data-n={n}
+              className={cn("flex-shrink-0 snap-start", page ? "w-56 sm:w-60" : "w-44")}
+            >
+              <MomentCard
+                n={n}
+                seg={seg}
+                onCite={onCite}
+                describe={describe}
+                density={density}
+                highlighted={String(highlighted) === String(n)}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
