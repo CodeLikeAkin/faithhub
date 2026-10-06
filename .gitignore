@@ -1,6 +1,7 @@
 .env.local
 node_modules
 .next
-.next-preview
+# any NEXT_DIST_DIR build beside your own: .next-preview, .next-qa, .next-a11y
+.next-*
 
 .vercel
