@@ -22,9 +22,14 @@ import { useMediaQuery, PANEL_DOCKED_QUERY } from "@/lib/useMediaQuery";
 import { recordLastLesson } from "@/lib/recent";
 import { cn } from "@/lib/utils";
 
-const DECL_PREVIEW = 5;
-// Notes longer than this fold behind "Read the full notes" on a phone.
-const NOTES_FOLD_CHARS = 1200;
+/** One tab's contents. Only the open one is ever in the document. */
+function TabPanel({ id, children }) {
+  return (
+    <div role="tabpanel" id={`panel-${id}`} aria-labelledby={`tab-${id}`} tabIndex={-1}>
+      {children}
+    </div>
+  );
+}
 
 // Set in the Vision page's reading style: medium-weight display headings,
 // navy diamonds for bullets, and quotes as its pull quote (sky gradient, a
@@ -87,14 +92,13 @@ export default function LessonPage({ sermonId }) {
   const [seek, setSeek] = useState(null); // { videoId, t, n }
   const [startAt, setStartAt] = useState(0);
   const [watching, setWatching] = useState(null); // moments outside this series → modal
-  const [showAllDecls, setShowAllDecls] = useState(false);
-  const [notesOpen, setNotesOpen] = useState(false); // phone: the folded notes
-  const [openSecs, setOpenSecs] = useState({}); // phone: scriptures / words start folded
-  const [activeSec, setActiveSec] = useState(null);
+  const [tab, setTab] = useState(null); // the open panel; null until the data says which exist
   const [toast, showToast] = useToast({ offset: "5.5rem" }); // clears the Ask button
   const docked = useMediaQuery(PANEL_DOCKED_QUERY);
   const scrollRef = useRef(null);
   const playerRef = useRef(null);
+  const tabsRef = useRef(null);
+  const panelRef = useRef(null);
 
   useEffect(() => setActiveId(sermonId), [sermonId]);
 
@@ -112,8 +116,13 @@ export default function LessonPage({ sermonId }) {
   const nameOf = (p) => (series ? partTitle(p.title, series.title) : cleanTitle(p.title));
 
   // The header splits the title into its own slots: name, event session, speaker · date.
+  // All three meet on one byline under the title, so the date stays short enough
+  // not to wrap it at phone width ("2 Sep 2026", not "September 2, 2026").
   const header = part ? parseTitle(part.title, series?.title) : null;
-  const headerDate = part ? partDate(part, { month: "long", day: "numeric", year: "numeric" }) : null;
+  const headerDate = part ? partDate(part, { day: "numeric", month: "short", year: "numeric" }, "en-GB") : null;
+  // The session arrives pre-joined ("Day 1 · Morning"); on one byline its own
+  // separator would read as two more fields, so it travels as a single phrase.
+  const byline = [header?.speaker, headerDate, header?.session?.replace(/\s*·\s*/g, " ")].filter(Boolean).join(" · ");
 
   const scrollToPlayer = () => {
     if (playerRef.current) scrollToElement(playerRef.current, { offset: 16 });
@@ -125,7 +134,6 @@ export default function LessonPage({ sermonId }) {
       if (!p) return;
       setActiveId(id);
       setStartAt(0);
-      setShowAllDecls(false);
       loadPartData(id);
       try {
         window.history.replaceState(null, "", `/sermon/${id}`);
@@ -179,21 +187,34 @@ export default function LessonPage({ sermonId }) {
       : { sermonId: part.id, sermonTitle: cleanTitle(part.title) };
   }, [series, part]);
 
-  const sections = pd && !pd.loading
+  // Everything drawn from the message is a tab, not a stretch of one long
+  // page: only the open panel is in the document, so reading the
+  // declarations never means scrolling past the notes to reach them.
+  const tabs = pd && !pd.loading
     ? [
         pd.notes && { id: "notes", label: "Notes" },
-        pd.scriptures?.length > 0 && { id: "scriptures", label: "Scriptures" },
-        pd.wordStudies?.length > 0 && { id: "words", label: "Words" },
-        pd.declarations?.length > 0 && { id: "declarations", label: "Declarations" },
+        pd.scriptures?.length > 0 && { id: "scriptures", label: "Scriptures", count: pd.scriptures.length },
+        pd.wordStudies?.length > 0 && { id: "words", label: "Words", count: pd.wordStudies.length },
+        pd.declarations?.length > 0 && { id: "declarations", label: "Declarations", count: pd.declarations.length },
       ].filter(Boolean)
     : [];
+  const tabKey = tabs.map((t) => t.id).join();
 
-  const jumpTo = (id) => {
-    // A folded section has to open first, or there's nothing to land on.
-    setOpenSecs((o) => (o[id] ? o : { ...o, [id]: true }));
+  const openTab = (id) => {
+    setTab(id);
+    // A panel replaces its predecessor, so reading to the foot of a long one
+    // and switching would otherwise open the next already scrolled past its
+    // own heading. Anchor on the panel, not the tab bar: the bar is sticky, so
+    // it always measures as visible and would never move anything. Scroll up
+    // only — tapping a tab from the top of the page must not pull the player
+    // off screen.
     requestAnimationFrame(() => {
-      const el = document.getElementById(id);
-      if (el) scrollToElement(el, { offset: 56 });
+      const box = scrollRef.current;
+      const el = panelRef.current;
+      if (!box || !el) return;
+      const bar = tabsRef.current?.offsetHeight || 0;
+      const delta = el.getBoundingClientRect().top - (box.getBoundingClientRect().top + bar);
+      if (delta < 0) box.scrollTo({ top: box.scrollTop + delta, behavior: "smooth" });
     });
     try {
       window.history.replaceState(null, "", `/sermon/${part.id}#${id}`);
@@ -202,45 +223,15 @@ export default function LessonPage({ sermonId }) {
     }
   };
 
-  // Each message starts with its notes, scriptures and words folded again.
+  // Settle on a tab once the data says which exist: the one in the URL if it
+  // has content, else the first. Re-runs per message, since parts differ in
+  // what they carry.
   useEffect(() => {
-    setNotesOpen(false);
-    setOpenSecs({});
-  }, [part?.id]);
-
-  // Which section is under the sticky tab bar, for the tab underline.
-  const sectionKey = sections.map((s) => s.id).join();
-  useEffect(() => {
-    const box = scrollRef.current;
-    if (!box || !sectionKey) return;
-    const ids = sectionKey.split(",");
-    const onScroll = () => {
-      const line = box.getBoundingClientRect().top + 120;
-      let current = null;
-      for (const id of ids) {
-        const el = document.getElementById(id);
-        if (el && el.getBoundingClientRect().top <= line) current = id;
-      }
-      setActiveSec(current);
-    };
-    onScroll();
-    box.addEventListener("scroll", onScroll, { passive: true });
-    return () => box.removeEventListener("scroll", onScroll);
-  }, [sectionKey, part?.id]);
-
-  // Arriving on /sermon/[id]#scriptures: jump there once the content exists.
-  const jumpedToHash = useRef(false);
-  useEffect(() => {
-    if (jumpedToHash.current || !pd || pd.loading) return;
-    jumpedToHash.current = true;
-    const id = window.location.hash.slice(1);
-    if (["notes", "scriptures", "words", "declarations"].includes(id)) {
-      setTimeout(() => {
-        const el = document.getElementById(id);
-        if (el) scrollToElement(el, { offset: 56, smooth: false });
-      }, 60);
-    }
-  }, [pd]);
+    if (!tabKey) return;
+    const ids = tabKey.split(",");
+    const wanted = decodeURIComponent(window.location.hash.slice(1));
+    setTab((t) => (t && ids.includes(t) ? t : ids.includes(wanted) ? wanted : ids[0]));
+  }, [tabKey, part?.id]);
 
   // Remember this lesson for the home page's "Pick up where you left off".
   useEffect(() => {
@@ -296,9 +287,7 @@ export default function LessonPage({ sermonId }) {
 
   // On a phone the tab bar carries the Ask button, so the floating one only
   // appears there when there is no tab bar (and from sm up, where it has room).
-  const askInNav = Boolean(panel) && sections.length > 1;
-  const decls = pd?.declarations || [];
-  const shownDecls = showAllDecls ? decls : decls.slice(0, DECL_PREVIEW);
+  const askInNav = Boolean(panel) && tabs.length > 1;
 
   return (
     <ToolShell
@@ -345,72 +334,49 @@ export default function LessonPage({ sermonId }) {
             </div>
 
             <div className="px-4 sm:px-0">
+              {/* Title and byline only: the series name is already the page's
+                  own title in the bar above, and where you are in it is the
+                  job of the parts navigator at the foot of the page. */}
               <header className="mt-6 sm:mt-8">
-                {/* Set as the Vision eyebrow (rule + caps); the series name is
-                    still the way back to the course. */}
-                {series && (
-                  <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-bold uppercase tracking-[0.2em] text-brand-navy">
-                    <span aria-hidden="true" className="h-px w-8 bg-brand-navy/40" />
-                    <Link href={`/series/${series.id}`} className="hover:underline">
-                      {seriesName(series.title)}
-                    </Link>
-                    {part.part_number && header.named && (
-                      <span className="text-brand-gray">
-                        Part {part.part_number} of {parts.length}
-                      </span>
-                    )}
-                  </p>
-                )}
-                <h1 className="mt-3 font-display text-3xl font-medium leading-[1.1] tracking-tight text-brand-ink text-balance sm:text-4xl">
+                <h1 className="font-display text-2xl font-medium leading-[1.1] tracking-tight text-brand-ink text-pretty sm:text-3xl">
                   {header.named || !series || !part.part_number ? header.name : `Part ${part.part_number}`}
                 </h1>
-                {header.session && (
-                  <p className="mt-4">
-                    <span className="inline-flex items-center rounded-full bg-brand-sky px-3 py-1 text-sm font-semibold text-brand-navy">
-                      {header.session}
-                    </span>
-                  </p>
-                )}
-                {(header.speaker || headerDate) && (
-                  <p className="mt-2 text-sm text-brand-gray sm:mt-3">{[header.speaker, headerDate].filter(Boolean).join(" · ")}</p>
-                )}
+                {byline && <p className="mt-2 text-sm text-brand-gray sm:mt-3">{byline}</p>}
                 {part.summary && (
                   <p className="mt-4 max-w-2xl text-base leading-relaxed text-brand-ink/80 sm:mt-5 sm:text-lg">{part.summary}</p>
                 )}
               </header>
 
-              {series && parts.length > 1 && (
-                <CourseOutline className="mt-7 sm:mt-9" series={series} parts={parts} activeId={part.id} onSelect={(id) => goPart(id)} />
-              )}
-
-              {sections.length > 1 && (
-                <nav
-                  aria-label="On this page"
-                  className="sticky top-0 z-10 -mx-4 mt-8 flex items-center border-b border-brand-navy/10 bg-white/95 pl-4 backdrop-blur sm:-mx-8 sm:mt-10 sm:px-8"
+              {tabs.length > 1 && (
+                <div
+                  ref={tabsRef}
+                  className="sticky top-0 z-10 -mx-4 mt-5 flex items-center border-b border-brand-navy/10 bg-white/95 pl-4 backdrop-blur sm:-mx-8 sm:mt-10 sm:px-8"
                 >
                   <div className="relative min-w-0 flex-1">
-                    <ul className="flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                      {sections.map((s) => (
-                        <li key={s.id} className="flex-shrink-0">
-                          <a
-                            href={`#${s.id}`}
-                            aria-current={activeSec === s.id ? "location" : undefined}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              jumpTo(s.id);
-                            }}
-                            className={cn(
-                              "relative inline-flex h-11 items-center px-3 text-sm font-medium transition-colors after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full",
-                              activeSec === s.id
-                                ? "text-brand-navy after:bg-brand-navy"
-                                : "text-brand-ink/70 hover:text-brand-navy"
-                            )}
-                          >
-                            {s.label}
-                          </a>
-                        </li>
+                    <div
+                      role="tablist"
+                      aria-label="What's in this message"
+                      className="flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    >
+                      {tabs.map((t) => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          role="tab"
+                          id={`tab-${t.id}`}
+                          aria-selected={tab === t.id}
+                          aria-controls={`panel-${t.id}`}
+                          onClick={() => openTab(t.id)}
+                          className={cn(
+                            "relative inline-flex h-11 flex-shrink-0 items-center gap-1.5 px-3 text-sm font-medium transition-colors after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full",
+                            tab === t.id ? "text-brand-navy after:bg-brand-navy" : "text-brand-ink/70 hover:text-brand-navy"
+                          )}
+                        >
+                          {t.label}
+                          {t.count != null && <span className="text-xs font-normal text-brand-gray">{t.count}</span>}
+                        </button>
                       ))}
-                    </ul>
+                    </div>
                     {/* Tells a phone reader the tabs scroll sideways. */}
                     <span
                       aria-hidden="true"
@@ -427,7 +393,7 @@ export default function LessonPage({ sermonId }) {
                       <Sparkles size={16} aria-hidden="true" />
                     </button>
                   )}
-                </nav>
+                </div>
               )}
 
               {pd?.loading && (
@@ -439,107 +405,85 @@ export default function LessonPage({ sermonId }) {
 
               {pd && !pd.loading && !pd.notes && (
                 <p className="mt-12 rounded-[1.5rem] bg-brand-light px-6 py-5 text-sm leading-relaxed text-brand-gray">
-                  {sections.length === 0
+                  {tabs.length === 0
                     ? "Notes, scriptures and declarations for this message are still being prepared. You can already ask about it — every answer comes from what was preached."
                     : "Notes for this message haven’t been written yet. Everything below is drawn from the message itself, and you can ask about any of it."}
                 </p>
               )}
 
-              {pd?.notes && (
-                <Section id="notes" eyebrow="From the service" title="Notes" intro="The key points of the message, with the scriptures behind each one">
-                  {(() => {
-                    const folded = pd.notes.length > NOTES_FOLD_CHARS && !notesOpen;
-                    return (
-                      <>
-                        <div className="relative">
-                          <div
-                            className={cn(
-                              "max-w-2xl text-base leading-[1.75] text-brand-ink/90 lg:text-lg",
-                              folded && "max-h-[34rem] overflow-hidden sm:max-h-none sm:overflow-visible"
-                            )}
-                          >
-                            <ReactMarkdown components={NOTES_MARKDOWN}>{tidyNotes(pd.notes)}</ReactMarkdown>
-                          </div>
-                          {folded && (
-                            <span
-                              aria-hidden="true"
-                              className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-white via-white/80 to-transparent sm:hidden"
-                            />
-                          )}
-                        </div>
-                        {folded && (
-                          <button
-                            type="button"
-                            onClick={() => setNotesOpen(true)}
-                            className="mt-2 inline-flex h-11 items-center rounded-full border border-brand-navy/20 px-5 text-sm font-semibold text-brand-navy transition-colors hover:bg-brand-sky sm:hidden"
-                          >
-                            Read the full notes
-                          </button>
-                        )}
-                      </>
-                    );
-                  })()}
-                </Section>
+              {/* One panel at a time. Each is keyed so switching tabs remounts
+                  its contents rather than carrying the last one's state over. */}
+              <div ref={panelRef}>
+              {tab === "notes" && pd?.notes && (
+                <TabPanel id="notes">
+                  <Section id="notes-sec" eyebrow="From the service" title="Notes" titleHidden flush intro="The key points of the message, with the scriptures behind each one">
+                    <div className="max-w-2xl text-base leading-[1.75] text-brand-ink/90 lg:text-lg">
+                      <ReactMarkdown components={NOTES_MARKDOWN}>{tidyNotes(pd.notes)}</ReactMarkdown>
+                    </div>
+                  </Section>
+                </TabPanel>
               )}
 
-              {pd?.scriptures?.length > 0 && (
-                <Section
-                  id="scriptures"
-                  eyebrow="Read in this message"
-                  title="Scriptures in this message"
-                  count={pd.scriptures.length}
-                  collapsed={!openSecs.scriptures}
-                  onToggle={() => setOpenSecs((o) => ({ ...o, scriptures: !o.scriptures }))}
-                  intro={`${pd.scriptures.length} readings. Tap one to read it and see why it was read.`}
-                >
-                  <VerseExplorer sermonId={part.id} scriptures={pd.scriptures} embedded />
-                </Section>
+              {tab === "scriptures" && pd?.scriptures?.length > 0 && (
+                <TabPanel id="scriptures">
+                  <Section
+                    id="scriptures-sec"
+                    eyebrow="Read in this message"
+                    title="Scriptures in this message"
+                    titleHidden
+                    flush
+                    intro={`${pd.scriptures.length} readings. Tap one to read it and see why it was read.`}
+                  >
+                    <VerseExplorer key={part.id} sermonId={part.id} scriptures={pd.scriptures} embedded />
+                  </Section>
+                </TabPanel>
               )}
 
-              {pd?.wordStudies?.length > 0 && (
-                <Section
-                  id="words"
-                  eyebrow="Greek & Hebrew"
-                  title="Words he explained"
-                  count={pd.wordStudies.length}
-                  collapsed={!openSecs.words}
-                  onToggle={() => setOpenSecs((o) => ({ ...o, words: !o.words }))}
-                  intro="The Greek and Hebrew behind the message. Tap a word."
-                >
-                  <WordStudy sermonId={part.id} words={pd.wordStudies} embedded onWatch={playMoment} />
-                </Section>
+              {tab === "words" && pd?.wordStudies?.length > 0 && (
+                <TabPanel id="words">
+                  <Section
+                    id="words-sec"
+                    eyebrow="Greek & Hebrew"
+                    title="Words he explained"
+                    titleHidden
+                    flush
+                    intro="The Greek and Hebrew behind the message. Tap a word."
+                  >
+                    <WordStudy key={part.id} sermonId={part.id} words={pd.wordStudies} embedded onWatch={playMoment} />
+                  </Section>
+                </TabPanel>
               )}
 
-              {decls.length > 0 && (
-                <Section id="declarations" eyebrow="To declare" title="Declarations from this message" intro="Speak them over your life">
-                  <ul className="divide-y divide-brand-navy/10 border-y border-brand-navy/10">
-                    {shownDecls.map((d) => (
-                      <DeclarationLine
-                        key={d.id}
-                        declaration={{ ...d, sermon_id: part.id, sermon_title: part.title }}
-                        onWatch={playMoment}
-                        onCopy={(text) => copyText(text, showToast)}
-                        showSource={false}
-                      />
-                    ))}
-                  </ul>
-                  {decls.length > DECL_PREVIEW && (
-                    <button
-                      type="button"
-                      onClick={() => setShowAllDecls((v) => !v)}
-                      className="mt-4 text-sm font-semibold text-brand-navy hover:underline"
-                    >
-                      {showAllDecls ? "Show fewer" : `Show all ${decls.length}`}
-                    </button>
-                  )}
-                </Section>
+              {tab === "declarations" && pd?.declarations?.length > 0 && (
+                <TabPanel id="declarations">
+                  <Section id="declarations-sec" eyebrow="To declare" title="Declarations from this message" titleHidden flush intro="Speak them over your life">
+                    <ul className="divide-y divide-brand-navy/10 border-y border-brand-navy/10">
+                      {pd.declarations.map((d) => (
+                        <DeclarationLine
+                          key={d.id}
+                          declaration={{ ...d, sermon_id: part.id, sermon_title: part.title }}
+                          onWatch={playMoment}
+                          onCopy={(text) => copyText(text, showToast)}
+                          showSource={false}
+                        />
+                      ))}
+                    </ul>
+                  </Section>
+                </TabPanel>
+              )}
+              </div>
+
+              {/* Where to go next in the series: page furniture, the same under
+                  every tab, so it sits at the foot rather than above the content. */}
+              {series && parts.length > 1 && (
+                <CourseOutline className="mt-16" series={series} parts={parts} activeId={part.id} onSelect={(id) => goPart(id)} />
               )}
 
               {next && (
                 <button
                   type="button"
                   onClick={() => goPart(next.id)}
-                  className="group relative isolate mt-16 flex w-full items-center gap-4 overflow-hidden rounded-[1.75rem] bg-brand-deep p-4 text-left text-white shadow-card transition-shadow hover:shadow-lift sm:gap-5 sm:p-5"
+                  className="group relative isolate mt-4 flex w-full items-center gap-4 overflow-hidden rounded-[1.75rem] bg-brand-deep p-4 text-left text-white shadow-card transition-shadow hover:shadow-lift sm:gap-5 sm:p-5"
                 >
                   {/* The Vision page's dark panel, in miniature. */}
                   <span aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 -z-10 h-64 w-64 rounded-full bg-brand-navy blur-3xl" />

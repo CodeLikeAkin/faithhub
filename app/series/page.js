@@ -583,7 +583,7 @@ export default function SeriesBrowsePage() {
                           <Eyebrow>Latest series</Eyebrow>
                           <h2
                             id="latest-heading"
-                            className="mt-3 font-display text-2xl font-medium leading-[1.1] tracking-tight text-brand-ink text-balance"
+                            className="mt-3 font-display text-2xl font-medium leading-[1.1] tracking-tight text-brand-ink text-pretty"
                           >
                             {featured.title}
                           </h2>

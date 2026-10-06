@@ -196,7 +196,7 @@ export default function SeriesOverview({ seriesId }) {
                     A series in {parts.length} {parts.length === 1 ? "part" : "parts"}
                     {dateRange && ` · ${dateRange}`}
                   </p>
-                  <h1 className="mt-4 font-display text-3xl font-semibold leading-[1.05] tracking-tight text-balance sm:text-4xl">
+                  <h1 className="mt-4 font-display text-3xl font-semibold leading-[1.05] tracking-tight text-pretty sm:text-4xl">
                     {seriesName(series.title)}
                   </h1>
                   {parts[0] && (

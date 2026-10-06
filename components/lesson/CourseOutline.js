@@ -6,9 +6,9 @@ import { ChevronDown, ChevronLeft, ChevronRight, Play } from "lucide-react";
 import { parseSermonDate, partTitle, seriesName } from "@/lib/titles";
 import { cn } from "@/lib/utils";
 
-export const partDate = (p, opts = { month: "short", day: "numeric", year: "numeric" }) => {
+export const partDate = (p, opts = { month: "short", day: "numeric", year: "numeric" }, locale = "en-US") => {
   const d = parseSermonDate(p?.title) || (p?.sermon_date ? new Date(p.sermon_date) : null);
-  return d ? d.toLocaleDateString("en-US", { ...opts, timeZone: "UTC" }) : "";
+  return d ? d.toLocaleDateString(locale, { ...opts, timeZone: "UTC" }) : "";
 };
 
 const WINDOW = 5; // parts shown around the current one before "All N parts"
