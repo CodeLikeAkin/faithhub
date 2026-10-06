@@ -17,7 +17,7 @@ function SectionHead({ id, eyebrow, title, note, action }) {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
           <Eyebrow>{eyebrow}</Eyebrow>
-          <h2 id={id} className="mt-3 font-display text-3xl font-medium leading-[1.08] tracking-tight text-brand-ink text-balance">
+          <h2 id={id} className="mt-3 font-display text-2xl font-medium leading-[1.08] tracking-tight text-brand-ink text-balance sm:text-3xl">
             {title}
           </h2>
           {note && <p className="mt-2 text-sm text-brand-gray">{note}</p>}

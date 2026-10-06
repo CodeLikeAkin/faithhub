@@ -44,7 +44,7 @@ export default function Shelf({ eyebrow, title, action, children, className, col
       <div className="mb-4 flex items-end justify-between gap-4">
         <div className="min-w-0">
           {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
-          <h2 className="mt-2 font-display text-3xl font-medium tracking-tight text-brand-ink">{title}</h2>
+          <h2 className="mt-2 font-display text-2xl font-medium tracking-tight text-brand-ink sm:text-3xl">{title}</h2>
         </div>
         <div className="flex flex-shrink-0 items-center gap-2">
           {action}

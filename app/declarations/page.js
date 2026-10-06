@@ -373,7 +373,7 @@ export default function DeclarationsPage() {
                       </div>
                     ))}
                   <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-                    <h3 className="font-display text-3xl font-medium tracking-tight text-brand-ink">Declarations to speak</h3>
+                    <h3 className="font-display text-2xl font-medium tracking-tight text-brand-ink sm:text-3xl">Declarations to speak</h3>
                     <Button variant="dark" size="sm" icon={false} onClick={() => openSpeak("facing")} className="py-2.5">
                       <Volume2 className="h-4 w-4" aria-hidden="true" />
                       Speak these
@@ -447,7 +447,7 @@ export default function DeclarationsPage() {
               <div className="flex flex-wrap items-end justify-between gap-4">
                 <div className="min-w-0">
                   <Eyebrow>{themeInfo.sub}</Eyebrow>
-                  <h2 id="theme-heading" className="mt-3 font-display text-3xl font-medium tracking-tight text-brand-ink sm:text-4xl">
+                  <h2 id="theme-heading" className="mt-3 font-display text-2xl font-medium tracking-tight text-brand-ink sm:text-3xl">
                     {themeInfo.name}
                   </h2>
                   {theme && (

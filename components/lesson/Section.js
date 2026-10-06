@@ -23,7 +23,7 @@ export default function Section({ id, eyebrow, title, intro, action, count, coll
           {eyebrow && <Eyebrow className="mb-3">{eyebrow}</Eyebrow>}
           <h2
             id={id ? `${id}-heading` : undefined}
-            className="font-display text-3xl font-medium leading-[1.1] tracking-tight text-brand-ink text-balance"
+            className="font-display text-2xl font-medium leading-[1.1] tracking-tight text-brand-ink text-balance sm:text-3xl"
           >
             {onToggle ? (
               <button

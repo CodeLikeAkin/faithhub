@@ -182,7 +182,7 @@ function SectionHead({ id, eyebrow, title, meta, action, className }) {
           <h2
             id={id}
             className={cn(
-              "font-display text-3xl font-medium leading-[1.08] tracking-tight text-brand-ink text-balance sm:text-4xl",
+              "font-display text-2xl font-medium leading-[1.08] tracking-tight text-brand-ink text-balance sm:text-3xl",
               eyebrow && "mt-3"
             )}
           >

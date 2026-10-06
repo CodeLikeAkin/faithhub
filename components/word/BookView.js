@@ -131,7 +131,7 @@ export default function BookView({ slug }) {
       {view && (
         <>
           <section aria-labelledby="chapters-heading" className="pt-10">
-            <h2 id="chapters-heading" className="font-display text-3xl font-medium tracking-tight text-brand-ink">
+            <h2 id="chapters-heading" className="font-display text-2xl font-medium tracking-tight text-brand-ink sm:text-3xl">
               Chapters
             </h2>
             <p className="mt-1.5 text-sm text-brand-gray">Tap a chapter to read it. The darker it is, the more messages open it.</p>
@@ -142,7 +142,7 @@ export default function BookView({ slug }) {
 
           {view.passages.length > 0 && (
             <section aria-labelledby="passages-heading" className="pt-12">
-              <h2 id="passages-heading" className="font-display text-3xl font-medium tracking-tight text-brand-ink">
+              <h2 id="passages-heading" className="font-display text-2xl font-medium tracking-tight text-brand-ink sm:text-3xl">
                 Most-opened passages
               </h2>
               <ul className="mt-5 space-y-1.5">
@@ -166,7 +166,7 @@ export default function BookView({ slug }) {
 
           {view.messages.length > 0 && (
             <section aria-labelledby="messages-heading" className="pt-12">
-              <h2 id="messages-heading" className="font-display text-3xl font-medium tracking-tight text-brand-ink">
+              <h2 id="messages-heading" className="font-display text-2xl font-medium tracking-tight text-brand-ink sm:text-3xl">
                 Messages that open {book.name}
               </h2>
               <p className="mt-1.5 text-sm text-brand-gray">Most references first</p>
