@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { bookFromSlug, passageLabel, sectionFor } from "@/lib/canon";
-import { loadBookRows, loadBookStats, useLoad } from "@/lib/word-data";
+import { loadBookDetail, loadBookStats, useLoad } from "@/lib/word-data";
 import { cleanTitle, parseSermonDate } from "@/lib/titles";
 import { cn } from "@/lib/utils";
 
@@ -56,45 +56,31 @@ function ChapterGrid({ book, chapters }) {
 export default function BookView({ slug }) {
   const book = bookFromSlug(slug);
   const { data: stats } = useLoad(loadBookStats, []);
-  const { data: rows, error, loading } = useLoad(() => (book ? loadBookRows(book.id) : []), [book?.id]);
+  const { data: detail, error, loading } = useLoad(() => (book ? loadBookDetail(book.id) : null), [book?.id]);
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     if (book) document.title = `${book.name} · The Word`;
   }, [book]);
 
+  // The counting now happens in Postgres (word_book_detail); all that's left
+  // here is padding the chapters the book never had preached and labelling the
+  // passages, both of which need the canon, not the data.
   const view = useMemo(() => {
-    if (!book || !rows) return null;
-    const chapters = Array.from({ length: book.chapters }, () => ({ refs: 0, sermons: new Set() }));
-    const passages = new Map();
-    const bySermon = new Map();
-    for (const r of rows) {
-      const c = chapters[r.chapter - 1];
-      if (c) {
-        c.refs += 1;
-        if (r.sermon?.id) c.sermons.add(r.sermon.id);
-      }
-      if (r.verse_start) {
-        const key = `${r.chapter}|${r.verse_start}|${r.verse_end || r.verse_start}`;
-        let p = passages.get(key);
-        if (!p) passages.set(key, (p = { chapter: r.chapter, vs: r.verse_start, ve: r.verse_end || r.verse_start, sermons: new Set() }));
-        if (r.sermon?.id) p.sermons.add(r.sermon.id);
-      }
-      if (r.sermon?.id) {
-        let s = bySermon.get(r.sermon.id);
-        if (!s) bySermon.set(r.sermon.id, (s = { sermon: r.sermon, refs: 0 }));
-        s.refs += 1;
-      }
-    }
+    if (!book || !detail) return null;
+    const byChapter = new Map((detail.chapters || []).map((c) => [c.chapter, c]));
     return {
-      chapters: chapters.map((c) => ({ refs: c.refs, messages: c.sermons.size })),
-      passages: [...passages.values()]
-        .sort((a, b) => b.sermons.size - a.sermons.size)
-        .slice(0, 6)
-        .map((p) => ({ ...p, messages: p.sermons.size, label: passageLabel(book.name, p.chapter, p.vs, p.ve) })),
-      messages: [...bySermon.values()].sort((a, b) => b.refs - a.refs),
+      chapters: Array.from({ length: book.chapters }, (_, i) => {
+        const c = byChapter.get(i + 1);
+        return { refs: c?.refs || 0, messages: c?.messages || 0 };
+      }),
+      passages: (detail.passages || []).map((p) => ({
+        ...p,
+        label: passageLabel(book.name, p.chapter, p.vs, p.ve),
+      })),
+      messages: detail.messages || [],
     };
-  }, [book, rows]);
+  }, [book, detail]);
 
   if (!book) {
     return (
@@ -133,7 +119,7 @@ export default function BookView({ slug }) {
         <div aria-hidden="true" className="mt-6 h-px bg-gradient-to-r from-brand-navy/30 via-brand-navy/10 to-transparent" />
       </header>
 
-      {loading && !rows && (
+      {loading && !detail && (
         <div aria-hidden="true" className="mt-10 grid grid-cols-5 gap-2 sm:grid-cols-8 sm:gap-2.5 lg:grid-cols-10">
           {Array.from({ length: book.chapters }, (_, i) => (
             <span key={i} className="h-14 rounded-xl bg-brand-sky motion-safe:animate-pulse" />
