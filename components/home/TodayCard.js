@@ -1,33 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Bookmark, Mic } from "lucide-react";
-import {
-  fetchTodaysDeclaration,
-  recordSpeakDay,
-  streakLabel,
-  toggleSaved,
-  useSavedDeclarations,
-  useStreak,
-} from "@/lib/declarations";
+import { useEffect, useState } from "react";
+import { Bookmark } from "lucide-react";
+import { fetchTodaysDeclaration, toggleSaved, useSavedDeclarations } from "@/lib/declarations";
 import { cleanTitle } from "@/lib/titles";
 import { cn } from "@/lib/utils";
 import { DotGrid, Eyebrow, QuoteGlyph, Rings } from "@/components/Decor";
 
-const WORD_MS = 300; // roughly the pace of a declaration spoken aloud
-
 /**
- * Today's declaration, to be spoken. "Speak it" lights the words up one at a
- * time at a speaking pace and counts the day toward the speaking streak, the
- * same streak Speak mode keeps.
+ * Today's declaration, to read and keep. Speaking it — the word-by-word pace
+ * and the streak it counts toward — belongs to Speak mode; this card only
+ * shows the declaration and lets you save it.
  */
 export default function TodayCard({ className, style }) {
   const [decl, setDecl] = useState(undefined);
-  const [lit, setLit] = useState(-1); // index of the last word lit; -1 = idle
-  const [speaking, setSpeaking] = useState(false);
-  const timer = useRef(null);
   const saved = useSavedDeclarations();
-  const streak = useStreak();
 
   useEffect(() => {
     let live = true;
@@ -36,41 +23,17 @@ export default function TodayCard({ className, style }) {
       .catch(() => live && setDecl(null));
     return () => {
       live = false;
-      clearTimeout(timer.current);
     };
   }, []);
 
   if (decl === null) return null;
-  const words = decl ? decl.declaration_text.trim().split(/\s+/) : [];
   const isSaved = !!decl && saved.some((d) => d.id === decl.id);
-
-  const speak = () => {
-    clearTimeout(timer.current);
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      recordSpeakDay();
-      return;
-    }
-    setSpeaking(true);
-    let i = 0;
-    const step = () => {
-      setLit(i);
-      i += 1;
-      if (i < words.length) timer.current = setTimeout(step, WORD_MS);
-      else
-        timer.current = setTimeout(() => {
-          setSpeaking(false);
-          setLit(-1);
-          recordSpeakDay();
-        }, 700);
-    };
-    step();
-  };
 
   return (
     <article
       style={style}
       className={cn(
-        "relative flex min-h-[16rem] flex-col gap-4 overflow-hidden rounded-[1.75rem] bg-brand-deep p-6 text-white shadow-card sm:p-8",
+        "relative flex min-h-[16rem] flex-col items-center gap-4 overflow-hidden rounded-[1.75rem] bg-brand-deep p-6 text-center text-white shadow-card sm:p-8",
         className
       )}
     >
@@ -89,49 +52,29 @@ export default function TodayCard({ className, style }) {
           <div className="h-6 w-3/5 rounded-full fh-skeleton-dark" />
         </div>
       ) : (
-        <>
-          <blockquote className="relative mt-auto max-w-[24ch] font-display text-2xl font-medium leading-snug tracking-tight text-balance sm:text-3xl">
-            &ldquo;
-            {words.map((w, i) => (
-              <span
-                key={i}
-                className={cn("transition-opacity duration-300", speaking && i > lit ? "opacity-30" : "opacity-100")}
-              >
-                {w}
-                {i < words.length - 1 ? " " : ""}
-              </span>
-            ))}
-            &rdquo;
+        <div className="relative mt-auto w-full">
+          {/* Centered, so the quote mark sits inside the measure rather than
+              hanging into the padding: no text-indent here. */}
+          <blockquote className="mx-auto max-w-[30ch] font-display text-xl font-medium leading-snug tracking-tight text-balance sm:text-2xl">
+            &ldquo;{decl.declaration_text.trim()}&rdquo;
           </blockquote>
           {decl.sermon_title && (
-            <p className="relative text-sm text-white/65">
+            <p className="mt-2 text-sm text-white/65">
               From <span className="font-medium text-white">{cleanTitle(decl.sermon_title)}</span>
             </p>
           )}
-          <div className="relative flex flex-wrap items-center gap-2.5">
-            <button
-              type="button"
-              onClick={speak}
-              disabled={speaking}
-              className="inline-flex h-10 items-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-brand-navy transition hover:bg-brand-sky active:scale-[0.97] disabled:opacity-90"
-            >
-              <Mic size={16} aria-hidden="true" />
-              {speaking ? "Speaking" : streak.spokeToday ? "Speak again" : "Speak it"}
-            </button>
+          <div className="mt-5 flex justify-center">
             <button
               type="button"
               onClick={() => toggleSaved(decl)}
               aria-pressed={isSaved}
-              className="inline-flex h-10 items-center gap-2 rounded-full border border-white/30 px-4 text-sm font-semibold text-white transition hover:border-white active:scale-[0.97]"
+              className="inline-flex h-10 items-center gap-2 rounded-full border border-white/40 px-4 text-sm font-semibold text-white transition hover:border-white active:scale-[0.97]"
             >
               <Bookmark size={16} aria-hidden="true" className={isSaved ? "fill-current" : ""} />
               {isSaved ? "Saved" : "Save"}
             </button>
-            <span className="text-sm text-white/65" aria-live="polite">
-              {streakLabel(streak)}
-            </span>
           </div>
-        </>
+        </div>
       )}
     </article>
   );
