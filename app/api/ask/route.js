@@ -960,6 +960,15 @@ QUESTION: ${message}${readAs}`;
       // This model answers 4/4 in ~2s. Re-measure before changing it.
       model: 'gemini-2.5-flash',
       systemInstruction: systemPrompt,
+      // A little thinking, not the default. 2.5 Flash thinks as long as it
+      // likes unless told otherwise: on this prompt that was ~1,300 hidden
+      // tokens and up to ~6s of silence before the first word, the single
+      // biggest wait on the page. Measured 2026-10-07, first word at: default
+      // 2.6–7.6s, 512 → ~3.7s, 256 → ~2.2s, 0 → ~1.2s. At 0 it slipped on the
+      // house rules (a formal "Pastor Funlola Alabi", and answering a story it
+      // couldn't find without first saying so); 256 kept them. Re-run
+      // scripts/ask-eval (results/speed-thinking-*) before changing it.
+      generationConfig: { thinkingConfig: { thinkingBudget: 256 } },
     });
 
     // Gemini can reject here (429 quota, 503 overload) before any streaming

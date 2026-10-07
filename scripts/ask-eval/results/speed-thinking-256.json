@@ -1,0 +1,1507 @@
+{
+  "label": "speed-thinking-256",
+  "base": "http://localhost:3930",
+  "at": "2026-10-07T20:04:47.059Z",
+  "results": [
+    {
+      "id": "A18",
+      "group": "A",
+      "note": "Rev. Peter only — must not pull in other preachers as his",
+      "turns": [
+        {
+          "q": "What did Rev. Peter say about volunteering in church?",
+          "expect": {
+            "sermon": [
+              "PRAYER WORKS",
+              "How To Have A Great Year - Part 5",
+              "Vision Sunday 2026",
+              "GO YE Part 1",
+              "Godly Relationships 3"
+            ]
+          },
+          "status": 200,
+          "debug": {
+            "planned": true,
+            "search": "volunteering in church",
+            "mode": "locate",
+            "question": "What did Rev. Peter say about volunteering in church?",
+            "scope": null,
+            "history": 0,
+            "pool": 44,
+            "segments": 18,
+            "weakGrounding": false,
+            "sims": [
+              0.88,
+              0,
+              0.875,
+              0,
+              0.869,
+              0,
+              0.867,
+              0.865,
+              0,
+              0.865,
+              0,
+              0.865,
+              0,
+              0.864,
+              0,
+              0.863,
+              0.863,
+              0
+            ]
+          },
+          "segmentMap": {
+            "1": {
+              "sermon_id": "c5b0e642-d130-4956-9b3b-d8e5c6df7a50",
+              "video_id": "eoQOYfn_gYA",
+              "start_seconds": 512,
+              "sermon_title": "Our Heritage of the Work of the Ministry  | Rev Peter Alabi  | 13th November 2022",
+              "speaker": null,
+              "text": "something in church do something in church did you see that now you also show your faithfulness by your giving you show your faithfulness by your giving you can't say you're a member of a church when you don't give you are not a member if you are not a giver because that's one of the major ways to s…"
+            },
+            "2": {
+              "sermon_id": "f10c33cb-b0a4-42aa-8520-358ee6ed0ad1",
+              "video_id": "_Kwfyv3Dg5Y",
+              "start_seconds": 3640,
+              "sermon_title": "FAQs | WHAT TO DO IN COURTSHIP | REV&#39;D PETER ALABI | 27TH FEBRUARY 2022.",
+              "speaker": null,
+              "text": "you want to volunteer in the community for ngos volunteering the church for a special event by the grace of god mate 27 we're going to have a special event for kids it's a good time to volunteer you and your beloved just come around you know just you know in the community at your workplace you see w…"
+            },
+            "3": {
+              "sermon_id": "2db98f04-6167-4573-8cdf-abfccce1a81e",
+              "video_id": "TZtqOjgL7No",
+              "start_seconds": 9055,
+              "sermon_title": "HOFCHURCHNG | DAY 23 | 40 DAYS OF TRANSFORMATION 2025 | 14TH DECEMBER 2025",
+              "speaker": null,
+              "text": "involved in the service of God in the local church. Being part of a team, a department, you know, a ministry in the church and serve wholeheartedly. Serve wholeheartedly. You know, part of service is to make yourself available to be trained. Get yourself available to be trained. That happens in ever…"
+            },
+            "4": {
+              "sermon_id": "f10c33cb-b0a4-42aa-8520-358ee6ed0ad1",
+              "video_id": "_Kwfyv3Dg5Y",
+              "start_seconds": 3507,
+              "sermon_title": "FAQs | WHAT TO DO IN COURTSHIP | REV&#39;D PETER ALABI | 27TH FEBRUARY 2022.",
+              "speaker": null,
+              "text": "it works now let's do something now you let your hand cross my hand then you will now cross it together do not come to my mind to remind what is all this what's the meaning of all this oh goodness oh my god i remember when mom and i were coaching man she would come she tried to rub my head ah touch…"
+            },
+            "5": {
+              "sermon_id": "3439f665-0d08-4579-b72a-8b3654b1209d",
+              "video_id": "7LECxTh6FGk",
+              "start_seconds": 2025,
+              "sermon_title": "40DOT | DAY 36 | MORNING | REVD PETER ALABI | 6TH JULY, 2022",
+              "speaker": null,
+              "text": "church when we come for services if we come that's why we call this service we come to be serviced we come to be service so that we can go out there and function that's what we come to do in church so and that's why you see when we come to church it is you are coming to be minister too this is what…"
+            },
+            "6": {
+              "sermon_id": "ffff324c-daa6-4805-ac15-ebb9c937f591",
+              "video_id": "R6LkwhG_0Lw",
+              "start_seconds": 12132,
+              "sermon_title": "HOFCHURCHNG | PRAYER WORKS | 28TH MARCH 2026 | REV PETER ALABI",
+              "speaker": null,
+              "text": "of the first things I did those days in my family church, I went to learn how to play the keyboard. So I I became useful and then I volunteered myself. I said I can play it. So they gave me opportunity. I played. They saw I was playing well. They made me join the choir. We used to wear white and blu…"
+            },
+            "7": {
+              "sermon_id": "5371c05b-c475-4de3-b16c-76bd79e60d79",
+              "video_id": "h-4fIzvphXw",
+              "start_seconds": 2245,
+              "sermon_title": "End of Year Admonition - Getting Planted in the Local Church | Rev Peter Alabi | 4th December 2024",
+              "speaker": null,
+              "text": "to do Church correctly corly do Church how talk like your voice is yours do Church how talk louder correct uhhuh you do Church correctly do Church correctly do Church correctly do Church correctly you know God is bringing me into this flow because you need it are you listening do Church how corly do…"
+            },
+            "8": {
+              "sermon_id": "2db98f04-6167-4573-8cdf-abfccce1a81e",
+              "video_id": "TZtqOjgL7No",
+              "start_seconds": 9125,
+              "sermon_title": "HOFCHURCHNG | DAY 23 | 40 DAYS OF TRANSFORMATION 2025 | 14TH DECEMBER 2025",
+              "speaker": null,
+              "text": "and do it faithfully. That is how the work of God gets to be done. The local church is not built upon the talent of a few. It is built upon the sacrifices of many. And here in this church, we don't even like to use the word sacrifice because there's nothing we can do compared to the sacrifice of Jes…"
+            },
+            "9": {
+              "sermon_id": "ffff324c-daa6-4805-ac15-ebb9c937f591",
+              "video_id": "R6LkwhG_0Lw",
+              "start_seconds": 12060,
+              "sermon_title": "HOFCHURCHNG | PRAYER WORKS | 28TH MARCH 2026 | REV PETER ALABI",
+              "speaker": null,
+              "text": "remember vividly now. My older brother is a pastor. He began to take the things of God more seriously than almost all of us in my family from a very young age. I remember vivly the days when I will be struggling for them to allow me to attend their night prayer night I mean night vig and they won't…"
+            },
+            "10": {
+              "sermon_id": "8e33c282-4fb6-4ded-8e6b-d87893733117",
+              "video_id": "vYmElTIlYcY",
+              "start_seconds": 10544,
+              "sermon_title": "HCM 2025 | Day 1 Morning - Discipleship Congress | Rev Peter Alabi | 1st September  2025",
+              "speaker": null,
+              "text": "It should be a place where you are not only coming to minister but you also be ministered to. I minister to leaders of this church last night. The local church must be a place of fellowship. We interact with each other. Don't be the believer that after service before we even say the lines are fallin…"
+            },
+            "11": {
+              "sermon_id": "992b03ca-ef4e-46a2-9fec-b16774a2e1d5",
+              "video_id": "jbup3LE35UE",
+              "start_seconds": 8940,
+              "sermon_title": "HOFCHURCHNG | DAY 6 | 40 DAYS OF TRANSFORMATION 2024 |20TH JULY 2024",
+              "speaker": null,
+              "text": "didn't speak to him the one who believes will never make haste will never make haste you know by the grace of God few months from now we're going to be speaking in Canada in four cities now I didn't go to beg anybody to invite me to pray I've never done it I've never done it in my life I will never…"
+            },
+            "12": {
+              "sermon_id": "095a0dd6-563e-4893-9ced-8610468ee080",
+              "video_id": "Eah43_CDrgs",
+              "start_seconds": 960,
+              "sermon_title": "The Power of the Spirit 3 - 2nd Service | Rev Peter Alabi | 19th May 2024",
+              "speaker": null,
+              "text": "can help in cleaning the sanctuary there are many things you can do in the house of the Lord now to serve is not that you come and say I Auntie I'm very good at this this is what I want to do no that's not how to serve the way to serve is to just say I am available whatever you need me for I'm avail…"
+            },
+            "13": {
+              "sermon_id": "087e4764-b873-4266-a1a2-b383d07fb2f8",
+              "video_id": "pBvHmZ3r5tc",
+              "start_seconds": 7234,
+              "sermon_title": "Vision Sunday 2026 | Rev Peter Alabi | 15th February 2026",
+              "speaker": null,
+              "text": "people that God can talk to about a need without anybody telling them and as I sat down there the Lord showed me something in the church said do that thing and it's a very major thing and sensitive thing I knew it in my spirit so I sent a message daddy I will you know this came to my spirit blah bla…"
+            },
+            "14": {
+              "sermon_id": "99fb6cad-df6e-46e0-ab52-3375a8fdef13",
+              "video_id": "WAXzol4QYc0",
+              "start_seconds": 2567,
+              "sermon_title": "HCM 2025 | Day 6 -  Believers School of Ministry | Rev Peter Alabi | 6th September 2025",
+              "speaker": null,
+              "text": "We're giving, join us to give. We're building, join us to build. >> We're going on visitation. Join us to go on visitation. Be part of what the church is doing. The church is a moving part. >> Can you imagine, God forbid, you left home this morning, your hand say, \"I'm not going. Those are signs of…"
+            },
+            "15": {
+              "sermon_id": "f67edfce-6fb5-4017-919d-0948c57b3741",
+              "video_id": "ZphBzpZOIdg",
+              "start_seconds": 3553,
+              "sermon_title": "Who Is A Disciple | Growing In Discipleship | Pastor Funlola Alabi |7th June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "to work on your character, mold you and shape you to become to become. If you take hold of discipleship and you can walk up to a soul, somebody a stranger to preach to them the gospel. Is it a presentation they want to tell you to do at work that you don't be able to do? That you can walk up to a st…"
+            },
+            "16": {
+              "sermon_id": "c75141cf-d134-4e5d-9a0d-040c8ea43e04",
+              "video_id": "bcK5RTuiqTw",
+              "start_seconds": 2221,
+              "sermon_title": "The Book of Ephesians - Part 17 | Rev Peter Alabi | 19th August 2026",
+              "speaker": null,
+              "text": "to service. God bless you. Now see your employees say h go. The same you do in the office. You complate. You're complaining for if I would write you credit to borrow money. Hear the word of God today. Hear the word of God today. >> If you do that to tie up because she's your employee, you are not se…"
+            },
+            "17": {
+              "sermon_id": "777beda4-b215-4124-a245-c53da55622d4",
+              "video_id": "J2D9TsGXseM",
+              "start_seconds": 7974,
+              "sermon_title": "HOFCHURCHNG | APOSTOLIC MIDWEEK SERVICE | 19TH NOVEMBER 2025 | REV PETER ALABI",
+              "speaker": null,
+              "text": "ready for service evening, the Lord just reminded me and said, \"You got to call your harvest >> as a church.\" >> Yes, sir. >> You know, we did appointment. We didn't take one single offering. We didn't get any support from anybody from outside. We didn't ask. We don't do that. We never do that. >> W…"
+            },
+            "18": {
+              "sermon_id": "e5eb5681-72a5-4442-97dd-641caa6da126",
+              "video_id": "s3rnV5vBcEQ",
+              "start_seconds": 13106,
+              "sermon_title": "HOFCHURCHNG | CAREER DAY FOR KIDS AND TEENS | 24TH MAY 2025 | REV PETER ALABI",
+              "speaker": null,
+              "text": "us your name, the career station you went to, and what you learned. My name is Caleb. So, which carrier station did you um visit? I learned that to build a church. Okay. You're part of the team that built FF3, right? Amazing. So, what did you learn from the um from that um experience? What did you l…"
+            }
+          },
+          "answer": "Dad teaches that volunteering in church is a key way to participate and serve God.\n\nHere's what he said about it:\n*   In \"FAQs,\" Dad encourages volunteering in church for special events, like one for kids on May 27. He explains that engaging in tasks together, such as volunteering, builds bonds and strengthens relationships [2][4].\n*   In \"Day 23,\" Dad emphasizes the importance of being involved in the service of God in the local church, by being part of a team or department and serving wholeheartedly. He states that part of service is making yourself available to be trained [3].\n*   In \"Prayer Works,\" Dad shared his own testimony of volunteering in his family church by learning to play the keyboard, becoming useful, and serving in the choir. He realized that as he gave himself to his own development, he didn't need to fight for places in the church because they found him useful and an asset [6][9].\n*   In \"The Power of the Spirit 3 - 2nd Service,\" Dad explains that serving is not about coming to do only what you are good at, but being available for whatever is needed, even if you need to be taught. He stresses that Christians come to church to be blessed *and* to serve one another, such as by cleaning chairs or teaching God's word [12].\n*   In \"Vision Sunday 2026,\" Dad says that if God will do anything on earth, He will use people, so you might as well volunteer yourself to be a channel for God through action [13].\n*   In \"HCM 2025,\" Dad instructs believers not to be \"paralyzed parts\" of the church, but to be active. This includes joining the church in giving, building, going on visitation, and soul-winning, asking yourself what the church is doing that you haven't started doing yet [14].",
+          "suggestions": [
+            "How to build bonds in courtship",
+            "How to serve wholeheartedly in church",
+            "What it means to be a church member"
+          ],
+          "ms": 9701,
+          "verdict": "PASS",
+          "checks": {
+            "citationsValid": true,
+            "retrieved": true,
+            "cited": true,
+            "hasCitations": true
+          },
+          "notes": [
+            "right message at segment #6 of 18"
+          ],
+          "failed": []
+        }
+      ]
+    },
+    {
+      "id": "B3",
+      "group": "B",
+      "note": "Spoken by a family member at a celebration, not by Rev. Peter",
+      "turns": [
+        {
+          "q": "The message where his dad started a church in the house",
+          "expect": {
+            "sermon": [
+              "ICONIC"
+            ],
+            "notPeter": true
+          },
+          "status": 200,
+          "debug": {
+            "planned": true,
+            "search": "started a church in the house",
+            "mode": "locate",
+            "question": "Where did Rev. Peter speak about starting a church in the house?",
+            "scope": null,
+            "history": 0,
+            "pool": 60,
+            "segments": 18,
+            "weakGrounding": false,
+            "sims": [
+              0.871,
+              0.865,
+              0.878,
+              0,
+              0.876,
+              0,
+              0,
+              0.875,
+              0.875,
+              0.874,
+              0,
+              0.873,
+              0,
+              0.872,
+              0.872,
+              0,
+              0.869,
+              0
+            ]
+          },
+          "segmentMap": {
+            "1": {
+              "sermon_id": "9c18d73d-f2cf-4dba-bc8d-b9fbf8531618",
+              "video_id": "wwP8bGn2IjM",
+              "start_seconds": 18933,
+              "sermon_title": "HOFCHURCHNG | 40 DOT IMMERSION | REV PETER ALABI | 15TH JULY 2023",
+              "speaker": null,
+              "text": "so much so that they now had to send to Jerusalem for the apostles to come so when you go anywhere you go and start something there then you will send for us then we will come or we'll send any of the leaders to come you get what I'm saying now oh yeah oh yeah that's the way it should be because we…"
+            },
+            "2": {
+              "sermon_id": "de0508c1-dcaf-4208-b825-9dd83ef62061",
+              "video_id": "0wsGAXULCGk",
+              "start_seconds": 7235,
+              "sermon_title": "A Supernatural Life - Part 4 | Rev Peter Alabi | 7th May 2025",
+              "speaker": null,
+              "text": "are the high priest of my confession. And in the name of the Lord Jesus Christ, I repent and I set myself free from all those negative words. In the name of the Lord Jesus. And then you stand there. You say, \"Father, as a partaker of the heavenly calling, according to Hebrews 3, under your lordship,…"
+            },
+            "3": {
+              "sermon_id": "e2d2131a-f44b-49a2-96e3-4bec8da7c2ec",
+              "video_id": "Uf81Ip8GvWU",
+              "start_seconds": 1925,
+              "sermon_title": "RFC 2025 - Day 1 Evening - 5 Elements of Faith | Rev Peter Alabi | 18th April 2025",
+              "speaker": null,
+              "text": "your own. Some things just begin to occur to you. They occur to you like that. David said in Psalm 122:1, I was glad when they said to me, \"Let us go into the house of the Lord.\" Psalm 55:14, \"We took sweet counsel together, and we went to the house of the Lord in company. Don't come alone. Let us n…"
+            },
+            "4": {
+              "sermon_id": "686e4bf7-4cb9-479c-b630-55f7cb3cbd69",
+              "video_id": "9TgXgSUQRt8",
+              "start_seconds": 15794,
+              "sermon_title": "HCM 2025 | Day 5 -  Finance Convention 2025 | Rev Peter Alabi | 5th September 2025",
+              "speaker": null,
+              "text": "he will he will rent house he will leave he will settle as if he's a normal migrant like everybody else but he has come for one day because of one particular day that he's building up onto >> and that day is the day where the president will be in a particular place so he can shoot him and kill him f…"
+            },
+            "5": {
+              "sermon_id": "e18c1037-480f-46ef-b807-f16bfcc2fb99",
+              "video_id": "g0kufow_7A8",
+              "start_seconds": 290,
+              "sermon_title": "The Shortfall In Labourers - Witnesses Part 11 | Pastor Funlola Alabi | 31st May 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "all right the media you know sanctuary keepers they make sure that the auditorium is clean and conducive enough for us to sit and have a great time in service. There are many operations that goes on in the church to make church run. But you know we never miss words to say that all those things that…"
+            },
+            "6": {
+              "sermon_id": "92ee509a-9ed3-4fde-a6f6-63d73d1b1261",
+              "video_id": "YDcvHBYFaQE",
+              "start_seconds": 10430,
+              "sermon_title": "HOFCHURCHNG |WONDERS OF PERSONAL FELLOWSHIP | DAY 38 |40 DAYS OF TRANSFORMATION 2024 |21ST AUG. 2024",
+              "speaker": null,
+              "text": "now you can be a member of that physical Gathering joining them online but what you are joining is not an online Gathering you are online joining a physical Gathering because you are not physically available there so they can't say what where is your church he say we don't have a physical Beauty we…"
+            },
+            "7": {
+              "sermon_id": "a5617efe-8376-4c98-a5bb-9925bdf767d8",
+              "video_id": "t5fsRq9i7os",
+              "start_seconds": 6373,
+              "sermon_title": "HOFCHURCHNG | DAY 5 | 40 DAYS OF TRANSFORMATION 2024 |19TH JULY 2024",
+              "speaker": null,
+              "text": "that's why we confess him as Lord that he's Lord now means he rules you and therefore you follow him you can't confess him as Lord and continue to follow the dictates of another god regardless of your age. He say also but their parents don't want them to practice Christianity. Well, there is what is…"
+            },
+            "8": {
+              "sermon_id": "5dd3191a-2a82-4963-8557-578414f7ba5a",
+              "video_id": "mJI1pU89V3o",
+              "start_seconds": 1569,
+              "sermon_title": "Praying With Prayer | Rev'd Peter Alabi | 9th of January 2022",
+              "speaker": null,
+              "text": "building paul said he said we are laborers together with god ye are god's husbandry god's vineyard and ye are god's building we are god's house hallelujah somebody say i'm god's house in first peter 2 5 peter said he also as lively or living stones i built up a spiritual house to offer spiritual sac…"
+            },
+            "9": {
+              "sermon_id": "10435a29-e28c-435b-9674-f13bd1d56ac5",
+              "video_id": "K8_YWhLqpa0",
+              "start_seconds": 2936,
+              "sermon_title": "How GOD Calls and Why GOD Calls Into The Ministry | YMTS 3 | Rev Peter Alabi | 20th May 2026",
+              "speaker": null,
+              "text": "local church. You will be amazed. You'll be amazed. This is a welltaught church. >> And I mean well taught if I say so myself. I'm telling you. Hallelujah. And it's been a long time I've done that teaching series, spiritual home training, but I promise you in 2026 there will be another installment o…"
+            },
+            "10": {
+              "sermon_id": "766a52ff-7d34-4fdd-8df1-d0c8036bbcd0",
+              "video_id": "V9IJjL5rKNI",
+              "start_seconds": 2798,
+              "sermon_title": "The Counsel of GOD - 2nd Service | Rev Peter Alabi | 14th July 2024",
+              "speaker": null,
+              "text": "God these days there are people who start churches as a business you see as a Christian I believe if you let God guide you when you enter the Gathering of any place where they call they say it's a church supposedly the Holy Ghost can help you tell whether there is a calling there or not it can help…"
+            },
+            "11": {
+              "sermon_id": "a5617efe-8376-4c98-a5bb-9925bdf767d8",
+              "video_id": "t5fsRq9i7os",
+              "start_seconds": 6459,
+              "sermon_title": "HOFCHURCHNG | DAY 5 | 40 DAYS OF TRANSFORMATION 2024 |19TH JULY 2024",
+              "speaker": null,
+              "text": "a church just started the church of Jesus Christ? Firstly, next thing you hear people are selling houses, selling lands, bringing the produce to the apostles feet so that the needs of people can be met. Which need? It's like we just started church today and now say there is such a need that requires…"
+            },
+            "12": {
+              "sermon_id": "c88a8a59-4be7-4191-821d-a9929a5d85dd",
+              "video_id": "59gsCIHaa0I",
+              "start_seconds": 1703,
+              "sermon_title": "Apostolic Christianity Part 1 | Rev Peter Alabi | 15th May 2024",
+              "speaker": null,
+              "text": "you must know that in our local church we are not the only children in God's family there are many many many children of God across the nations of the world spread across I remember at the inaugural service of our Oxford Church two weeks ago I remember after we finished the service on Sunday the res…"
+            },
+            "13": {
+              "sermon_id": "a3f56335-a6aa-42a8-8cb8-6202c5ddd5e6",
+              "video_id": "6yd3PgGPT30",
+              "start_seconds": 2161,
+              "sermon_title": "HOFCHURCHNG | DAY 40 - MORNING SESSION | 40 DAYS OF TRANSFORMATION 2025 | 31ST DECEMBER 2025",
+              "speaker": null,
+              "text": "40 duty no that's not how how it is doneh so it just simply means you there's you can take some rest you know not from spiritual things but just you get what I mean and all that so but please stay away from those things still wait on the lord I'm just talking about for the sake of strength and energ…"
+            },
+            "14": {
+              "sermon_id": "913be6ec-05d2-49f4-a024-5c68454a0d9b",
+              "video_id": "qf8ECByy070",
+              "start_seconds": 5696,
+              "sermon_title": "Dealing with Unbelief - Part 2 | Rev Peter Alabi | 22nd January 2025",
+              "speaker": null,
+              "text": "church I said if I was a founder or a pastor of of a church I would be coming to church regularly because I used to come to regularly even when I was not a pastor all right even after I left home why I grew up that way that was a good tradition they pass down to us I listen to what I'm saying I say…"
+            },
+            "15": {
+              "sermon_id": "35c1e9e3-25be-419c-b15e-4ea551123a81",
+              "video_id": "7ikShQi33n4",
+              "start_seconds": 11874,
+              "sermon_title": "Are You a Strong Believer? Immersion Service | Rev Peter Alabi | 3rd May 2026",
+              "speaker": null,
+              "text": "Some of you are asking now, can you trust God for your first house uh in the next 12 months? I really believe God can give you a house in 12 months. I love the brother. He stood up over there. Those trying to start up again, it's okay if they won that race. See, now let let me tell you how can you g…"
+            },
+            "16": {
+              "sermon_id": "686e4bf7-4cb9-479c-b630-55f7cb3cbd69",
+              "video_id": "9TgXgSUQRt8",
+              "start_seconds": 17712,
+              "sermon_title": "HCM 2025 | Day 5 -  Finance Convention 2025 | Rev Peter Alabi | 5th September 2025",
+              "speaker": null,
+              "text": "two you become four. It starts as a watch party until it becomes a house church. >> You are now four. You are now five. One day we say oh you are four you are five there. Wow. Oh yeah. Take manual you to teach those five people. Teach them. Teach them the word of God. The five of you. You don't need…"
+            },
+            "17": {
+              "sermon_id": "b590e00d-5946-4800-b014-74c4b7af9fa4",
+              "video_id": "XH1DA300S4I",
+              "start_seconds": 2368,
+              "sermon_title": "The Book of Ephesians - Part 9 | Rev Peter Alabi | 24th June 2026",
+              "speaker": null,
+              "text": "reason why a church member stops coming to church or they begin to feel unsafe in God's house. No, that should never be. You must be contributing towards the safety and the protection of the flock. You must be. And that's what the word of God says. He says that the Lord of God of Israel said against…"
+            },
+            "18": {
+              "sermon_id": "69ef936f-773e-475c-806e-f78d518c9a9e",
+              "video_id": "3FYPjs5gsGo",
+              "start_seconds": 2462,
+              "sermon_title": "Arise Early and Be on your way 3 | Revd Peter Alabi | 14th August 2022",
+              "speaker": null,
+              "text": "to do the will of god and to enjoy life on a high level and after a godly soul and for a good witness shout amen something you see that i see you guys stand up a lot in this church it's part of the benefit of being a member of this church exercise for your body stand up you have a smart watch your s…"
+            }
+          },
+          "answer": "The messages provided do not describe Dad's own father starting a church in a house.\n\nHowever, Dad does mention that he was taught good traditions from home about attending church regularly, even before he was a pastor [14]. He also teaches about the importance of house churches:\n*   In **40 Dot Immersion**, Dad explains that when you go to a new place, you can start by live-streaming, inviting people for a watch party, and from there it becomes a cell or a house church. He mentions that two people are enough to build a gathering [1].\n*   In **HCM 2025**, Dad says that a house church starts with as few as two or three people. He shares how he started this church by looking for converts and preaching together with them [16]. He also describes a strategy where someone moves into a neighborhood, forms connections, and a house church starts before they know it, similar to how the early church spread [4].\n*   In **Wonders of Personal Fellowship**, Dad states that the goal for members in the diaspora is to grow to the point where they can start a house church, defining it as calling people to join you, even just two or three. He notes that many early churches of the apostles started in people's houses [6].\n*   In **Day 40 - Morning Session**, Dad encourages members in the diaspora, whose churches might be meeting in house churches, to check on their invitees and perfect arrangements for transportation to gather people [13].",
+          "suggestions": [
+            "How can I start a house church?",
+            "What is the primary calling of the church?",
+            "What defines a true church?"
+          ],
+          "ms": 8729,
+          "verdict": "FAIL",
+          "checks": {
+            "citationsValid": true,
+            "retrieved": false,
+            "cited": false,
+            "noMisattribution": true,
+            "hasCitations": true
+          },
+          "notes": [
+            "right message not among 18 segments"
+          ],
+          "failed": [
+            "retrieved",
+            "cited"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C7",
+      "group": "C",
+      "note": null,
+      "turns": [
+        {
+          "q": "How do I overcome fear and anxiety?",
+          "expect": {},
+          "status": 200,
+          "debug": {
+            "planned": true,
+            "search": "overcome fear and anxiety",
+            "mode": "teaching",
+            "question": "How do I overcome fear and anxiety?",
+            "scope": null,
+            "history": 0,
+            "pool": 48,
+            "segments": 18,
+            "weakGrounding": false,
+            "sims": [
+              0.853,
+              0,
+              0.881,
+              0,
+              0,
+              0.875,
+              0,
+              0,
+              0,
+              0.866,
+              0,
+              0.865,
+              0.863,
+              0,
+              0.861,
+              0.86,
+              0,
+              0.859
+            ]
+          },
+          "segmentMap": {
+            "1": {
+              "sermon_id": "4536a039-5518-4c85-9464-6d9a676e572a",
+              "video_id": "SFwSgjsMSd8",
+              "start_seconds": 3303,
+              "sermon_title": "The Prayer of a Righteous Man - Part 3 - 1st Service | 9th February 2025 | Rev Peter Alabi",
+              "speaker": null,
+              "text": "faced fears battles and won in other words he's trying to let you see Champions are people who overcame fears they are not people who never had fears Champions are people who had fears in their life that they faced some of you may be in those moments and seasons of your life now where God is confron…"
+            },
+            "2": {
+              "sermon_id": "19325cf5-0393-4387-a47a-a9c842dc04a2",
+              "video_id": "L1GYbx70F9A",
+              "start_seconds": 3289,
+              "sermon_title": "GOD's Principle of Faithfulness 5 -Ambidextrous Believers Part 18 | Rev Peter Alabi | 27th July 2025",
+              "speaker": null,
+              "text": "Did you see that? So take no thought doesn't mean don't think. All right. The original language there is don't worry about it. Don't worry about it. Some people can see that in service sometimes the word of God is coming up with so much power and his mind is no longer in the service. You know why he…"
+            },
+            "3": {
+              "sermon_id": "dcfb2955-683f-4fa1-9d2f-9af4c7e72d24",
+              "video_id": "zsLKCGseIdo",
+              "start_seconds": 11944,
+              "sermon_title": "HOFCHURCHNG | END OF YEAR MEGA SERVICE | 31ST DECEMBER 2025 | REVD PETER ALABI",
+              "speaker": null,
+              "text": "But like I told you, these are things you can deal with. And I mean starting from here this morning, you must make up your mind. You will not journey in life with fear again. that fear will not be a companion in your life's journey anymore. You must make up your mind. 2 Timothy 1:6 Paul said to Timo…"
+            },
+            "4": {
+              "sermon_id": "1e52f5e0-943c-490b-b9f6-3df9a06d215c",
+              "video_id": "RSi7qQGnowM",
+              "start_seconds": 3464,
+              "sermon_title": "The Justified Ones 2  | The Blessed Life 3 | Rev Peter Alabi | 21st September 2022",
+              "speaker": null,
+              "text": "mind with all kinds of things and I said next time a devil tries to arouse your mind you plead the blood of Jesus and harass him back and some of you need to understand how to Warfare in your mind because that's where the real battle is whether it's a battle against sin whether it's about to be agai…"
+            },
+            "5": {
+              "sermon_id": "5d5400a2-342c-4b61-a216-4dea0a9de794",
+              "video_id": "xFKokHWR30g",
+              "start_seconds": 5584,
+              "sermon_title": "Divine Mastery - Ambidextrous Believers Part 12 | Rev Peter Alabi | 8th June 2025",
+              "speaker": null,
+              "text": "do from this service this morning is this. for the next two weeks at least decide go on the you know telegram channel look at the teachings we've done decide on which subject you want to master in this season and for the next two weeks bombard yourself with those teachings get your Bible concordance…"
+            },
+            "6": {
+              "sermon_id": "efa79175-e343-4140-ad7b-3ccd4f659bbe",
+              "video_id": "7d9VKbXVKWA",
+              "start_seconds": 1634,
+              "sermon_title": "Furtherance Through The Ministry of The Word | Pastor Funlola Alabi | 9th August 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "fear of making it, fear of succeeding, fear of having children, fear of degeneration, whatever fear it is that you have lost in your life. Under the ministry of God's word, fears disappear. The Lord delivers from fear. David said, he said, \"I sought the Lord and he delivered me from all my fears.\" A…"
+            },
+            "7": {
+              "sermon_id": "3be302ca-ec9a-44ec-a7d5-e31edf081554",
+              "video_id": "FjwbSSiQc5s",
+              "start_seconds": 8139,
+              "sermon_title": "HOFCHURCHNG | DAY 26 - EVENING SESSION | 40 DAYS OF TRANSFORMATION 2025 | 17TH DECEMBER 2025",
+              "speaker": null,
+              "text": "this program, the power of God has been dealing with that issue. And you say, thank God for You begin to thank You say, Father, I thank you for what you have done about this matter in the last 26 days. I give you all the praise. And then from there you go and address that thing and say, in the name…"
+            },
+            "8": {
+              "sermon_id": "686e4bf7-4cb9-479c-b630-55f7cb3cbd69",
+              "video_id": "9TgXgSUQRt8",
+              "start_seconds": 5064,
+              "sermon_title": "HCM 2025 | Day 5 -  Finance Convention 2025 | Rev Peter Alabi | 5th September 2025",
+              "speaker": null,
+              "text": "to another. He would cry seriously. And I I had to endure the the the sound of that. He was serious. And I'll be praying in tong tong they work. You see what I'm saying? Yeah. So if you're a woman, it's good for you to do. It helps your kids be doctors. I be what led us into that into breastfeeding.…"
+            },
+            "9": {
+              "sermon_id": "251ac301-86e3-45c8-981f-3655b1783f7b",
+              "video_id": "2bVMPvxKJHw",
+              "start_seconds": 3058,
+              "sermon_title": "How To Prepare for 40 Days of Transformation 2025 | Rev Peter Alabi | 16th November 2025",
+              "speaker": null,
+              "text": "of living a powerful life. At what point did Jacob have a breakthrough? The night he withdrew from everybody, stepped away from his family, stepped away from his wives, stepped away from his kids, stepped away from all the distractions of life in one night. I told you, God doesn't withhold. It is yo…"
+            },
+            "10": {
+              "sermon_id": "da2e54b9-b2b9-4f2e-88e4-2878150df358",
+              "video_id": "2a-sO2xiCrQ",
+              "start_seconds": 4009,
+              "sermon_title": "The Prayer of a Righteous Man - Part 7 - 2nd Service | Rev Peter Alabi | 23rd February 2025",
+              "speaker": null,
+              "text": "fear to do right because they didn't know that fear of punishment even when it comes to doing what is right will not stop at that it will begin to encroach into other areas of your life eventually it become fear of dying eventually become fear of failure in life and then before you know what is happ…"
+            },
+            "11": {
+              "sermon_id": "8b0c132a-fa89-46cf-af17-495a5b11ecb9",
+              "video_id": "TKm94Q0Cmcw",
+              "start_seconds": 6808,
+              "sermon_title": "HOFCHURCHNG | DAY 6 - EVENING SESSION | 40 DAYS OF TRANSFORMATION 2025 | 27TH NOVEMBER 2025",
+              "speaker": null,
+              "text": "Fear no evil. Somebody say, \"I will fear no evil.\" Say like your voice is yours. Say, \"I shall fear no evil.\" Say bolder than that. Say, \"I shall fear no evil.\" Why will you not fear any evil? Let's go to Psalm 23. Why will you not fear any evil? In Psalm 23, the psalmist said, \"Yea, verse 4, though…"
+            },
+            "12": {
+              "sermon_id": "0f8a1596-3cb6-4263-82f4-987dbbf7a353",
+              "video_id": "-oUqOB1keGU",
+              "start_seconds": 4283,
+              "sermon_title": "Graces and Places 7 | Rev Peter Alabi | 8th October 2023",
+              "speaker": null,
+              "text": "even you know fear is a messenger from Satan but fear also has PA the spirit of fear has personal assistance he has special assistance one of the special assistance of the spirit of fear is the emotion of fear now you don't need to have the spirit of fear in you for you to feel fear you can feel fea…"
+            },
+            "13": {
+              "sermon_id": "ab39166e-345a-4cc2-9fa0-eeb8072336d0",
+              "video_id": "f1qbdcKAbgk",
+              "start_seconds": 1921,
+              "sermon_title": "How to Listen to the Voice of God -  Rev'd Peter Alabi",
+              "speaker": null,
+              "text": "so why not torment yourself for what will not even happen anyway at least not at this time because the major fear of man is a fear of death otherwise i'm afraid of flying no flying is not your fear your fear is what could happen as a result of lying which is death so don't lie offline you see do you…"
+            },
+            "14": {
+              "sermon_id": "cec14d1f-3687-441f-a79f-461c6ec0222a",
+              "video_id": "U19wxBF8JNw",
+              "start_seconds": 1685,
+              "sermon_title": "The Knowledge of The LORD Our Shepherd 4 | Rev Peter Alabi | 24th August 2025",
+              "speaker": null,
+              "text": ">> There's a great calm right now >> in the name of Jesus. Thank you, Lord God. >> Thank you, Lord Jesus. >> Keep playing it in the background. Keep playing it in the background. Go on like that. Thank you, Lord Jesus. I see God is ministering to people and touching people. He's touching people. Yes…"
+            },
+            "15": {
+              "sermon_id": "4536a039-5518-4c85-9464-6d9a676e572a",
+              "video_id": "SFwSgjsMSd8",
+              "start_seconds": 3382,
+              "sermon_title": "The Prayer of a Righteous Man - Part 3 - 1st Service | 9th February 2025 | Rev Peter Alabi",
+              "speaker": null,
+              "text": "me and that was the end of it that was the end of it there comes a time you've got to face that thing and say you know what no more no more you know I found out any fear that is dogging you that is coming consistently has some anxiety inside of it fact I don't think you can separate fear from anxiet…"
+            },
+            "16": {
+              "sermon_id": "ac2f51ea-3dd7-444d-8585-c3f1ca50d8b4",
+              "video_id": "ziyYpRvNQSw",
+              "start_seconds": 1929,
+              "sermon_title": "Listening to the Holy Spirit | How To Be Led by The Spirit 4 | Rev'd Peter Alabi | 22nd May 2022",
+              "speaker": null,
+              "text": "because the major fear of man is a fear of death otherwise i'm afraid of flying no flying is not your fear your fear is what could happen as a result of lying which is death so don't lie offline you see do you ever want to go near a swimming pool the water is not see that's how you know that that wa…"
+            },
+            "17": {
+              "sermon_id": "8b0c132a-fa89-46cf-af17-495a5b11ecb9",
+              "video_id": "TKm94Q0Cmcw",
+              "start_seconds": 6922,
+              "sermon_title": "HOFCHURCHNG | DAY 6 - EVENING SESSION | 40 DAYS OF TRANSFORMATION 2025 | 27TH NOVEMBER 2025",
+              "speaker": null,
+              "text": "is with you, his presence with you may not cause you to overcome fear. And of course, as you know, that's why there are many Christians today, God is with them, but there is still fear with them. So, why is God with me? Why should the presence of God with me cause me not to be afraid? The answer is…"
+            },
+            "18": {
+              "sermon_id": "cfcc44fb-4f2c-4d81-832c-a0fa6cf15586",
+              "video_id": "xMZGAB95InA",
+              "start_seconds": 4149,
+              "sermon_title": "Faith, Foolishness, Presumptions or Fear - Part 1 | Rev Peter Alabi | 1st January 2025",
+              "speaker": null,
+              "text": "people so I will stay for your fance now let me tell you this to get to that point where these men got through you must first conquer fear all the examples we've mentioned now they all they all conquered fear none of these men lived by fear nor in fear none of them David was not a fearful man as we…"
+            }
+          },
+          "answer": "Overcoming fear and anxiety involves understanding their nature, recognizing God's provision against them, and actively engaging in spiritual practices to counter them.\n\nDad teaches that anxiety is a manifestation of fear, and worry is a disturbing, scary, fearful thought about tomorrow [2]. Fear is an enemy of a sound mind, making people irrational [3]. Our Senior Pastor adds that fear is not just a feeling but a tormenting spirit that paralyzes and hinders progress [6]. Dad likens fear to cancer, explaining that it spreads if not cut off immediately [10]. Many fears, such as the fear of flying, are ultimately rooted in the fear of death, and psychologists even say most fears are irrational because they will never happen [13][16]. Fear in one area can also open up other areas of your life to the enemy [18].\n\nTo overcome fear and anxiety, several key principles are shared:\n\n1.  **Understand God's provision against fear:**\n    *   **God has not given us a spirit of fear:** Dad emphasizes that God has given us a spirit of love, power, and a sound mind, not fear (2 Timothy 1:6) [3]. Our Senior Pastor echoes this, stating that God has not given us the spirit of fear or timidity [6]. We have not received the spirit of bondage again to fear (Romans 8:15) [3].\n    *   **The love of God casts out all fear:** Fear is bondage, but God's love, which is already in our hearts, casts it out [3]. The presence of God, specifically His love for us, is the antidote to fear [11][17]. He is with us with good intentions and has the capacity to protect us [17].\n    *   **God delivers from all fears:** David sought the Lord and was delivered from all his fears, and Dad teaches that if God heard David, He will hear us too [6][18].\n    *   **Don't worry, trust God:** Dad explains that \"take no thought\" means \"don't worry about it\" (Matthew 6:25) [2][8]. Worry exposes areas of your life to the enemy, as seen with Job, whose fear and anxiety exposed his children and estate (Job 3:25) [8].\n\n2.  **Actively engage in spiritual warfare and apply God's Word:**\n    *   **Face your fears:** Champions are those who overcome fears, not those who never had them. You must confront what is dogging you and say \"no more\" [1]. Dad recalls an experience where he faced a fierce lion in a dream by rebuking it in his spirit, and it \"skimped away,\" signifying the end of that fear [1]. There comes a time you've got to face that thing [1][15].\n    *   **Cut it off and repent:** Fear needs to be cut off immediately, like cancer [10]. You can repent of fear, crying out to the Lord like David did in Psalm 34, asking Him to deliver you from all fears [10][18].\n    *   **Warfare in your mind:** The mind is where the real battle is. You cannot overcome thoughts with thoughts; you must open your mouth and speak the right thing, pleading the blood of Jesus and harassing the devil back [4].\n    *   **Command fear and anxiety:** When incessant fear or anxiety rises, command it in the name of the Lord Jesus Christ, saying, \"I overcome you. I come against you and I come after you by the power of the Holy Spirit. And I suppress you. I neutralize you now\" [7].\n    *   **Master the Word on victory over fear:** Dedicate time to studying and meditating on teachings about victory over fear and faith. Gather all scriptures that speak against fear and how a believer overcomes it [5].\n    *   **Seek solitude:** Withdrawing from distractions, people, and social media can help you miss anxiety and fear, along with other negative influences. This helps create space to hear God [9].\n    *   **Experience God's peace:** God is quieting every noise of worry, anxiety, and fear, bringing His peace into your heart and mind [14]. This peace that passes all understanding quiets your spirit [14].",
+          "suggestions": [
+            "How can I master a subject?",
+            "What is a sound mind?",
+            "How does God's love protect?"
+          ],
+          "ms": 10429,
+          "verdict": "PASS",
+          "checks": {
+            "citationsValid": true,
+            "hasCitations": true
+          },
+          "notes": [],
+          "failed": []
+        }
+      ]
+    },
+    {
+      "id": "H6",
+      "group": "H",
+      "note": null,
+      "turns": [
+        {
+          "q": "What does the Catholic church teach about purgatory?",
+          "expect": {
+            "refuse": true
+          },
+          "status": 200,
+          "debug": {
+            "planned": true,
+            "search": "purgatory teaching Catholic church",
+            "mode": "teaching",
+            "question": "What does the Catholic church teach about purgatory?",
+            "scope": null,
+            "history": 0,
+            "pool": 40,
+            "segments": 18,
+            "weakGrounding": true,
+            "sims": [
+              0.844,
+              0.843,
+              0.842,
+              0.841,
+              0.84,
+              0.838,
+              0.837,
+              0.837,
+              0.836,
+              0.836,
+              0.836,
+              0.835,
+              0.835,
+              0.835,
+              0.834,
+              0.834,
+              0.834,
+              0.833
+            ]
+          },
+          "segmentMap": {
+            "1": {
+              "sermon_id": "41e28a2f-7fd7-46a3-9cf4-63b894b58a57",
+              "video_id": "QHsyd1FKgkY",
+              "start_seconds": 4917,
+              "sermon_title": "HOFCHURCHNG | DAY 11 | 40 DAYS OF TRANSFORMATION 2024 | 25TH JULY 2024",
+              "speaker": null,
+              "text": "reduce yourself to a point where you cannot endure 20 minutes teaching again it's possible I've told you many of you don't realize it I've said over the years that long teaching is not just good for you as members of the church is important for me myself as a teacher because if I don't teach for lon…"
+            },
+            "2": {
+              "sermon_id": "35c1e9e3-25be-419c-b15e-4ea551123a81",
+              "video_id": "7ikShQi33n4",
+              "start_seconds": 9130,
+              "sermon_title": "Are You a Strong Believer? Immersion Service | Rev Peter Alabi | 3rd May 2026",
+              "speaker": null,
+              "text": "son of a widow. Jesus doesn't know the woman. Jesus didn't know the family. He is going on his own ministry work and he meets them and he can see this is sorrow. These people are sad. They didn't ask him and say come and raise the dead. They didn't beg him. Jesus just saw these people are in pain. H…"
+            },
+            "3": {
+              "sermon_id": "998c00a5-f10a-4dd3-bf6d-eb4510367f26",
+              "video_id": "2neYhuQk75s",
+              "start_seconds": 1928,
+              "sermon_title": "Apostolic Foundations 3 |The Sacrosanctity of GODs Choice of Men |Pastor Funlola Alabi |10 July 2024",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "many people have died because of false Doctrine people have lost their lives false doctrine that says they don't take drugs they don't take medicine they they are believers and they I tell you they they've made Heaven they have I'm telling you they have eternal life but they don't believe in taking…"
+            },
+            "4": {
+              "sermon_id": "60f41a97-0ec5-4cf8-9a53-2bec58e248ce",
+              "video_id": "yLB52gXYF-Y",
+              "start_seconds": 304,
+              "sermon_title": "Corrections and Adjustments [Part 2] | Metamorphoo IV | Rev Peter Alabi",
+              "speaker": null,
+              "text": "have 10 000 instructors so there must be instruction coming to you there must be voice or voices of instruction that's why we say in life you're going to have many unconscious teachers but you cannot afford to be an unconscious learner you can't afford it you must always be tuned to the voice of ins…"
+            },
+            "5": {
+              "sermon_id": "527f1dbd-398d-4dd6-a9a7-298d1160c8f5",
+              "video_id": "xUBYiVU5XLk",
+              "start_seconds": 1914,
+              "sermon_title": "The Sacrosanctity of GOD&#39;s Choice of Men 2| Apostolic Christianity | Rev Peter Alabi |12th June 2024",
+              "speaker": null,
+              "text": "saying you know we experienced one in this church unfortunately the woman has you know de woman of God she's going to be with the Lord now you see what I'm saying now sadly so but she was healed from the cancer I didn't stress myself some of the Associates in full time were there I never broke a swe…"
+            },
+            "6": {
+              "sermon_id": "bc90e545-903f-49c8-836f-61e81425cc29",
+              "video_id": "bnsI1G2604M",
+              "start_seconds": 2528,
+              "sermon_title": "Exercising the Reborn Spirit | Developing a Strong Spirit V | Rev'd Peter Alabi | 27th March 2022",
+              "speaker": null,
+              "text": "context of ability to discern and you need to bear that in mind because when we go to verse 27 now you also see that if you don't have that in mind you can become a heretic by this verse and say you don't need a teacher to teach you god's word so go to verse 27 now first john 2 27 but the anointing…"
+            },
+            "7": {
+              "sermon_id": "f3c24051-c599-4d3a-9fb5-6f4346f7c1fd",
+              "video_id": "GEL2-r46ULg",
+              "start_seconds": 0,
+              "sermon_title": "Four Areas Your Faith Confessions Must Cover - Part 5 | Rev Peter Alabi | 2nd October 2024",
+              "speaker": null,
+              "text": "life it's the life as God has it there is no death in that life when you believe the gospel you are obeying the go by doing so you are obeying God your obedience the instruction in the meeting is what connects you to the flow of the spirit in the meeting is what connects you to the floor of the anoi…"
+            },
+            "8": {
+              "sermon_id": "913be6ec-05d2-49f4-a024-5c68454a0d9b",
+              "video_id": "qf8ECByy070",
+              "start_seconds": 120,
+              "sermon_title": "Dealing with Unbelief - Part 2 | Rev Peter Alabi | 22nd January 2025",
+              "speaker": null,
+              "text": "same things to you he said for me it is not Grievous he says but for you it is safe was Paul says for me um I don't count it burdensome and I think it comes with the anointing to teach anyone who is really anointed to teach God's word doesn't see it as a burden to repeat himself I don't count it the…"
+            },
+            "9": {
+              "sermon_id": "9b896d47-588e-4991-9c62-b81ae3a56228",
+              "video_id": "0It5N7qf7M0",
+              "start_seconds": 2471,
+              "sermon_title": "Growing up Spiritually 1 | Rev Peter Alabi | 9th October 2022",
+              "speaker": null,
+              "text": "not just teaching head knowledge and I'm not also teaching to put it in your head I'm teaching Revelation knowledge so that I can get into your heart but as after doing the teaching you know as we do the teaching we also pray for the flock because Paul taught these churches the Ephesian Church the c…"
+            },
+            "10": {
+              "sermon_id": "59710785-1850-410b-a6fc-6ff69497758b",
+              "video_id": "PV8jWYwpl6w",
+              "start_seconds": 804,
+              "sermon_title": "Angels and Demons - The Things of The Spirit Part 7 | Rev Peter Alabi | 22nd February 2026",
+              "speaker": null,
+              "text": "many more things we can learn about the basics. And that's why this morning we're looking at the things of the spirit is a very fundamental teaching. You see, because there is no Christianity without the supernatural and there is no supernatural without the Holy Ghost. I said again, there is no Chri…"
+            },
+            "11": {
+              "sermon_id": "b960a825-40bc-46d1-aabc-4b9c283b7046",
+              "video_id": "vjH9jLj9bmE",
+              "start_seconds": 3,
+              "sermon_title": "The Authority of the Believer in Prayer II | Rev'd Peter Alabi | 23rd January 2022",
+              "speaker": null,
+              "text": "your faith must be in the law blood of jesus is something the devil cannot stand whenever you speak of the blood of jesus you are speaking of what jesus christ has done in redemption as a matter of fact the blood of jesus is jesus himself when you hear the word of god you have a divine opportunity i…"
+            },
+            "12": {
+              "sermon_id": "ffff324c-daa6-4805-ac15-ebb9c937f591",
+              "video_id": "R6LkwhG_0Lw",
+              "start_seconds": 3613,
+              "sermon_title": "HOFCHURCHNG | PRAYER WORKS | 28TH MARCH 2026 | REV PETER ALABI",
+              "speaker": null,
+              "text": "inheritance.\" Ask of me, I will give you the hidden for the inheritance. Hallelujah. So, we have a mandate. We have a mandate to preach the gospel. In acts in Mark chapter 16 verse1 15 he said and he said unto them go ye into all the world and preach the gospel to every creature. Go ye that is our w…"
+            },
+            "13": {
+              "sermon_id": "59710785-1850-410b-a6fc-6ff69497758b",
+              "video_id": "PV8jWYwpl6w",
+              "start_seconds": 0,
+              "sermon_title": "Angels and Demons - The Things of The Spirit Part 7 | Rev Peter Alabi | 22nd February 2026",
+              "speaker": null,
+              "text": "So we will look a little further on the subject of the things of the spirit. You know I've said in recent time we usually would teach a topic for a month and then we'll move to another topic the next month. What we noticed in the last one two years we've not been doing that. Now I'll tell you one of…"
+            },
+            "14": {
+              "sermon_id": "be3d1430-5fc7-4320-b200-568e04aad2be",
+              "video_id": "PZpuroTBY24",
+              "start_seconds": 9245,
+              "sermon_title": "HOFCHURCHNG | DAY 12 - EVENING SESSION | 40 DAYS OF TRANSFORMATION 2025 | 3RD DECEMBER 2025",
+              "speaker": null,
+              "text": ">> It had to be taught. It had to be taught. Now, that's a working that's a working of the spirit in this church. Are you seeing what I'm saying somebody now? >> Yes, sir. >> But if it happens a lot as it does here, there is a tendency that you can actually get familiar with it. >> Yes, sir. >> Say…"
+            },
+            "15": {
+              "sermon_id": "30cb72f5-8707-496b-8855-507e8737965a",
+              "video_id": "EOFDDKq1Okg",
+              "start_seconds": 5964,
+              "sermon_title": "Faith and Healing 3 | Midweek service | Rev Peter Alabi | 17th August 2022",
+              "speaker": null,
+              "text": "were relying on the anointing for their christian life and their personal life and they thought the anointing failed them no the anointing name failed they were trying to make the anointing do what it was not designed to do and i'll tell you many have died because of that many have died because of t…"
+            },
+            "16": {
+              "sermon_id": "c3acddf7-789c-4530-aea0-ed3ffc1d6445",
+              "video_id": "-JCGih_OPVo",
+              "start_seconds": 1672,
+              "sermon_title": "CONSISTENCY - Holding On to The Things We Know to Be True | Pastor Funlola Alabi | 23rd January 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "not every TEACHER THAT IS TRULY TEACHING the gospel or that is a TRUE TEACHER. THERE ARE FALSE TEACHERS. NEWS FLASH. THERE'S FALSEHOOD OUT THERE. NEWS FLASH. AND WE MUST BE aware of it. We must be aware of it. And that's why it will forever be the height of confusion. When a believer stays back and…"
+            },
+            "17": {
+              "sermon_id": "be3d1430-5fc7-4320-b200-568e04aad2be",
+              "video_id": "PZpuroTBY24",
+              "start_seconds": 11888,
+              "sermon_title": "HOFCHURCHNG | DAY 12 - EVENING SESSION | 40 DAYS OF TRANSFORMATION 2025 | 3RD DECEMBER 2025",
+              "speaker": null,
+              "text": "thing on your mind. It wasn't a house. It wasn't a car. It wasn't a wife or a husband. He wasn't a child. He was the Holy Ghost. >> And Luke summarized it and he said, \"They were with one accord.\" And what they were in one accord about happened. >> Whenever we in one accord, what we are in one accor…"
+            },
+            "18": {
+              "sermon_id": "845a926c-8000-417a-83fe-5c95ae3a5c35",
+              "video_id": "rlm5sxHrkhE",
+              "start_seconds": 699,
+              "sermon_title": "The Anointing - 2nd Service | Pastor Funlola Alabi | 18th August 2024",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "here to help us but is not a replacement for the natural things for example you need to go to school the Holy Ghost will not teach you medicine but it can help you as you practice medicine it can help you as you learn medicine but he not going to teach he's not he's not going to be your lecturer in…"
+            }
+          },
+          "answer": "The messages provided do not directly address what the Catholic Church teaches about purgatory.\n\nHowever, in one of our messages, our Senior Pastor Funlola Alabi does speak about false doctrines. She mentions instances where people have died due to doctrines that reject medicine or blood transfusions, stating that these individuals \"have eternal life\" and \"have made Heaven,\" despite losing their lives because of these beliefs [3]. She emphasizes the importance of avoiding false teachings, noting that they can lead to loss of life [3].\n\nDad also highlights the importance of discerning teaching and exercising the reborn spirit. He explains that you don't need another person to teach you whether something is of God or not, because your spirit and the Holy Ghost witness to each other (Romans 8:16) [6]. He also cautions that wrong teaching can kill and lead to serious sickness or health crises, especially when it disregards making wise choices about health, such as getting enough sleep [15].",
+          "suggestions": [
+            "How can I discern false teaching?",
+            "What is true genuine accountability?",
+            "How does the Holy Ghost help us?"
+          ],
+          "ms": 9782,
+          "verdict": "FAIL",
+          "checks": {
+            "citationsValid": true,
+            "saysNotCovered": false
+          },
+          "notes": [
+            "uses the formal name \"Pastor Funlola Alabi\""
+          ],
+          "failed": [
+            "saysNotCovered"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K1",
+      "group": "K",
+      "note": null,
+      "turns": [
+        {
+          "q": "What did Mom teach about good works and salvation?",
+          "expect": {
+            "sermon": [
+              "Funlola"
+            ],
+            "speaker": "Senior Pastor",
+            "notPeter": true,
+            "steward": true
+          },
+          "status": 200,
+          "debug": {
+            "planned": true,
+            "search": "good works, salvation, faith",
+            "mode": "teaching",
+            "question": "What did Pastor Funlola teach about good works and salvation?",
+            "scope": {
+              "kind": "preacher",
+              "label": "Pastor Funlola Alabi",
+              "messages": 85,
+              "missed": false
+            },
+            "history": 0,
+            "pool": 64,
+            "segments": 18,
+            "weakGrounding": false,
+            "sims": [
+              0.84,
+              0,
+              0.894,
+              0,
+              0,
+              0.878,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0.861,
+              0,
+              0.859,
+              0.858,
+              0.857,
+              0.856,
+              0.856
+            ]
+          },
+          "segmentMap": {
+            "1": {
+              "sermon_id": "765dc698-9844-4f0e-a274-d4557c1edb33",
+              "video_id": "ZplYhd-jOGs",
+              "start_seconds": 86,
+              "sermon_title": "Prayer as a Thing of The Spirit - Part 2 | Pastor Funlola Alabi | 18th March 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "we can maximize prayer. And that is not all that God does for us. God is so good that he gave us eternal life. All right? And at the point of salvation, he didn't ask us to bring our own faith to receive salvation. He gave us the faith, his own faith with which we receive salvation. And that is the…"
+            },
+            "2": {
+              "sermon_id": "cedb87d1-c9af-4666-9901-30d416145caf",
+              "video_id": "b1LFKrJ7p5Q",
+              "start_seconds": 176,
+              "sermon_title": "Faith Essentials  | Pst Funlola Alabi | 12th November 2023",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "years it can be harmful to you it will be harmful to you all right but that's not how Faith boosting is you can get your faith boosted at any time the more the merer glory to God the more the stronger Hallelujah so that's the way he works so every time we have an opportunity to hear teachings on fai…"
+            },
+            "3": {
+              "sermon_id": "f3ab39d9-718a-4326-aa7e-86f8226be18d",
+              "video_id": "rRccBtbsTYI",
+              "start_seconds": 3770,
+              "sermon_title": "The Book of Ephesians - Part 11 | Pastor Funlola Alabi | 8th July 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "but they are the proof of salvation. They are not the price we pay to be saved, but they are proof. They are evidence that we are saved. They are evidence. Good works give evidence to our salvation. Is a sign that we have the nature of God. The divine nature of God. The nature of God. God does good…"
+            },
+            "4": {
+              "sermon_id": "567b2ae1-ee49-469e-9d55-6f150eb28d55",
+              "video_id": "y_yHriN4P98",
+              "start_seconds": 110,
+              "sermon_title": "Family Weekend Charge - HOF Family Weekend 2025 Day 1 | Pastor Funlola Alabi | 22nd March 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "is a product of marriage or rather it should be glory to God he ought to be because that is the way God designed it and if you notice all right for some of you under the sound of my voice you will realize that both you and your siblings all came out of a marital Union between your parents for those…"
+            },
+            "5": {
+              "sermon_id": "f3ab39d9-718a-4326-aa7e-86f8226be18d",
+              "video_id": "rRccBtbsTYI",
+              "start_seconds": 3384,
+              "sermon_title": "The Book of Ephesians - Part 11 | Pastor Funlola Alabi | 8th July 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "the preaching of the gospel to save men and to disciple them. But what they ARE TRYING TO DESCRIBE IS THE FACT THAT MARRIAGE AND parenting is very important and God has an oversight over those areas of our lives. But rather than call them ministry, you can call them divine assignments cuz God said I…"
+            },
+            "6": {
+              "sermon_id": "f3ab39d9-718a-4326-aa7e-86f8226be18d",
+              "video_id": "rRccBtbsTYI",
+              "start_seconds": 3852,
+              "sermon_title": "The Book of Ephesians - Part 11 | Pastor Funlola Alabi | 8th July 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "That is evidence. Glory to God. Number three, the believer is not saved as a result of good works, but good works are the result of salvation. The believer is not saved as the result of good works. But good works are the result of salvation. Good works are the result of salvation. It's only under th…"
+            },
+            "7": {
+              "sermon_id": "4efd81ac-a4cf-445d-aa4e-b8f7e5b35e90",
+              "video_id": "TxBHXEY3IYs",
+              "start_seconds": 1516,
+              "sermon_title": "KERUSSO | PASTOR  FUNLOLA ALABI | 4TH SEPTEMBER 2022",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "you the compassion of our lord jesus christ will fall upon you and you will not leave them without preaching the gospel to them because you are a jerusalem there is nobody else that will preach this gospel except you and me angels will not preach it they cannot preach it this is a message that has b…"
+            },
+            "8": {
+              "sermon_id": "c368a583-0608-4090-9494-25b7ca6b7eca",
+              "video_id": "ldLhgnGUDDo",
+              "start_seconds": 2826,
+              "sermon_title": "The Greatness of the Harvest - Witnesses Part 10 | Pastor Funlola Alabi | 17th May 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "What do they call that chief um the person would introduce himself and then he say my co-debaters the what the chief speaker many of you did not you didn't go to liter literacy club glory to god so the harvest is massive there are those that heard another gospel and it's not the gospel of Christ Gal…"
+            },
+            "9": {
+              "sermon_id": "873ba5f2-7006-40e2-857a-c2a539d97699",
+              "video_id": "pq6daMhfUj8",
+              "start_seconds": 4037,
+              "sermon_title": "Persuaded | Living the life of Faith | Pastor Funlola Alabi | 19th March 2023",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "now dead when he was about 100 years old neither yet the deadness of Sarah's womb you know sometimes we feel like this fed Life Works we excuse you from putting in some work or exempts you from taking responsibility no Abraham took responsibility he took responsibility for his face he said he was no…"
+            },
+            "10": {
+              "sermon_id": "cedb87d1-c9af-4666-9901-30d416145caf",
+              "video_id": "b1LFKrJ7p5Q",
+              "start_seconds": 2272,
+              "sermon_title": "Faith Essentials  | Pst Funlola Alabi | 12th November 2023",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "doing relationship by faith and when we're talking about doing relationship worship by faith we are talking about doing it according to the word of God by the word of God you still believe that it's okay to be sick but you're a Christian there's no doubt about that your salvation is secure you have…"
+            },
+            "11": {
+              "sermon_id": "4efd81ac-a4cf-445d-aa4e-b8f7e5b35e90",
+              "video_id": "TxBHXEY3IYs",
+              "start_seconds": 1615,
+              "sermon_title": "KERUSSO | PASTOR  FUNLOLA ALABI | 4TH SEPTEMBER 2022",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "summarizes your salvation and your assignments that tells you expressly that you were saved for a purpose and this is for a purpose that was predetermined from the foundations of the world before you were made god saw jeremiah and he said to him in jeremiah chapter 1 verse 5. he says before you were…"
+            },
+            "12": {
+              "sermon_id": "824f96e2-81c9-4df6-a339-e934d9720ce1",
+              "video_id": "am9r_rDK4hk",
+              "start_seconds": 795,
+              "sermon_title": "HCM 2025 | Day 2 Morning - Faith and Enlargement - Part 1| Pastor Funlola Alabi | 2nd September 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "raised him from the dead he says you shall be saved. Verse 10 says for with the heart man believeth unto righteousness and with the mouth confession is made unto salvation. And verse 11 tells us it says for the scripture said whosoever believeth on him shall not be ashamed. So faith is what we use t…"
+            },
+            "13": {
+              "sermon_id": "ef52a7f4-1aae-487e-887b-07a01b3c206c",
+              "video_id": "vPI5x0h6QuM",
+              "start_seconds": 915,
+              "sermon_title": "The Gospel of Salvation - Part 3 | Pastor Funlola Alabi | 9th March 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "mercy of God day by day the Bible say they are new every morning great is thy faithfulness it is because of his Mercy that we are not consumed let me John 3:22 it is because of his Mercy truly that we are not consumed by sin and all of its consequences Psalms 86:15 the Bible says but thou oh Lord as…"
+            },
+            "14": {
+              "sermon_id": "9465a35b-46aa-4f94-bb3a-ea3b86c3cc91",
+              "video_id": "4GXs8GdZ784",
+              "start_seconds": 1620,
+              "sermon_title": "RIGHTEOUSNESS - The Gift of No-Condemnation | Pastor Funlola Alabi | 21st September 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "righteousness that they are trying to do in order to be saved. But that is not the way salvation works. That is not the way a man becomes righteous. The Bible says, \"But it is according to his mercy that he saved us. We are saved by the mercy of God.\" What is the basis of all the things that Jesus d…"
+            },
+            "15": {
+              "sermon_id": "9465a35b-46aa-4f94-bb3a-ea3b86c3cc91",
+              "video_id": "4GXs8GdZ784",
+              "start_seconds": 1054,
+              "sermon_title": "RIGHTEOUSNESS - The Gift of No-Condemnation | Pastor Funlola Alabi | 21st September 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "trouble, sorrow, grieviance, iniquity, miserable, pain, painful, perverseness, weariness, wickedness, a mixture of all kinds of things that are just not good. And you see, every time we lift up holy hands, which we must always do to give thanks to God for redemption, for salvation, we must remember…"
+            },
+            "16": {
+              "sermon_id": "824f96e2-81c9-4df6-a339-e934d9720ce1",
+              "video_id": "am9r_rDK4hk",
+              "start_seconds": 706,
+              "sermon_title": "HCM 2025 | Day 2 Morning - Faith and Enlargement - Part 1| Pastor Funlola Alabi | 2nd September 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "comes by the hearing of the word of God. So when you heard the word of God at salvation, faith came to you for salvation. And by the faith of God that came to you, you received salvation and you were saved. When the word of God is being preached, the same faith that we received at salvation is quick…"
+            },
+            "17": {
+              "sermon_id": "1c38a865-127c-46df-9702-b5c305707c9a",
+              "video_id": "sM55-4OHlIg",
+              "start_seconds": 600,
+              "sermon_title": "The Gospel of Salvation - Part 8 | Pastor Funlola Alabi | 13th April 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "generous with salvation, generous with um redemption, generous with forgiveness of sins, generous with his mercy, his compassion. He's generous with everything that the work of Christ represents. And it is for everybody. It's for everybody. And he says in verse 13, for whosoever shall call upon the…"
+            },
+            "18": {
+              "sermon_id": "9465a35b-46aa-4f94-bb3a-ea3b86c3cc91",
+              "video_id": "4GXs8GdZ784",
+              "start_seconds": 3650,
+              "sermon_title": "RIGHTEOUSNESS - The Gift of No-Condemnation | Pastor Funlola Alabi | 21st September 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "Christian. Be a true Christian. The one whose nature has been changed. The one who when we look at him, we don't behold iniquity and we don't behold perversess. The one that God is in. And God has said to us about himself that the only way to him is Christ Jesus. So as I begin to round off I want yo…"
+            }
+          },
+          "answer": "Our Senior Pastor teaches that good works are not the price we pay to be saved, but rather they are the proof and result of salvation [3][6][7].\n\nShe explains that salvation is a free gift received by grace through faith, and not by works, so that no one can boast (Ephesians 2:8-9) [7][8]. The gospel itself imparts faith for salvation when heard, and this faith is what we use to believe God [12][16]. God is so good and intentional that at the point of salvation, He gave us His own faith to receive it, not asking us to bring our own [1]. Salvation is an expression of God's mercy and has always been His original plan [13][14]. It is for everyone who calls upon the name of the Lord and believes the gospel, regardless of their background or circumstances, because faith in God is an equalizer [17].\n\nGood works are evidence of our salvation and a sign that we have received the divine nature of God [3]. Just as God Himself does good works—creating everything and declaring it \"very good\"—when we do good works, we are proving that we are like our Father [3]. Forgiving others, being generous, and raising children well are examples of good works [3][5]. Parenting, for instance, is considered a divine assignment and a good work that God expects us to do well, not leaving it to schools or relatives [5].\n\nIt is important to understand that good works are the *result* of salvation, not the cause [3][6]. Under the law, people performed good works to be saved or accepted, but as new creations, we do good works *because* we are justified, not to earn God's approval [6]. God has already approved of us, giving us express permission to do His works [6]. Furthermore, good works are the result of God's working in the believer's heart, because people do not naturally do good on their own [6] (Philippians 2:13). Our Senior Pastor emphasizes that we are saved for a purpose, and this purpose was predetermined from the foundations of the world (Ephesians 2:10) [7][11]. Part of these good works includes preaching the gospel, as every believer has been saved to be sent as a preacher of the Word [7][11].",
+          "suggestions": [
+            "What does it mean to be justified?",
+            "What is the role of faith in salvation?",
+            "What is the importance of the Word of God?"
+          ],
+          "ms": 9049,
+          "verdict": "PASS",
+          "checks": {
+            "citationsValid": true,
+            "retrieved": true,
+            "cited": true,
+            "speakerCredited": true,
+            "noFormalName": true,
+            "noMisattribution": true,
+            "hasCitations": true
+          },
+          "notes": [
+            "right message at segment #1 of 18"
+          ],
+          "failed": []
+        }
+      ]
+    },
+    {
+      "id": "K2",
+      "group": "K",
+      "note": null,
+      "turns": [
+        {
+          "q": "What did our Senior Pastor teach about discipleship?",
+          "expect": {
+            "sermon": [
+              "Funlola"
+            ],
+            "speaker": "Senior Pastor",
+            "notPeter": true,
+            "steward": true
+          },
+          "status": 200,
+          "debug": {
+            "planned": true,
+            "search": "following Jesus, training, obedience, growing in faith",
+            "mode": "teaching",
+            "question": "What did our Senior Pastor teach about discipleship?",
+            "scope": {
+              "kind": "preacher",
+              "label": "Pastor Funlola Alabi",
+              "messages": 85,
+              "missed": false
+            },
+            "history": 0,
+            "pool": 60,
+            "segments": 18,
+            "weakGrounding": false,
+            "sims": [
+              0.893,
+              0.878,
+              0.877,
+              0.876,
+              0.874,
+              0.871,
+              0.87,
+              0.869,
+              0.867,
+              0.864,
+              0.864,
+              0.864,
+              0.864,
+              0.863,
+              0.863,
+              0.863,
+              0.863,
+              0.863
+            ]
+          },
+          "segmentMap": {
+            "1": {
+              "sermon_id": "f67edfce-6fb5-4017-919d-0948c57b3741",
+              "video_id": "ZphBzpZOIdg",
+              "start_seconds": 202,
+              "sermon_title": "Who Is A Disciple | Growing In Discipleship | Pastor Funlola Alabi |7th June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "a pupil. Instruct, train. Christianity is scholarly. It's not a funfair. It's serious work. It's serious business. It's a serious faith. You know, as believers, you may think that once you've graduated from school, that's the end of school or that's the end of learning. Until you get to a church lik…"
+            },
+            "2": {
+              "sermon_id": "18349ac8-7376-41db-bbb1-61d44f67a134",
+              "video_id": "cUCrGAtA_48",
+              "start_seconds": 3017,
+              "sermon_title": "Facts About Discipleship - Part 2 | Growing In Discipleship | Pastor Funlola Alabi | 28th June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "became bold and full of faith. Struggling Peter became successful. Why? Because he submitted himself to a process of disciplehip. Your life can be better than it is. Things can get better than they are. You can become everything that God has designed for you to become. So I want to run quickly. How…"
+            },
+            "3": {
+              "sermon_id": "f67edfce-6fb5-4017-919d-0948c57b3741",
+              "video_id": "ZphBzpZOIdg",
+              "start_seconds": 3307,
+              "sermon_title": "Who Is A Disciple | Growing In Discipleship | Pastor Funlola Alabi |7th June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "Peter was a married man. His mother-in-law was living in his house. You know that's a double badge. >> >> If you can host your mother-in-law, uh-uh, you are odogu. But yet, he followed Jesus like a student. He was obviously older, but he followed. So, it's not a function of age. It's a heart. It's a…"
+            },
+            "4": {
+              "sermon_id": "656ac05e-3c79-475d-bcee-0320a1058816",
+              "video_id": "DaOGye03R1E",
+              "start_seconds": 1554,
+              "sermon_title": "Apostolic Foundations 2 |The Sacrosanctity of GODs Choice of Men |Pastor Funlola Alabi |3 July 2024",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "was he busy doing he was busy growing he was busy growing and that made him to become followable it made him to become somebody that people wanted to witness they wanted to see they wanted to hear him they wanted to handle the things that pertain to him he was growing he was waxing strong in spirit…"
+            },
+            "5": {
+              "sermon_id": "18349ac8-7376-41db-bbb1-61d44f67a134",
+              "video_id": "cUCrGAtA_48",
+              "start_seconds": 2732,
+              "sermon_title": "Facts About Discipleship - Part 2 | Growing In Discipleship | Pastor Funlola Alabi | 28th June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "But thank God for disciplehip in my life. There were people who would see me people from home. They saw there was something they saw about my life that was just different. As though I retrained my they train me but I retrained myself but nobody can train themselves. So that says that somebody who th…"
+            },
+            "6": {
+              "sermon_id": "4a5c1aed-b7fe-4a66-b676-fcfd4fc22985",
+              "video_id": "WFmFATjNTwM",
+              "start_seconds": 3852,
+              "sermon_title": "Who Is A Disciple - Part 2 | Growing In Discipleship | Pastor Funlola Alabi | 14th June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "discipling. As you keep learning the word of God, you are becoming more of a blessing to the people that you are discipling. So, there's no end to that. Humility is very key, teachability is very important where discipleship is concerned. And discipleship is a call to faithfulness where a disciple m…"
+            },
+            "7": {
+              "sermon_id": "f4391428-b654-4ed4-86f4-3b53b5fbbd41",
+              "video_id": "X6nChhHXbhI",
+              "start_seconds": 2811,
+              "sermon_title": "RFC 2025 - Day 1 Morning | Pastor Funlola Alabi | 18th April 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "have faith to be healed. So get up and start walking. Every time we stand here before you and we speak the word word of God to you, we are telling you you have faith to prosper. So go and prosper. You have faith to succeed with good success. So go and succeed with good success. You have faith to do…"
+            },
+            "8": {
+              "sermon_id": "bdfdd395-1e97-4168-9c7d-d652f6f851d3",
+              "video_id": "FHF3vCpVWfo",
+              "start_seconds": 489,
+              "sermon_title": "Enlarged - (A Charge) - Day 1 Morning - HCM 2026 - Pastor Funlola Alabi - 2nd September 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "increasing, AND BECOMING SO MUCH MORE than you are. You're going to be seeing visions of enlargement, visions of enlargement, images of expansion will be imprinted in your soul in the name of Jesus. In every session of this camp meeting, under every ministration in the name of Jesus, your conviction…"
+            },
+            "9": {
+              "sermon_id": "f67edfce-6fb5-4017-919d-0948c57b3741",
+              "video_id": "ZphBzpZOIdg",
+              "start_seconds": 3060,
+              "sermon_title": "Who Is A Disciple | Growing In Discipleship | Pastor Funlola Alabi |7th June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "That you can be a cell leader, too. You, too, can lead. You, too, can disciple people. You, too, can start can run a church. YOU CAN BE A RESIDENT PASTOR. YOU CAN BE A CELL TOWER LEADER. YOU CAN BE OUR DELEGATE TO nations as WE CARRY THIS GOSPEL FROM COAST TO COAST. >> >> That you, because of you, H…"
+            },
+            "10": {
+              "sermon_id": "c3bcd178-16bf-48fe-90c3-08e6006d6163",
+              "video_id": "t7-E1GuLJmo",
+              "start_seconds": 2328,
+              "sermon_title": "Visible Enlargement - Day 3 Morning - HCM 2026 - Pastor Funlola Alabi - 4th September 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "have is the faith of God. And the faith of God is already in its perfect state. That is why we don't say let your faith grow or that your faith will grow stronger. It is you that will grow stronger in faith. It is you that we grow stronger in faith. Grow stronger in faith by feeding on the word of G…"
+            },
+            "11": {
+              "sermon_id": "30a75bb8-af1a-416e-9d14-db11b04f45d0",
+              "video_id": "1kFulLCC3Uc",
+              "start_seconds": 3275,
+              "sermon_title": "Facts About Discipleship - Part 1 | Growing In Discipleship | Pastor Funlola Alabi | 21st June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "life, beloved. There are many good things that God has designed for you to do for him. When are you going to start doing it? When are you going to take them up, glory to God? When are you going to occupy YOURSELF WITH THAT WHICH GOD HAS already designed and determined for you to be occupied with fro…"
+            },
+            "12": {
+              "sermon_id": "d41031dc-7490-49a7-8ccc-e0110f6dfc74",
+              "video_id": "4KxPWiPR36U",
+              "start_seconds": 2996,
+              "sermon_title": "RFC 2025 - Day 2 Morning - Avoid Faith-Attacking Clichés | Pastor Funlola Alabi | 19th April 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "was much younger, there was a time they didn't he didn't have television at home. There was no power, no distractions of this age for about 3 years. What was he doing? He was feeding on the word of God. That is how come he's the man of faith that he is today. He knows the word of God, preaches the w…"
+            },
+            "13": {
+              "sermon_id": "f4391428-b654-4ed4-86f4-3b53b5fbbd41",
+              "video_id": "X6nChhHXbhI",
+              "start_seconds": 3135,
+              "sermon_title": "RFC 2025 - Day 1 Morning | Pastor Funlola Alabi | 18th April 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "birth, beloved, what this means is that your faith can address issues that have been in your life from your birth. It doesn't matter how long it has been, longstanding issues. God can deal with it. When you strengthen yourself in faith concerning it, it will give way. The problem had been there all…"
+            },
+            "14": {
+              "sermon_id": "fa253fe6-5239-45cd-9a18-ef534353eb72",
+              "video_id": "W11KvLh2IzM",
+              "start_seconds": 803,
+              "sermon_title": "Resurrection Faith Convention | Day 2 | Pst. Funlola Alabi | 18th April 2022",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "promises there's a reason why god gave us this instruction to be followers of them who to face and patience inherit the promises because everybody is following somebody whether you're intentional or deliberate or unconscious you are following everybody is a follower not just that you click for loans…"
+            },
+            "15": {
+              "sermon_id": "976b0e10-068b-4cfe-b164-b2584a7f4c36",
+              "video_id": "HDIxf0KiPqk",
+              "start_seconds": 2714,
+              "sermon_title": "HCM 2025 | Day 3 Morning - Faith and Enlargement-Part 2 | Pastor Funlola Alabi | 3rd September 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "a minister. Stand out as a as a believer. Stand out as a church member. Stand out as a steward. Stand out as a businesswoman. Stand out as a career person. Let the things that you're doing be a platform for the ministry. Let it be a platform for for the ministry. Be a steward of heaven's resources.…"
+            },
+            "16": {
+              "sermon_id": "4a5c1aed-b7fe-4a66-b676-fcfd4fc22985",
+              "video_id": "WFmFATjNTwM",
+              "start_seconds": 2340,
+              "sermon_title": "Who Is A Disciple - Part 2 | Growing In Discipleship | Pastor Funlola Alabi | 14th June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "You reason beyond the circumstance. You think about implications of things that you say. The implications of the things you do. The implications of the places you go. If they see you at a bar, they're always seeing you at a bar Friday night. You know, they're going to start asking questions. And if…"
+            },
+            "17": {
+              "sermon_id": "7599d2e4-8f8b-48dd-a08f-d2b19cf3c874",
+              "video_id": "DfFGp4rwDjE",
+              "start_seconds": 2430,
+              "sermon_title": "The Gospel of Salvation - Part 7 | Pastor Funlola Alabi | 6th April 2025",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "walk. This is how they sit. This is what they do. Do you understand what I'm saying? You don't start teaching. Going through the process of what? Disciplehip. And that is why we tell you God is not about giving birth and throwing away. He doesn't burn to throw away. You don't preach to an unsaved pe…"
+            },
+            "18": {
+              "sermon_id": "30a75bb8-af1a-416e-9d14-db11b04f45d0",
+              "video_id": "1kFulLCC3Uc",
+              "start_seconds": 3111,
+              "sermon_title": "Facts About Discipleship - Part 1 | Growing In Discipleship | Pastor Funlola Alabi | 21st June 2026",
+              "speaker": "Pastor Funlola Alabi",
+              "text": "found in Jesus was or what he would have found in Christ was restoration, was freedom, was deliverance from those struggles. Glory to God. Let me just take the other two facts very quickly before we close. Fact number two, the Christian life is practically frustrating if you are not growing and bein…"
+            }
+          },
+          "answer": "Our Senior Pastor teaches that discipleship is a serious, scholarly process of instruction and training that enables believers to live out the eternal life they have received in Christ Jesus, fulfilling God's plan for their lives [1].\n\nDiscipleship is not just about knowing but about doing, bringing believers to a place of expression where they walk in the reality of what they know, have, and can do [1]. It is crucial because a believer who is not discipled will find it difficult, if not impossible, to fulfill God's plan [1]. Our Senior Pastor emphasizes that nobody can become everything God designed them to be by themselves; they need someone to help, train, and disciple them, like a sheep needs a shepherd [5].\n\nKey aspects of discipleship include:\n*   **A Heart for Learning:** It's not a function of age, but a heart that wants to learn, to be equipped, and to grow in understanding and ability [3]. Peter, though older and married, followed Jesus as a student [3].\n*   **Following and Learning:** A disciple is a follower who follows hard, desiring to learn and be blessed, equipped, and edified [3]. It involves submitting to a process of discipleship, as Peter did, which helped him become bold, full of faith, and successful [2][5].\n*   **Personal Devotion:** Establishing a personal devotion routine, also called quiet time, where you read your Bible and pray every day, is essential for spiritual growth and understanding God's word and ways [2]. Feeding on the word nourishes you with strength, energy, and willpower, just as physical food nourishes the body [10][12].\n*   **Spiritual Growth and Service:** The Christian life can be practically frustrating without growth and being of use to the kingdom [18]. Our Senior Pastor encourages believers to take their spiritual growth and service seriously, getting involved in what the church and God are doing, rather than just warming church benches [18].\n*   **Structured Avenues for Growth:** The system of discipleship creates avenues and structures for growth, such as small groups, teams for service, and sectors for soul winning [11]. In these small groups, thorough discipleship occurs where leaders can observe and work on believers' character and behavior, helping them live from the inside outwardly [11].\n*   **Becoming a Discipler:** Discipleship is a call to faithfulness, where a disciple must pass down exactly what they have been taught, not their own personal opinion [6]. Our Senior Pastor shares that her job is to communicate what Dad has communicated to her, and the goal is for those being taught to also be able to teach others [6][9].\n\nThrough discipleship, individuals can grow stronger in spirit, be filled with wisdom for ministry and life, and become effective witnesses of the gospel [4]. It enables believers to stand out, be instruments of increase, and use their faith to address longstanding issues, trusting that God still works with us as we use the faith He has given [13][15][7]. Discipleship puts you ahead in life [3].",
+          "suggestions": [
+            "Establish a personal devotion routine",
+            "How does reading the Bible aid growth?",
+            "How can I get involved in the church?"
+          ],
+          "ms": 9587,
+          "verdict": "PARTIAL",
+          "checks": {
+            "citationsValid": true,
+            "retrieved": true,
+            "cited": true,
+            "speakerCredited": true,
+            "noFormalName": true,
+            "noMisattribution": false,
+            "hasCitations": true
+          },
+          "notes": [
+            "right message at segment #1 of 18",
+            "credits Rev. Peter for someone else's words: \"Our Senior Pastor shares that her job is to communicate what Dad has communicated to her, and the goal is for those being taught to also be \""
+          ],
+          "failed": [
+            "noMisattribution"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "K4",
+      "group": "K",
+      "note": null,
+      "turns": [
+        {
+          "q": "What does Dad teach about tithing?",
+          "expect": {
+            "topic": "tith",
+            "calls": "\\bDad\\b",
+            "steward": true
+          },
+          "status": 200,
+          "debug": {
+            "planned": true,
+            "search": "tithing, giving to God, tithing is a principle",
+            "mode": "teaching",
+            "question": "What does Rev. Peter teach about tithing?",
+            "scope": null,
+            "history": 0,
+            "pool": 36,
+            "segments": 18,
+            "weakGrounding": false,
+            "sims": [
+              0.893,
+              0,
+              0.892,
+              0.888,
+              0,
+              0.885,
+              0.885,
+              0,
+              0.883,
+              0.883,
+              0.883,
+              0.882,
+              0,
+              0.881,
+              0.88,
+              0.88,
+              0.879,
+              0.878
+            ]
+          },
+          "segmentMap": {
+            "1": {
+              "sermon_id": "c41b10e6-551b-44d5-90e5-113149c87e49",
+              "video_id": "vvhRSInmql8",
+              "start_seconds": 3184,
+              "sermon_title": "Succeeding with Good Success | Be a Rising Star | Rev Peter Alabi | 3rd July 2022",
+              "speaker": null,
+              "text": "and as you're giving to the work of god someone will say well i don't like to give tithe or anything to any child i give my own tithe to beggars on the street if that is foolhardy that's so full adi because what you do when you give money to beggars is called arms giving it's a kind of giving god ho…"
+            },
+            "2": {
+              "sermon_id": "a734ff5e-e546-4c01-bbab-3667efbd0282",
+              "video_id": "-YeHm05CT6M",
+              "start_seconds": 1462,
+              "sermon_title": "40DOT | DAY 12 | EVENING | REVD PETER ALABI | 12TH JUNE 2022",
+              "speaker": null,
+              "text": "it makes you feel to become many so declare by yourself in the name of jesus say my little becomes much my small becomes great my few becomes many in the name of jesus say one more time say my little becomes much my smile becomes great my fuel becomes many in the mighty name of jesus this regard is…"
+            },
+            "3": {
+              "sermon_id": "2db98f04-6167-4573-8cdf-abfccce1a81e",
+              "video_id": "TZtqOjgL7No",
+              "start_seconds": 9055,
+              "sermon_title": "HOFCHURCHNG | DAY 23 | 40 DAYS OF TRANSFORMATION 2025 | 14TH DECEMBER 2025",
+              "speaker": null,
+              "text": "involved in the service of God in the local church. Being part of a team, a department, you know, a ministry in the church and serve wholeheartedly. Serve wholeheartedly. You know, part of service is to make yourself available to be trained. Get yourself available to be trained. That happens in ever…"
+            },
+            "4": {
+              "sermon_id": "686e4bf7-4cb9-479c-b630-55f7cb3cbd69",
+              "video_id": "9TgXgSUQRt8",
+              "start_seconds": 10868,
+              "sermon_title": "HCM 2025 | Day 5 -  Finance Convention 2025 | Rev Peter Alabi | 5th September 2025",
+              "speaker": null,
+              "text": ">> He came with a gift for us. >> What a blessing. >> You see, practice generosity. Be generous without expecting to collect something from the person. When see when you practice generosity, expect returns from God, not from the people you give. Write that down in capital letter. Don't forget it. Wh…"
+            },
+            "5": {
+              "sermon_id": "da6c1d3b-3982-484e-b06e-ed3d1f7de17c",
+              "video_id": "bqLa-wZmOOM",
+              "start_seconds": 2821,
+              "sermon_title": "RFC 2025 - Day 1 Morning | The Faith of GOD | Rev Peter Alabi | 18th April 2025",
+              "speaker": null,
+              "text": "God,\" the literal says, \"Have the faith of God. Have the God kind of faith.\" So the way this faith comes is by hearing the gospel. It's not just by hearing anything. You see that's why I feel sorry for people who went to churches or programs where they preach all kinds of secular humanism and just t…"
+            },
+            "6": {
+              "sermon_id": "6477f237-c660-4494-a74e-3dd5128abe00",
+              "video_id": "I8OtXItriJo",
+              "start_seconds": 570,
+              "sermon_title": "How To Have a Great Year (A Charge) | Rev Peter Alabi | 23rd February 2025",
+              "speaker": null,
+              "text": "structure. So when you're going to begin to draw your vision board you look at the structure of the church. It already guides you on how to project your vision concerning your giving for the year. In this church we give what we call the partnership offering. What is a partnership offering? It is the…"
+            },
+            "7": {
+              "sermon_id": "1c62c93b-a3f0-4f36-8885-9ae58946be86",
+              "video_id": "ho86PguM040",
+              "start_seconds": 5574,
+              "sermon_title": "Faith and Divine Leading - Part 3 | Rev Peter Alabi | 18th January 2026",
+              "speaker": null,
+              "text": "need or a gift they cannot use. How many of you know money is always usable? Money is always usable. So we want it to be done with cash gifts. Say amen to that somebody. >> >> Secondly, we have many associates in this church who are ministers. We also are very conscious, my wife and I are very consc…"
+            },
+            "8": {
+              "sermon_id": "4c7b2e17-3116-4d41-9809-d05f78e41651",
+              "video_id": "uys7U95NZtk",
+              "start_seconds": 1953,
+              "sermon_title": "40DOT | DAY 10 | MORNING SESSION | REVD PETER ALABI | 10TH JUNE 2022",
+              "speaker": null,
+              "text": "oversee the line and males are tended to by male you see that now is this is a simple principle and policy of decency you see that now it's a simple policy of decency don't worry it's my own internet i guess you know is a simple policy of decency that we have embraced and will remain with it for til…"
+            },
+            "9": {
+              "sermon_id": "8eb3f723-2ac4-4192-976a-0ab8bc5a721b",
+              "video_id": "lg9t1JiKKAo",
+              "start_seconds": 6380,
+              "sermon_title": "HOFCHURCHNG | UNITY SUNDAY | 5TH OCTOBER 2025 | REVD PETER ALABI",
+              "speaker": null,
+              "text": "and extreme poverty, the Bible says their super abundant joy overflowed into an act of extravagant generosity. For I can verify that they spontaneously gave not only according to their means, but far beyond what they could afford. They actually begged us for the privilege of sharing in this ministry…"
+            },
+            "10": {
+              "sermon_id": "6477f237-c660-4494-a74e-3dd5128abe00",
+              "video_id": "I8OtXItriJo",
+              "start_seconds": 966,
+              "sermon_title": "How To Have a Great Year (A Charge) | Rev Peter Alabi | 23rd February 2025",
+              "speaker": null,
+              "text": "are and be faithful. Faithfulness in giving means you are giving according to your capacity. Now I don't know your capacity is is the Lord who knows your capacity. That's why you give as you propose in your heart based on the blessing of God in your life. And that's the reason why we don't announce…"
+            },
+            "11": {
+              "sermon_id": "8eb3f723-2ac4-4192-976a-0ab8bc5a721b",
+              "video_id": "lg9t1JiKKAo",
+              "start_seconds": 6294,
+              "sermon_title": "HOFCHURCHNG | UNITY SUNDAY | 5TH OCTOBER 2025 | REVD PETER ALABI",
+              "speaker": null,
+              "text": "fully giving and committed to the Lord. Because every time you give, you're not just giving money. You're actually giving your life because the energy, the resources, the strength, you know, everything that you put into your work, your labor, your business, your job, your career is actually your lif…"
+            },
+            "12": {
+              "sermon_id": "087e4764-b873-4266-a1a2-b383d07fb2f8",
+              "video_id": "pBvHmZ3r5tc",
+              "start_seconds": 6506,
+              "sermon_title": "Vision Sunday 2026 | Rev Peter Alabi | 15th February 2026",
+              "speaker": null,
+              "text": "that to Jesus. Jesus, they said, \"OFFERING BASKET, BRING it here.\" Jesus stood there and said, \"Everybody else give. I want to see what you're giving.\" And that's to tell you if a pastor ask you, if as your pastor, if I ask you, \"What's your offering?\" I'm within my right. Jesus did it. >> Of course…"
+            },
+            "13": {
+              "sermon_id": "9911c99c-32b9-4fbc-bc41-10e99fbeb477",
+              "video_id": "2M1Jx5JRCw4",
+              "start_seconds": 1162,
+              "sermon_title": "GOD&#39;s Principle of Faithfulness 6 -Ambidextrous Believers Part 19 | Rev Peter Alabi |3rd August 2025",
+              "speaker": null,
+              "text": "Wednesdays and like this last Wednesday I explained to you concerning spiritual things that in the realm of the spirit is not only God's spirit that is there. There are all kinds of spirit in the spiritual realm. There are demons in the spiritual realm. Demons are spirits. Are you seeing this now? T…"
+            },
+            "14": {
+              "sermon_id": "686e4bf7-4cb9-479c-b630-55f7cb3cbd69",
+              "video_id": "9TgXgSUQRt8",
+              "start_seconds": 17097,
+              "sermon_title": "HCM 2025 | Day 5 -  Finance Convention 2025 | Rev Peter Alabi | 5th September 2025",
+              "speaker": null,
+              "text": "oil on his feet. She didn't stop there. She used her hair to clean it. It's as if she wanted to provoke somebody until Judas, the foolish man, was provoked. >> Ah, that Judas, is it still the offering that is spending you? Wait and see what I will do next. I will use my head to wipe it. Oh, you have…"
+            },
+            "15": {
+              "sermon_id": "087e4764-b873-4266-a1a2-b383d07fb2f8",
+              "video_id": "pBvHmZ3r5tc",
+              "start_seconds": 6412,
+              "sermon_title": "Vision Sunday 2026 | Rev Peter Alabi | 15th February 2026",
+              "speaker": null,
+              "text": "of but THEY HAVE MONEY TRILLIONS OF DOLLARS. You hear what I'm saying? When you have all the money you have all the infrastructure. So you have people who say today when Nigerians travel out they go to all countries where everything is working and I say do you need God you are a materialistic person…"
+            },
+            "16": {
+              "sermon_id": "f08f6e52-3046-49de-a9c3-3c914c9f7a06",
+              "video_id": "nDnRERwOJmE",
+              "start_seconds": 19356,
+              "sermon_title": "HOFCHURCHNG | DAY 28 EVENING SESSION AND DAY 29 | 40 DAYS OF TRANSFORMATION 2025 |19TH DECEMBER 2025",
+              "speaker": null,
+              "text": "generosity by giving his entire life. He laid down his whole life for us. You can't do better than that. And that's why in 2 Corinthians 5, Paul says that since one person, this is Jesus, died for us, he said, then all of us must not live for ourselves anymore. Do you see that? Now, we must live for…"
+            },
+            "17": {
+              "sermon_id": "1c62c93b-a3f0-4f36-8885-9ae58946be86",
+              "video_id": "ho86PguM040",
+              "start_seconds": 5654,
+              "sermon_title": "Faith and Divine Leading - Part 3 | Rev Peter Alabi | 18th January 2026",
+              "speaker": null,
+              "text": "serve with us in the ministry and to give to them. This is a separate account, please. It's not the same account. We don't use it for anything normally. This is not an account that is public to anybody. We have only brought it out for this purpose. All right? So, we can give into this account. Every…"
+            },
+            "18": {
+              "sermon_id": "087e4764-b873-4266-a1a2-b383d07fb2f8",
+              "video_id": "pBvHmZ3r5tc",
+              "start_seconds": 7168,
+              "sermon_title": "Vision Sunday 2026 | Rev Peter Alabi | 15th February 2026",
+              "speaker": null,
+              "text": "what their money is in it. Therefore their heart is in it. So this year pray and start giving proper offerings. Are you listening to what I'm saying? You look at the different offerings. profit offering your regular offering. I I've been talking about regular offerings since. Are you what I'm saying…"
+            }
+          },
+          "answer": "Dad teaches that while the church at Heritage of Faith doesn't necessarily call it tithing, they are not against tithes, and what they practice is called partnership offering [3][6]. This partnership offering is a percentage of your income that you choose to set aside to support the work of the ministry [6].\n\nHere are the key aspects of Dad's teaching on giving and tithing:\n*   **Partnership vs. Tithe**: While some churches call it tithe, Dad explains that at Heritage of Faith Church (HHF), it's referred to as partnership offering in line with the New Testament [3][6].\n*   **Distinction from Alms Giving**: Giving money to beggars, while honored by God, is called alms giving and is not the same as a tithe or partnership giving, which supports the spread of the gospel of Jesus Christ [1]. Alms giving has its place and is good to help the poor [1].\n*   **Recommended Minimum**: Dad encourages believers to give at least 10% of their income, noting that Old Testament believers, who did not have the Holy Ghost, gave 10% [3][6]. He suggests that those in Christ should even do more than that [6].\n*   **Free Will**: In the New Testament, giving is an act of free will. While a 10% tithe is basic, you choose the percentage yourself. You can even choose to give less, but it's important to make the right decision [6].\n*   **Where to Give**: Your primary place of generosity to the kingdom of God is your local church, where you are spiritually fed [3].\n*   **Faithfulness and Capacity**: Your giving should reflect your financial capacity, and it's about being faithful rather than just the amount [10]. Dad notes that the church does not announce big givers because faithfulness is what truly matters [10]. Giving is done as you propose in your heart based on God's blessing in your life [10].\n*   **Heart and Commitment**: Giving is a demonstration of the state of your heart and commitment to God's work, the spread of the gospel, and your purpose in Christ Jesus [9][11]. Your treasure indicates where your heart is (Luke 12:34) [11]. When you give, you are giving life because your labor, business, and career involve your life, energy, and time [11].\n*   **Expect Returns from God**: When you practice generosity, expect returns from God, not from the people you gave to [4].\n*   **Generosity is Not Selective**: Generosity is not selective; if you are truly generous, you will be generous everywhere, not just in church [16].",
+          "suggestions": [
+            "What is partnership offering?",
+            "How does giving show commitment?",
+            "What about special offerings?"
+          ],
+          "ms": 10556,
+          "verdict": "PASS",
+          "checks": {
+            "citationsValid": true,
+            "stewardName": true,
+            "noFormalName": true,
+            "onTopic": true,
+            "hasCitations": true
+          },
+          "notes": [],
+          "failed": []
+        }
+      ]
+    }
+  ]
+}
