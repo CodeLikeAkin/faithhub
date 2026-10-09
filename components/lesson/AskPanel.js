@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Maximize2, Plus, X } from "lucide-react";
 import StudyDocument from "@/components/ask/StudyDocument";
 import Composer from "@/components/ask/Composer";
-import { askQuestion, latestStudyFor, retryBlock, scopesFor, useStudies } from "@/lib/studies";
+import { askQuestion, latestStudyFor, retryBlock, scopesFor, stopAnswer, useStudies } from "@/lib/studies";
 
 /**
  * Asking, beside a lesson or series: the same study document + composer as
@@ -152,6 +152,7 @@ export default function AskPanel({
         width="panel"
         busy={busy}
         onSubmit={ask}
+        onStop={stopAnswer}
         scopes={scopes}
         scope={scope}
         onScopeChange={(s) => setScopeType(s.type)}

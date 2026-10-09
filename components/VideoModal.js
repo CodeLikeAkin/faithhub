@@ -19,6 +19,16 @@ import { cleanTitle } from "@/lib/titles";
  * corner but nothing forces it to stay there — whatever it covers (a
  * declaration, a cited line, the composer) the reader can just move it off.
  */
+const YT_ORIGIN = "https://www.youtube.com";
+
+const buildSrc = (videoId, start) => {
+  const origin = typeof window !== "undefined" ? `&origin=${encodeURIComponent(window.location.origin)}` : "";
+  return `${YT_ORIGIN}/embed/${videoId}?enablejsapi=1&start=${Math.max(
+    0,
+    Math.floor(start || 0)
+  )}&autoplay=1&playsinline=1&rel=0&cc_load_policy=0${origin}`;
+};
+
 const EDGE = 8; // keep this much of a gap between the mini-player and the viewport edge
 
 const clamp = (v, min, max) => Math.min(Math.max(v, min), Math.max(min, max));
@@ -243,12 +253,107 @@ export default function VideoModal({ seg, onClose, initialMinimized = false }) {
     };
   }, [seg, minimized]);
 
-  if (!seg) return null;
+  // ── The player ──────────────────────────────────────────────────────────────
+  // Each new `seg` object starts that moment from its timestamp — including the
+  // SAME moment tapped again, so callers hand over a fresh object per tap
+  // (`{ ...seg }`): a state set to the identical object would be ignored.
+  // On a desktop pointer the live player is told to seekTo over the YouTube
+  // IFrame API (postMessage), so nothing reloads. A touch screen only lets a
+  // video start by itself when the player is created inside the tap, and a
+  // postMessage play() has no tap behind it — so there the player is rebuilt
+  // at the new time instead (same trade LessonPlayer makes).
+  const [embed, setEmbed] = useState(null); // { src, key, video }
+  const embedRef = useRef(null);
+  const iframeRef = useRef(null);
+  const readyRef = useRef(false);
+  const queuedRef = useRef(null); // a seek that arrived before the player was ready
+  const captionsOffRef = useRef(false);
 
-  const src = `https://www.youtube.com/embed/${seg.video_id}?start=${Math.max(
-    0,
-    Math.floor(seg.start_seconds || 0)
-  )}&autoplay=1&playsinline=1&rel=0`;
+  const command = useCallback((func, args = []) => {
+    iframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args }), YT_ORIGIN);
+  }, []);
+  const seekNow = useCallback(
+    (t) => {
+      command("seekTo", [t, true]);
+      command("playVideo");
+    },
+    [command]
+  );
+  // Phones: captions off. `cc_load_policy=0` only stops them being forced on;
+  // a viewer whose YouTube/phone setting turns captions on still gets them, so
+  // the captions module is unloaded as well. (Desktop keeps the viewer's choice.)
+  const captionsOff = useCallback(() => {
+    if (!window.matchMedia("(pointer: coarse)").matches) return;
+    command("unloadModule", ["captions"]);
+    command("unloadModule", ["cc"]);
+  }, [command]);
+
+  useEffect(() => {
+    if (!seg?.video_id) {
+      embedRef.current = null;
+      readyRef.current = false;
+      queuedRef.current = null;
+      setEmbed(null);
+      return;
+    }
+    const t = Math.max(0, Math.floor(seg.start_seconds || 0));
+    const cur = embedRef.current;
+    const touch = window.matchMedia("(pointer: coarse)").matches;
+    if (cur && cur.video === seg.video_id && !touch) {
+      if (readyRef.current) seekNow(t);
+      else queuedRef.current = t;
+      return;
+    }
+    readyRef.current = false;
+    queuedRef.current = null;
+    captionsOffRef.current = false;
+    const next = { src: buildSrc(seg.video_id, t), key: (cur?.key || 0) + 1, video: seg.video_id };
+    embedRef.current = next;
+    setEmbed(next);
+  }, [seg, seekNow]);
+
+  const markReady = useCallback(() => {
+    if (readyRef.current) return;
+    readyRef.current = true;
+    captionsOff();
+    if (queuedRef.current != null) {
+      const t = queuedRef.current;
+      queuedRef.current = null;
+      seekNow(t);
+    }
+  }, [captionsOff, seekNow]);
+
+  useEffect(() => {
+    if (!embed) return;
+    const onMessage = (e) => {
+      if (e.source !== iframeRef.current?.contentWindow) return;
+      let data;
+      try {
+        data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+      } catch {
+        return;
+      }
+      if (data?.event === "onReady") markReady();
+      // The captions module only exists once playback begins — unload it then too.
+      else if (data?.event === "onStateChange" && data.info === 1 && !captionsOffRef.current) {
+        captionsOffRef.current = true;
+        captionsOff();
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [embed, markReady, captionsOff]);
+
+  const onFrameLoad = () => {
+    iframeRef.current?.contentWindow?.postMessage(
+      JSON.stringify({ event: "listening", id: "video-modal", channel: "widget" }),
+      YT_ORIGIN
+    );
+    // If onReady never arrives, treat the player as ready shortly after load.
+    setTimeout(markReady, 1500);
+  };
+
+  if (!seg) return null;
 
   const docked = minimized && !pos; // still in its default corner
 
@@ -355,13 +460,18 @@ export default function VideoModal({ seg, onClose, initialMinimized = false }) {
               : "relative w-full aspect-video rounded-xl overflow-hidden bg-black shadow-2xl"
           }
         >
-          <iframe
-            src={src}
-            title={cleanTitle(seg.sermon_title)}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="absolute inset-0 w-full h-full"
-          />
+          {embed && (
+            <iframe
+              ref={iframeRef}
+              key={embed.key}
+              src={embed.src}
+              title={cleanTitle(seg.sermon_title)}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              onLoad={onFrameLoad}
+              className="absolute inset-0 w-full h-full"
+            />
+          )}
         </div>
       </div>
     </div>

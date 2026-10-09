@@ -997,6 +997,9 @@ QUESTION: ${message}${readAs}`;
     // of the three, which sets how much is held back.
     const HOLD_BACK = STEWARD_HOLD_BACK;
 
+    // The reader hung up (the user pressed Stop): quit reading Gemini's stream so
+    // the call isn't paid for to the end, and never enqueue onto a closed stream.
+    let cancelled = false;
     const stream = new ReadableStream({
       async start(controller) {
         try {
@@ -1005,6 +1008,7 @@ QUESTION: ${message}${readAs}`;
           let sentTail = '';
           let leaked = false;
           for await (const chunk of result.stream) {
+            if (cancelled) return;
             pending += chunk.text() || '';
             if (LEAK_RE.test(sentTail + pending)) {
               leaked = true;
@@ -1026,10 +1030,14 @@ QUESTION: ${message}${readAs}`;
           }
           // close() only on the success path — closing an errored controller
           // throws "Invalid state" and buries the original failure.
+          if (cancelled) return;
           controller.close();
         } catch (err) {
-          controller.error(err);
+          if (!cancelled) controller.error(err);
         }
+      },
+      cancel() {
+        cancelled = true;
       },
     });
 

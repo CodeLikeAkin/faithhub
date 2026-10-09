@@ -207,6 +207,23 @@ export default function AnswerBlock({
         </div>
       )}
 
+      {block.stopped && block.status === "done" && (
+        <p className="mt-5 flex items-center gap-3 text-sm text-brand-gray">
+          You stopped this answer.
+          {isLast && (
+            <button
+              type="button"
+              onClick={() => onRetry(block)}
+              disabled={busy}
+              className="inline-flex items-center gap-1.5 rounded-full border border-brand-navy/20 bg-white px-3 py-1.5 font-bold text-brand-navy transition-colors hover:bg-brand-sky disabled:opacity-50"
+            >
+              <RotateCcw size={13} aria-hidden="true" />
+              Ask again
+            </button>
+          )}
+        </p>
+      )}
+
       {isLast && block.status === "done" && hasSources && (
         <FollowUps
           className={page ? "mt-12 max-w-3xl" : "mt-9"}

@@ -127,7 +127,7 @@ export default function SeriesOverview({ seriesId }) {
         openStudy={panelStudy}
         defaultScopeType="series"
         suggestions={summarySuggestions}
-        onCite={setWatching}
+        onCite={(seg) => setWatching({ ...seg })}
         onClose={() => setPanelOpen(false)}
         describeMoment={describeMoment}
       />

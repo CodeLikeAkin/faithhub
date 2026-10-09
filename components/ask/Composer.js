@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowUp, Loader2 } from "lucide-react";
+import { ArrowUp, Loader2, Square } from "lucide-react";
 import { useKeyboardInset } from "@/lib/useKeyboardInset";
 import { SCOPE_ALL } from "@/lib/studies";
 import { cn } from "@/lib/utils";
@@ -16,7 +16,8 @@ import ScopeChip from "./ScopeChip";
  *                      home indicator (safe-area padding)
  *
  * `onSubmit(text)` returns false when the question was not accepted (e.g. an
- * answer is still streaming) so the draft is kept.
+ * answer is still streaming) so the draft is kept. Give `onStop` and the send
+ * button turns into a Stop button while `busy`.
  *
  * `maxLength` caps what can be typed or pasted (a question, not an essay); a
  * small "n / max" counter appears once the draft passes 80% of it. The API
@@ -25,6 +26,7 @@ import ScopeChip from "./ScopeChip";
 export default function Composer({
   variant = "docked",
   onSubmit,
+  onStop,
   busy = false,
   scopes = [SCOPE_ALL],
   scope = SCOPE_ALL,
@@ -133,7 +135,24 @@ export default function Composer({
       </span>
     ) : null;
 
-  const send = (
+  // While an answer is being written the send button becomes Stop (when the
+  // surface supports it) — a square, as in every chat app.
+  const send =
+    busy && onStop ? (
+      <button
+        type="button"
+        onClick={onStop}
+        aria-label="Stop"
+        title="Stop answering"
+        className={cn(
+          "grid flex-shrink-0 place-items-center rounded-full bg-brand-navy text-white transition-[transform,background-color] hover:bg-brand-deep active:scale-[0.96]",
+          hero ? "h-12 w-12" : "h-10 w-10",
+          stacked && "order-3"
+        )}
+      >
+        <Square size={hero ? 16 : 14} fill="currentColor" aria-hidden="true" />
+      </button>
+    ) : (
     <button
       type="submit"
       disabled={busy || text.trim().length < minLength}
@@ -150,7 +169,7 @@ export default function Composer({
         <ArrowUp size={hero ? 20 : 17} aria-hidden="true" />
       )}
     </button>
-  );
+    );
 
   // On a phone the page composer's chip shrinks to its icon (on /ask it can
   // carry a whole series title). The panel's labels are short ("This

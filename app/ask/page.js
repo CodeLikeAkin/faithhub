@@ -17,6 +17,7 @@ import {
   rememberOpenStudy,
   retryBlock,
   scopesFor,
+  stopAnswer,
   useStudies,
 } from "@/lib/studies";
 import { plainText } from "@/lib/ask-format";
@@ -296,7 +297,7 @@ function AskView() {
             study={study}
             density="page"
             busy={busy}
-            onCite={setWatching}
+            onCite={(seg) => setWatching({ ...seg })}
             onAsk={ask}
             onRetry={(b) => retryBlock(study.id, b.id)}
             onActiveBlockChange={setActiveBlockId}
@@ -305,6 +306,7 @@ function AskView() {
             variant="docked"
             busy={busy}
             onSubmit={ask}
+            onStop={stopAnswer}
             scopes={scopes}
             scope={scope}
             onScopeChange={(s) => setScopeType(s.type)}

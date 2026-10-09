@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowRight, Trash2 } from "lucide-react";
 import { fmtDate, plainText } from "@/lib/ask-format";
 import { EXAMPLE_THEMES } from "@/lib/ask-examples";
-import { byRecent } from "@/lib/studies";
+import { byRecent, stopAnswer } from "@/lib/studies";
 import { displayTitle } from "@/lib/titles";
 import Masthead from "@/components/shell/Masthead";
 import { DotGrid, Eyebrow } from "@/components/Decor";
@@ -44,6 +44,7 @@ export default function AskEmptyState({ onAsk, busy, studies, inputRef, onDelete
           <Composer
             variant="hero"
             onSubmit={onAsk}
+            onStop={stopAnswer}
             busy={busy}
             placeholder="What’s on your heart today?"
             inputRef={inputRef}

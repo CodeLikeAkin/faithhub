@@ -24,7 +24,7 @@ const YT_ORIGIN = "https://www.youtube.com";
 
 const buildSrc = (videoId, start) => {
   const origin = typeof window !== "undefined" ? `&origin=${encodeURIComponent(window.location.origin)}` : "";
-  return `${YT_ORIGIN}/embed/${videoId}?enablejsapi=1&autoplay=1&playsinline=1&rel=0&start=${Math.max(
+  return `${YT_ORIGIN}/embed/${videoId}?enablejsapi=1&autoplay=1&playsinline=1&rel=0&cc_load_policy=0&start=${Math.max(
     0,
     Math.floor(start || 0)
   )}${origin}`;
@@ -34,6 +34,7 @@ export default function LessonPlayer({ videoId, title, startAt = 0, seek }) {
   const [src, setSrc] = useState(null); // null → facade
   const [thumb, setThumb] = useState("maxresdefault"); // → hqdefault → none
   const [failed, setFailed] = useState(false);
+  const [gen, setGen] = useState(0);
   const iframeRef = useRef(null);
   const ready = useRef(false);
   const queued = useRef(null); // a seek that arrived before the player was ready
@@ -46,12 +47,21 @@ export default function LessonPlayer({ videoId, title, startAt = 0, seek }) {
     command("seekTo", [t, true]);
     command("playVideo");
   };
+  // Phones: captions off (cc_load_policy=0 alone loses to a viewer's own YouTube
+  // setting, so the captions module is unloaded too). Desktop keeps their choice.
+  const captionsOff = () => {
+    if (!window.matchMedia("(pointer: coarse)").matches) return;
+    command("unloadModule", ["captions"]);
+    command("unloadModule", ["cc"]);
+  };
 
   const mount = (t) => {
     ready.current = false;
     queued.current = null;
     setFailed(false);
     setSrc(buildSrc(videoId, t));
+    // Same src again (the same moment tapped twice) must still rebuild the player.
+    setGen((g) => g + 1);
   };
 
   useEffect(() => {
@@ -79,7 +89,7 @@ export default function LessonPlayer({ videoId, title, startAt = 0, seek }) {
       // already up has no tap behind it, so it seeks but stays paused. Rebuild
       // the player at the new time instead.
       const touch = window.matchMedia("(pointer: coarse)").matches;
-      if (touch && buildSrc(videoId, seek.t) !== src) mount(seek.t);
+      if (touch) mount(seek.t);
       else seekNow(seek.t);
     } else queued.current = seek.t;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,8 +106,10 @@ export default function LessonPlayer({ videoId, title, startAt = 0, seek }) {
       } catch {
         return;
       }
-      if (data?.event === "onReady") {
+      if (data?.event === "onStateChange" && data.info === 1) captionsOff();
+      else if (data?.event === "onReady") {
         ready.current = true;
+        captionsOff();
         if (queued.current != null) {
           const t = queued.current;
           queued.current = null;
@@ -143,7 +155,7 @@ export default function LessonPlayer({ videoId, title, startAt = 0, seek }) {
         {src ? (
           <iframe
             ref={iframeRef}
-            key={src}
+            key={`${src}#${gen}`}
             src={src}
             title={cleanTitle(title) || "Message video"}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

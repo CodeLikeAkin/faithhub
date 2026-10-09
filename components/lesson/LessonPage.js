@@ -155,7 +155,7 @@ export default function LessonPage({ sermonId }) {
   const playMoment = (seg) => {
     const p = seg?.video_id ? parts.find((x) => x.youtube_video_id === seg.video_id) : null;
     if (!p) {
-      setWatching(seg);
+      setWatching({ ...seg });
       return;
     }
     if (!docked && panelOpen === true) setPanelOpen(null); // close the sheet so the video shows

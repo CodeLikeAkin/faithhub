@@ -464,6 +464,8 @@ QUESTION: ${message}`;
     const encoder = new TextEncoder();
     const segmentMapHeader = `SEGMENT_MAP:${JSON.stringify(segmentMap)}\n`;
 
+    // The reader hung up (the user pressed Stop): stop reading Gemini's stream.
+    let cancelled = false;
     const stream = new ReadableStream({
       async start(controller) {
         try {
@@ -472,19 +474,24 @@ QUESTION: ${message}`;
           // name that straddles two chunks whole.
           let pending = '';
           for await (const chunk of result.stream) {
+            if (cancelled) return;
             pending = stripFormalNames(pending + (chunk.text() || ''));
             if (pending.length > STEWARD_HOLD_BACK) {
               controller.enqueue(encoder.encode(pending.slice(0, -STEWARD_HOLD_BACK)));
               pending = pending.slice(-STEWARD_HOLD_BACK);
             }
           }
+          if (cancelled) return;
           if (pending) controller.enqueue(encoder.encode(pending));
           // close() only on the success path — closing an errored controller
           // throws "Invalid state" and buries the original failure.
           controller.close();
         } catch (err) {
-          controller.error(err);
+          if (!cancelled) controller.error(err);
         }
+      },
+      cancel() {
+        cancelled = true;
       },
     });
 
