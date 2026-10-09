@@ -6,11 +6,13 @@ import { extractScriptures, plainText } from "@/lib/ask-format";
 import { SCOPE_ALL } from "@/lib/studies";
 import { STARTER_QUESTIONS } from "@/lib/ask-examples";
 import { scrollToElement } from "@/lib/scroll";
+import { useMediaQuery } from "@/lib/useMediaQuery";
 import { cn } from "@/lib/utils";
 import AnswerBody from "./AnswerBody";
 import MomentsRow from "./MomentsRow";
 import ScriptureMargin, { verseAnchor } from "./ScriptureMargin";
 import FollowUps from "./FollowUps";
+import VerseSheet from "./VerseSheet";
 import { scopePhrase } from "./ScopeChip";
 
 // The panel is narrow, so its status sits at the same size as the lesson's
@@ -133,7 +135,18 @@ export default function AnswerBlock({
   const refused = !isError && !hasSources && !!block.answer;
   const scriptures = block.status === "done" && hasSources ? extractScriptures(block.answer) : [];
 
+  // The scripture list sits BESIDE the answer (sticky) only on a wide page;
+  // everywhere else it is stacked after the whole answer, and scrolling to it
+  // throws the reader to the bottom. There the verse opens in a sheet instead.
+  const wide = useMediaQuery("(min-width: 1280px)");
+  const [sheetVerse, setSheetVerse] = useState(null);
+  const marginBeside = page && wide;
+
   const focusVerse = (ref) => {
+    if (!marginBeside) {
+      setSheetVerse(ref);
+      return;
+    }
     setFocusedVerse(ref);
     const el = document.getElementById(verseAnchor(block.id, ref));
     if (el) scrollToElement(el, { align: "nearest", offset: 24, nested: true });
@@ -281,6 +294,8 @@ export default function AnswerBlock({
             ))}
         </div>
       )}
+
+      {sheetVerse && <VerseSheet reference={sheetVerse} onClose={() => setSheetVerse(null)} />}
 
       {isError && (
         <div role="alert" className="mt-7 rounded-[1.5rem] border border-brand-navy/15 bg-brand-light p-5 sm:p-6">
