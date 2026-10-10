@@ -46,7 +46,7 @@ the answer stream live in `lib/studies.js`, not in these components.
   under two series resolves to the one with the lowest part number (asking for a single row
   makes PostgREST reject the query).
 - `SeriesOverview.js` (`/series/[id]`) and `LessonPage.js` (`/sermon/[id]`).
-- `LessonPlayer.js` — embedded YouTube player; `seek={videoId,t,n}` jumps it via the
+- `LessonPlayer.js` — embedded YouTube player (starting it closes the app-wide corner player); `seek={videoId,t,n}` jumps it via the
   IFrame API (postMessage) instead of reloading. Shows a message if YouTube refuses
   to play a video (private/restricted).
 - `CourseOutline.js`, `AskPanel.js` (the Ask side panel — resumes this series' latest
@@ -86,7 +86,15 @@ the answer stream live in `lib/studies.js`, not in these components.
   route (`/ask`, `/declarations`, `/series`, `/sermon`, `/word`, `/admin` and their sub-pages)
   brings its own chrome via ToolShell.
 - `Button.js` — pill link/button (variants light / dark / outline / quiet; sizes lg / sm).
-- `VideoModal.js` — full-screen / draggable mini player for a cited moment.
+- `player/PlayerProvider.js` — the ONE app-wide video player, mounted in `app/layout.js`. Owns the
+  `VideoModal` and its `minimized` state. Pages never render a modal: they call `usePlayer()` —
+  `watch(seg)` (one argument, safe for `onWatch={watch}`) or `play(seg, { minimized: true })` (Ask).
+  A full-size video shrinks to the corner on in-app navigation and keeps playing (the iframe is never
+  remounted). `stop()` closes it. Only one video at a time: `LessonPlayer` calls `stop()` when it
+  starts and pauses itself when the corner player starts.
+- `VideoModal.js` — the full-screen / draggable mini player itself; controlled (`minimized`,
+  `onMinimizedChange`) by `PlayerProvider`. Desktop re-tap seeks in place over the IFrame API; touch
+  rebuilds the player inside the tap (autoplay). `cc_load_policy=0` + captions module unloaded on phones.
 - `VerseCard.js` — a scripture with its text + `TranslationToggle` (shared by answers
   and the series overview).
 - `VerseExplorer.js`, `WordStudy.js` — per-sermon scriptures and Greek/Hebrew words
