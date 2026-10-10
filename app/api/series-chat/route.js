@@ -450,9 +450,16 @@ QUESTION: ${message}`;
     // details and all) falls through to the outer catch and leaks to the
     // user as-is in the 500 body. Answer honestly instead, same tone as the
     // no-segments case.
+    // Aborting this controller hangs up the Gemini request itself, so a question
+    // the reader stopped does not keep generating.
+    const geminiAbort = new AbortController();
+    req.signal?.addEventListener('abort', () => geminiAbort.abort(), { once: true });
+
     let result;
     try {
-      result = await sendWithRetry(() => chat.sendMessageStream(userMessageWithContext));
+      result = await sendWithRetry(() =>
+        chat.sendMessageStream(userMessageWithContext, { signal: geminiAbort.signal })
+      );
     } catch (genErr) {
       console.error(`[chat] Gemini sendMessageStream failed after ${GEMINI_ATTEMPTS} attempts:`, genErr.message);
       return serviceErrorResponse(
@@ -492,6 +499,7 @@ QUESTION: ${message}`;
       },
       cancel() {
         cancelled = true;
+        geminiAbort.abort();
       },
     });
 

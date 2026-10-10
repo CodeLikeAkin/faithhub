@@ -975,12 +975,19 @@ QUESTION: ${message}${readAs}`;
     // starts — that's exactly what we saw during testing. Without this catch,
     // the raw provider error (with quota/billing details) leaks to the user
     // as a 500 body. Answer honestly instead, same tone as the no-segments case.
+    // Aborting this controller hangs up the Gemini request itself, so a question
+    // the reader stopped does not keep generating. Tripped by the client leaving
+    // (req.signal) or by the response stream being cancelled (below).
+    const geminiAbort = new AbortController();
+    req.signal?.addEventListener('abort', () => geminiAbort.abort(), { once: true });
+    const geminiOpts = { signal: geminiAbort.signal };
+
     let result;
     try {
       result = await sendWithRetry(() =>
         geminiHistory.length
-          ? model.startChat({ history: geminiHistory }).sendMessageStream(userMessageWithContext)
-          : model.generateContentStream(userMessageWithContext)
+          ? model.startChat({ history: geminiHistory }).sendMessageStream(userMessageWithContext, geminiOpts)
+          : model.generateContentStream(userMessageWithContext, geminiOpts)
       );
     } catch (genErr) {
       console.error(`[ask] Gemini generateContentStream failed after ${GEMINI_ATTEMPTS} attempts:`, genErr.message);
@@ -1047,6 +1054,7 @@ QUESTION: ${message}${readAs}`;
       },
       cancel() {
         cancelled = true;
+        geminiAbort.abort();
       },
     });
 
