@@ -39,7 +39,11 @@ export default function HomeHero() {
       {/* Vision devices, kept to the dark side so the preacher stays clear. */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
         <DotGrid dark className="inset-0 [mask-image:radial-gradient(ellipse_at_top_left,black,transparent_45%)]" />
-        <Rings className="absolute -bottom-56 -left-48 h-[34rem] w-[34rem] text-white/[0.07]" />
+        {/* On a phone the rings' centre sits exactly on the bottom-left corner
+            (half the box off each edge), so only the quarter-arcs show instead
+            of a whole ring across the photo. Wider banners keep the larger,
+            offset rings. */}
+        <Rings className="absolute -bottom-48 -left-48 h-96 w-96 text-white/[0.07] sm:-bottom-56 sm:h-[34rem] sm:w-[34rem]" />
       </div>
 
       {/* Pinned to the top of the banner, like the label on Today's declaration;

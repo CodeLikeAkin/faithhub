@@ -19,6 +19,11 @@ import ScopeChip from "./ScopeChip";
  * answer is still streaming) so the draft is kept. Give `onStop` and the send
  * button turns into a Stop button while `busy`.
  *
+ * `heroText="base"` sets the hero field's typed text at the 16px input floor
+ * (the default is larger) and its placeholder at body-copy size, 14px on a
+ * phone: the placeholder is its own size, so it can sit below 16px without
+ * iOS zooming the page on focus, which only looks at the typed text.
+ *
  * `maxLength` caps what can be typed or pasted (a question, not an essay); a
  * small "n / max" counter appears once the draft passes 80% of it. The API
  * routes keep their own, looser caps as the real guard.
@@ -38,6 +43,7 @@ export default function Composer({
   inputRef: externalRef,
   autoFocus = false,
   showScope = true,
+  heroText = "large",
   submitLabel = "Ask",
   minLength = 1,
   maxLength = 500,
@@ -113,7 +119,12 @@ export default function Composer({
       className={cn(
         "min-w-0 flex-1 resize-none bg-transparent text-brand-ink placeholder:text-brand-gray focus:outline-none",
         hero
-          ? "block w-full px-2 py-1.5 text-lg leading-relaxed sm:text-xl max-h-[200px]"
+          ? cn(
+              "block w-full px-2 py-1.5 leading-relaxed max-h-[200px]",
+              heroText === "base"
+                ? "text-base placeholder:text-sm sm:placeholder:text-base"
+                : "text-lg sm:text-xl"
+            )
           : "py-2 text-base leading-relaxed max-h-[120px]",
         // Stacked: take the whole first row, controls fall beneath.
         stacked && "order-1 basis-full px-1.5"

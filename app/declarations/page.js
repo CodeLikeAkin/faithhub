@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Bookmark, Flame, Play, RotateCcw, Volume2 } from "lucide-react";
+import { ArrowRight, Bookmark, Flame, Play, RotateCcw, Volume2, X } from "lucide-react";
 import ToolShell from "@/components/shell/ToolShell";
 import { copyText, useToast } from "@/components/shell/Toast";
 import Composer from "@/components/ask/Composer";
@@ -65,6 +65,22 @@ function setParams(changes) {
   } catch {
     /* noop */
   }
+}
+
+/** "Speak these" / "Speak them": a labelled pill, but just the speaker icon on a phone (like Today's declaration). */
+function SpeakButton({ label, className, ...rest }) {
+  return (
+    <Button
+      variant="dark"
+      size="sm"
+      icon={false}
+      className={cn("py-2.5 max-sm:h-11 max-sm:w-11 max-sm:justify-center max-sm:p-0", className)}
+      {...rest}
+    >
+      <Volume2 className="h-4 w-4" aria-hidden="true" />
+      <span className="max-sm:sr-only">{label}</span>
+    </Button>
+  );
 }
 
 export default function DeclarationsPage() {
@@ -201,10 +217,50 @@ export default function DeclarationsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [today, saved.length]);
 
+  // Back to the usual page: the day's theme and the chips come back.
+  const clearFacing = () => {
+    setFacing(null);
+    setParams({ facing: null });
+    resultsRef.current?.closest(".overflow-y-auto")?.scrollTo({ top: 0 });
+  };
+
   const copy = (text) => copyText(text, showToast);
   const todayParsed = today ? parseYoutubeUrl(today.youtube_url_with_timestamp) : null;
   const todaySaved = today ? saved.some((d) => d.id === today.id) : false;
   const todayLong = (today?.declaration_text || "").length > 150;
+
+  // My declarations + streak. Beside the day's theme on the usual page; under
+  // the answer when "What are you facing?" has one.
+  const mineCard = (
+    <section
+      aria-labelledby="mine-heading"
+      className="fh-rise relative isolate flex flex-col gap-4 overflow-hidden rounded-[1.75rem] border border-brand-navy/10 bg-gradient-to-br from-white to-brand-sky p-5 shadow-card sm:p-6"
+      style={{ "--i": 1 }}
+    >
+      <Rings className="pointer-events-none absolute -bottom-24 -right-24 -z-10 h-64 w-64 text-brand-navy/[0.08]" />
+      <div className="min-w-0">
+        <Eyebrow>Your set</Eyebrow>
+        <h2 id="mine-heading" className="mt-3 font-display text-2xl font-medium tracking-tight text-brand-ink">
+          My declarations
+        </h2>
+        <p className="mt-2 text-sm text-brand-gray">
+          {saved.length
+            ? `${saved.length} saved to speak each day`
+            : "Tap the bookmark on any declaration to keep it here"}
+        </p>
+        <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-brand-navy">
+          <Flame size={14} aria-hidden="true" />
+          {streakLabel(streak)}
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {saved.length > 0 && <SpeakButton label="Speak them" onClick={() => openSpeak("mine")} />}
+        <Button href="/declarations/mine" variant="quiet" size="sm" className="py-2.5">
+          {saved.length ? "Open" : "See how it works"}
+        </Button>
+      </div>
+    </section>
+  );
 
   return (
     <ToolShell
@@ -230,7 +286,7 @@ export default function DeclarationsPage() {
             }
             description="Say it plainly. You’ll get declarations from Heritage of Faith messages that speak to it, and a short word for you."
             aside={
-              today !== null && (
+              today !== null && !facing && (
                 <section
                   aria-labelledby="today-heading"
                   className="relative isolate overflow-hidden rounded-2xl border border-white/15 bg-white/[0.06] p-5 backdrop-blur-sm sm:p-6"
@@ -310,6 +366,7 @@ export default function DeclarationsPage() {
               <Composer
                 variant="hero"
                 showScope={false}
+                heroText="base"
                 busy={facing?.status === "loading"}
                 onSubmit={(q) => runFacing(q)}
                 placeholder="A diagnosis, a debt, a decision, a fear…"
@@ -352,9 +409,19 @@ export default function DeclarationsPage() {
 
               {facing?.status === "done" && (
                 <div className="mt-8">
-                  <p className="text-sm text-brand-gray">
-                    For <span className="font-semibold text-brand-ink">&ldquo;{facing.query}&rdquo;</span>
-                  </p>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="min-w-0 text-sm text-brand-gray">
+                      For <span className="font-semibold text-brand-ink">&ldquo;{facing.query}&rdquo;</span>
+                    </p>
+                    <button
+                      type="button"
+                      onClick={clearFacing}
+                      className="inline-flex h-10 flex-shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-brand-navy transition-colors hover:bg-brand-sky focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy"
+                    >
+                      <X size={15} aria-hidden="true" />
+                      Clear
+                    </button>
+                  </div>
                   {facing.response &&
                     (facing.general ? (
                       /* Nothing matched what they shared. These are general
@@ -374,10 +441,7 @@ export default function DeclarationsPage() {
                     ))}
                   <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
                     <h3 className="font-display text-2xl font-medium tracking-tight text-brand-ink sm:text-3xl">Declarations to speak</h3>
-                    <Button variant="dark" size="sm" icon={false} onClick={() => openSpeak("facing")} className="py-2.5">
-                      <Volume2 className="h-4 w-4" aria-hidden="true" />
-                      Speak these
-                    </Button>
+                    <SpeakButton label="Speak these" onClick={() => openSpeak("facing")} />
                   </div>
                   <ol className="mt-2 divide-y divide-brand-navy/10 border-y border-brand-navy/10">
                     {facing.items.map((d, i) => (
@@ -397,10 +461,19 @@ export default function DeclarationsPage() {
                 </div>
               )}
             </div>
+          {/* While a "What are you facing?" answer is on screen, the page is just
+              that answer, and below it, the reader's own set. The day's theme
+              and the chips come back with Clear. */}
+          {!facing ? (
+          <>
           {/* Themes — a tag filter, not a search (CLAUDE.md rule 2). The chip
               row stays pinned while the list below it scrolls. */}
           <div className="sticky top-0 z-10 -mx-3 mt-8 bg-white/95 px-3 py-3 backdrop-blur sm:-mx-8 sm:px-8">
-            <div role="group" aria-label="Themes" className="fh-no-scrollbar flex snap-x gap-2 overflow-x-auto">
+            {/* No scroll-snap on this row: today's theme is moved to the front once
+                the day is known, and the browser re-snapped to the chip it had been
+                sitting on (Faith), scrolling the row a chip-width and hiding the
+                active chip off the left edge. */}
+            <div role="group" aria-label="Themes" className="fh-no-scrollbar flex gap-2 overflow-x-auto">
               {chipThemes.map((t) => {
                 const on = t.slug === theme;
                 return (
@@ -413,7 +486,7 @@ export default function DeclarationsPage() {
                     }}
                     aria-pressed={on}
                     className={cn(
-                      "inline-flex h-10 flex-shrink-0 snap-start items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors active:scale-95",
+                      "inline-flex h-10 flex-shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors active:scale-95",
                       on
                         ? "border-brand-navy bg-brand-navy text-white"
                         : "border-brand-navy/15 bg-white text-brand-ink hover:border-brand-navy/50"
@@ -436,7 +509,10 @@ export default function DeclarationsPage() {
               running full width behind them, and dot grids out in the side
               gutters on wide screens. The declarations themselves stay on
               their white card. */}
-          <div className="relative isolate mt-3 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_17rem]">
+          {/* grid-cols-1 is minmax(0, 1fr); the implicit auto column is as wide as
+              the widest unbreakable line inside it — a one-line sermon title —
+              and ran the cards off the right edge of a phone. */}
+          <div className="relative isolate mt-3 grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_17rem]">
             <div aria-hidden="true" className="pointer-events-none absolute -inset-x-[50vw] -bottom-24 -top-4 -z-10 bg-gradient-to-b from-white via-brand-sky/70 to-white" />
             <DotGrid className="right-full top-10 -z-10 mr-6 hidden h-[30rem] w-[22rem] [mask-image:radial-gradient(circle_at_left,black,transparent_70%)] xl:block" />
             <DotGrid className="left-full top-64 -z-10 ml-6 hidden h-[30rem] w-[22rem] [mask-image:radial-gradient(circle_at_right,black,transparent_70%)] xl:block" />
@@ -456,17 +532,12 @@ export default function DeclarationsPage() {
                     </p>
                   )}
                 </div>
-                <Button
-                  variant="dark"
-                  size="sm"
-                  icon={false}
+                <SpeakButton
+                  label="Speak these"
                   onClick={() => openSpeak("theme")}
                   disabled={!themeItems?.length}
-                  className="py-2.5 disabled:pointer-events-none disabled:opacity-50"
-                >
-                  <Volume2 className="h-4 w-4" aria-hidden="true" />
-                  Speak these
-                </Button>
+                  className="disabled:pointer-events-none disabled:opacity-50"
+                />
               </div>
 
               {themeItems === null ? (
@@ -494,41 +565,12 @@ export default function DeclarationsPage() {
               </Link>
             </section>
 
-            {/* My declarations + streak */}
-            <section
-              aria-labelledby="mine-heading"
-              className="fh-rise relative isolate flex flex-col gap-4 overflow-hidden rounded-[1.75rem] border border-brand-navy/10 bg-gradient-to-br from-white to-brand-sky p-5 shadow-card sm:p-6"
-              style={{ "--i": 1 }}
-            >
-              <Rings className="pointer-events-none absolute -bottom-24 -right-24 -z-10 h-64 w-64 text-brand-navy/[0.08]" />
-              <div className="min-w-0">
-                <Eyebrow>Your set</Eyebrow>
-                <h2 id="mine-heading" className="mt-3 font-display text-2xl font-medium tracking-tight text-brand-ink">
-                  My declarations
-                </h2>
-                <p className="mt-2 text-sm text-brand-gray">
-                  {saved.length
-                    ? `${saved.length} saved to speak each day`
-                    : "Tap the bookmark on any declaration to keep it here"}
-                </p>
-                <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-brand-navy">
-                  <Flame size={14} aria-hidden="true" />
-                  {streakLabel(streak)}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {saved.length > 0 && (
-                  <Button variant="dark" size="sm" icon={false} onClick={() => openSpeak("mine")} className="py-2.5">
-                    <Volume2 className="h-4 w-4" aria-hidden="true" />
-                    Speak them
-                  </Button>
-                )}
-                <Button href="/declarations/mine" variant="quiet" size="sm" className="py-2.5">
-                  {saved.length ? "Open" : "See how it works"}
-                </Button>
-              </div>
-            </section>
+            {mineCard}
           </div>
+          </>
+          ) : (
+            <div className="mt-10 lg:max-w-md">{mineCard}</div>
+          )}
         </div>
       </div>
 
