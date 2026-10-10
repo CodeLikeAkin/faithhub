@@ -6,6 +6,7 @@ import { BookOpen, Captions, ChevronRight, Eye, EyeOff, FileText, Flame, Languag
 import YtThumb from "@/components/YtThumb";
 import { Btn, Chip, ConfirmBtn, Input, Notice, Select } from "@/components/admin/controls";
 import { adminFetch } from "@/lib/admin-client";
+import { declarationState } from "@/lib/admin-format";
 import { askStatus, isDeadVideo, preachedOn, speakerOf, splitTitle } from "@/lib/admin-titles";
 import { cn } from "@/lib/utils";
 
@@ -27,7 +28,7 @@ const PROBLEMS = [
   { key: "transcript", label: "No transcript", test: (m) => !m.transcript },
   { key: "search", label: "Not searchable", test: (m) => !m.search },
   { key: "scriptures", label: "No scripture list", test: (m) => !m.scriptures },
-  { key: "declarations", label: "No declarations", test: (m) => !m.declarations },
+  { key: "declarations", label: "No declarations", test: (m) => declarationState(m) === "missing" },
   { key: "notes", label: "No study notes", test: (m) => !!m.series_id && !m.notes },
   { key: "words", label: "No word studies", test: (m) => !m.word_studies && !m.word_studies_none },
   { key: "video", label: "Video won't play", test: (m) => isDeadVideo(m.video_status) },
@@ -40,7 +41,7 @@ const SORTS = [
   { key: "gaps", label: "Most pieces missing first" },
 ];
 
-/** The six study pieces, each "have", "none" (checked, none needed), "na" (not wanted here) or "missing". */
+/** The six study pieces, each "have", "none" (checked, none needed), "na" / "kept" (not wanted here) or "missing". */
 function piecesOf(m) {
   return [
     { key: "transcript", label: "Transcript", icon: Captions, state: m.transcript ? "have" : "missing" },
@@ -53,14 +54,20 @@ function piecesOf(m) {
       count: m.word_studies,
       state: m.word_studies ? "have" : m.word_studies_none ? "none" : "missing",
     },
-    { key: "declarations", label: "Declarations", icon: Flame, count: m.declarations, state: m.declarations ? "have" : "missing" },
+    { key: "declarations", label: "Declarations", icon: Flame, count: m.declarations, state: declarationState(m) },
     { key: "notes", label: "Study notes", icon: FileText, state: m.notes ? "have" : m.series_id ? "missing" : "na" },
   ];
 }
 
 const missingCount = (m) => piecesOf(m).filter((p) => p.state === "missing").length;
 
-const STATE_TEXT = { have: "in place", none: "checked, none needed", na: "not needed outside a series", missing: "missing" };
+const STATE_TEXT = {
+  have: "in place",
+  none: "checked, none needed",
+  na: "not needed outside a series",
+  kept: "kept off the Declarations page (guest or celebration video)",
+  missing: "missing",
+};
 
 function Pieces({ m }) {
   const pieces = piecesOf(m);
@@ -77,7 +84,7 @@ function Pieces({ m }) {
               className={cn(
                 "flex h-7 w-7 items-center justify-center rounded-full",
                 state === "have" && "bg-brand-navy text-white",
-                (state === "none" || state === "na") && "bg-brand-sky text-brand-navy/50",
+                (state === "none" || state === "na" || state === "kept") && "bg-brand-sky text-brand-navy/50",
                 state === "missing" && "border border-dashed border-slate-300 text-slate-400"
               )}
             >

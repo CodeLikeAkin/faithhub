@@ -25,7 +25,7 @@ import { Rings } from "@/components/Decor";
 import { StatusBadge } from "@/components/admin/ui";
 import { Btn, Chip, ConfirmBtn, Field, Input, Notice } from "@/components/admin/controls";
 import { adminFetch } from "@/lib/admin-client";
-import { fmtDate, timeAgo } from "@/lib/admin-format";
+import { declarationState, fmtDate, timeAgo } from "@/lib/admin-format";
 import { askStatus, isDeadVideo, preachedOn, speakerOf, splitTitle } from "@/lib/admin-titles";
 import { cn } from "@/lib/utils";
 
@@ -49,6 +49,13 @@ const JOB = {
 };
 
 const reviewHref = (tab, id) => `/admin/review?tab=${tab}&sermon=${id}`;
+
+const declarationsOf = (m) =>
+  declarationState({
+    declarations: m.counts.declarations,
+    declarations_kept: m.counts.declarationsKept,
+    declarations_none: m.declarations_none,
+  });
 
 // ─── Title ─────────────────────────────────────────────────────────────────
 
@@ -228,14 +235,15 @@ function ActionLink({ href, children }) {
   );
 }
 
-function WordStudiesNone({ m, onChange }) {
+/** The "checked, none needed" mark: `field` is word_studies_none or declarations_none. */
+function NoneNeeded({ m, field, onChange }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   async function set(value) {
     setBusy(true);
     setError("");
     try {
-      const r = await adminFetch(`/api/admin/sermons/${m.id}`, { method: "PATCH", body: { word_studies_none: value } });
+      const r = await adminFetch(`/api/admin/sermons/${m.id}`, { method: "PATCH", body: { [field]: value } });
       onChange(r.sermon);
     } catch (e) {
       setError(e.message);
@@ -244,7 +252,7 @@ function WordStudiesNone({ m, onChange }) {
   }
   return (
     <div className="flex flex-col items-start gap-1 sm:items-end">
-      {m.word_studies_none ? (
+      {m[field] ? (
         <Btn variant="ghost" size="sm" busy={busy} onClick={() => set(false)}>
           Undo
         </Btn>
@@ -261,6 +269,7 @@ function WordStudiesNone({ m, onChange }) {
 function Pieces({ m, onChange, onProcess, processing }) {
   const c = m.counts;
   const inSeries = m.series.length > 0;
+  const declarations = declarationsOf(m);
   const rows = [
     {
       key: "transcript",
@@ -287,13 +296,24 @@ function Pieces({ m, onChange, onProcess, processing }) {
       key: "declarations",
       icon: Flame,
       label: "Declarations",
-      state: c.declarations ? "have" : "missing",
-      detail: c.declarations ? plural(c.declarations, "declaration", "declarations") : "Waiting for the careful pass",
-      action: c.declarations ? (
-        <ActionLink href={reviewHref("declarations", m.id)}>Review</ActionLink>
-      ) : (
-        <ActionLink href="/admin/careful-pass">Careful pass</ActionLink>
-      ),
+      state: { have: "have", kept: "na", none: "na", missing: "missing" }[declarations],
+      detail: {
+        have:
+          plural(c.declarations, "declaration", "declarations") +
+          (c.declarationsKept ? `, plus ${nf.format(c.declarationsKept)} kept off the Declarations page` : ""),
+        kept: `${plural(c.declarationsKept, "declaration", "declarations")}, all kept off the Declarations page. They show on this message's own page.`,
+        none: "Checked: this message needs no declarations",
+        missing: "Waiting for the careful pass. If this message needs none, mark it.",
+      }[declarations],
+      action:
+        declarations === "have" || declarations === "kept" ? (
+          <ActionLink href={reviewHref("declarations", m.id)}>Review</ActionLink>
+        ) : (
+          <div className="flex flex-wrap items-center gap-1 sm:flex-nowrap">
+            {declarations === "missing" && <ActionLink href="/admin/careful-pass">Careful pass</ActionLink>}
+            <NoneNeeded m={m} field="declarations_none" onChange={onChange} />
+          </div>
+        ),
     },
     {
       key: "notes",
@@ -317,7 +337,11 @@ function Pieces({ m, onChange, onProcess, processing }) {
         : m.word_studies_none
         ? "Checked: this message explains no Greek or Hebrew word"
         : "None yet. If it explains no Greek or Hebrew word, mark it.",
-      action: c.words ? <ActionLink href={reviewHref("words", m.id)}>Review</ActionLink> : <WordStudiesNone m={m} onChange={onChange} />,
+      action: c.words ? (
+        <ActionLink href={reviewHref("words", m.id)}>Review</ActionLink>
+      ) : (
+        <NoneNeeded m={m} field="word_studies_none" onChange={onChange} />
+      ),
     },
   ];
   const automatic = ["transcript", "search", "scriptures"].some((k) => rows.find((r) => r.key === k).state === "missing");
@@ -394,7 +418,7 @@ export default function MessageDetail({ message }) {
     !m.transcript && "transcript",
     !m.counts.segments && "search",
     !m.counts.scriptures && "scripture list",
-    !m.counts.declarations && "declarations",
+    declarationsOf(m) === "missing" && "declarations",
     inSeries && !m.notes && "study notes",
     !m.counts.words && !m.word_studies_none && "word studies",
   ].filter(Boolean);

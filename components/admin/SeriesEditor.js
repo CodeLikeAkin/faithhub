@@ -8,7 +8,7 @@ import { StatusBadge } from "@/components/admin/ui";
 import { Btn, Chip, ConfirmBtn, Field, Input, Notice } from "@/components/admin/controls";
 import { useSortableList } from "@/components/admin/useSortableList";
 import { adminFetch } from "@/lib/admin-client";
-import { fmtDate } from "@/lib/admin-format";
+import { declarationState, fmtDate } from "@/lib/admin-format";
 import { cn } from "@/lib/utils";
 
 const PIECES = [
@@ -24,7 +24,7 @@ function PiecePips({ p }) {
   return (
     <ul className="flex gap-1">
       {PIECES.map(({ key, label, icon: Icon }) => {
-        const ok = key === "declarations" ? p.declarations > 0 : !!p[key];
+        const ok = key === "declarations" ? declarationState(p) !== "missing" : !!p[key];
         return (
           <li
             key={key}

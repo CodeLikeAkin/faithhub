@@ -26,6 +26,16 @@ const inAll = (rows, unit) => (typeof rows === "number" ? `${fmt(rows)} ${unit} 
 const noneNeeded = (n) => (n > 0 ? `${fmt(n)} checked as needing none.` : "Not every message has Greek or Hebrew to explain.");
 const join = (...parts) => parts.filter(Boolean).join(" ");
 
+// Declarations count the way the Declarations page sees them: a guest's or a
+// celebration video's are kept off it, and some messages are checked as
+// needing none. Both count as in place.
+const declarationsNote = (onPage, kept, none) =>
+  join(
+    typeof onPage === "number" ? `${fmt(onPage)} on the Declarations page.` : null,
+    kept > 0 ? `${fmt(kept)} guest or celebration ${kept === 1 ? "message" : "messages"} kept off it.` : null,
+    none > 0 ? `${fmt(none)} checked as needing none.` : null
+  );
+
 // "N missing" opens exactly those messages on the Messages page.
 const missingHref = (filter, piece) => `/admin/messages?filter=${filter}&missing=${piece}`;
 
@@ -41,7 +51,12 @@ function catalogView({ coverage: c, segmentGaps, extractions: x }) {
       { label: "Transcript", have: x ? n - x.catalogNoTranscript : null, href: href("transcript") },
       { label: "Searchable in Ask the Word", have: typeof segmentGaps === "number" ? n - segmentGaps : null, href: href("search") },
       { label: "Scripture list", have: n - c.catalog_no_scriptures, note: inAll(rows?.scriptures, "verse references"), href: href("scriptures") },
-      { label: "Declarations", have: n - c.catalog_no_declarations, note: inAll(rows?.declarations, "declarations"), href: href("declarations") },
+      {
+        label: "Declarations",
+        have: n - c.catalog_no_declarations,
+        note: declarationsNote(rows?.declarations, c.catalog_declarations_kept || 0, c.catalog_declarations_none || 0),
+        href: href("declarations"),
+      },
       { label: "Study notes", have: n - c.catalog_no_notes, href: href("notes") },
       {
         label: "Word studies",
@@ -65,7 +80,12 @@ function libraryView({ coverage: c, extractions: x, declarationsTotal }) {
       { label: "Transcript", have: have.transcript, note: "Nothing else can be made without one.", href: href("transcript") },
       { label: "Searchable in Ask the Word", have: have.search, href: href("search") },
       { label: "Scripture list", have: have.scriptures, note: inAll(x.rows.library.scriptures, "verse references"), href: href("scriptures") },
-      { label: "Declarations", have: have.declarations, note: inAll(declarationsTotal, "declarations"), href: href("declarations") },
+      {
+        label: "Declarations",
+        have: have.declarations + have.declarationsNone,
+        note: declarationsNote(declarationsTotal, have.declarationsKept, have.declarationsNone),
+        href: href("declarations"),
+      },
       {
         label: "Study notes",
         have: have.seriesWithNotes,

@@ -215,7 +215,7 @@ export default function CarefulPass({ rows, library = false }) {
         {library && (
           <Section
             title="Rest of the library"
-            note="Messages in no series. They only need declarations; study notes are for series messages."
+            note="Messages in no series. They only need declarations; study notes are for series messages. If one needs none, open it and mark it."
             list={rest}
             id="cp-rest"
             {...sectionProps}
@@ -271,7 +271,8 @@ export default function CarefulPass({ rows, library = false }) {
           )}
         </div>
         <Notice tone="info" className="mt-4">
-          This page refreshes the list each time you open it, so finished messages drop off on their own.
+          This page refreshes the list each time you open it, so finished messages drop off on their own. Messages marked
+          &ldquo;no declarations needed&rdquo; aren&apos;t listed.
         </Notice>
       </aside>
     </div>

@@ -1,11 +1,11 @@
 import { adminApiGuard } from '@/lib/admin-auth';
 import { UUID_RE, fail, failFrom, ok, readJson } from '@/lib/admin-api';
-import { loadSermon, renameSermon, setPublished, setWordStudiesNone } from '@/lib/admin-sermons';
+import { loadSermon, renameSermon, setDeclarationsNone, setPublished, setWordStudiesNone } from '@/lib/admin-sermons';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * PATCH { title?, published?, word_studies_none? } -> change one message.
+ * PATCH { title?, published?, word_studies_none?, declarations_none? } -> change one message.
  * Each field is saved and recorded in History on its own.
  */
 export async function PATCH(req, { params }) {
@@ -27,6 +27,11 @@ export async function PATCH(req, { params }) {
     if (body.word_studies_none !== undefined) {
       if (typeof body.word_studies_none !== 'boolean') return fail('Bad request.');
       if (body.word_studies_none !== before.word_studies_none) await setWordStudiesNone(before, body.word_studies_none);
+    }
+
+    if (body.declarations_none !== undefined) {
+      if (typeof body.declarations_none !== 'boolean') return fail('Bad request.');
+      if (body.declarations_none !== before.declarations_none) await setDeclarationsNone(before, body.declarations_none);
     }
 
     let series = [];

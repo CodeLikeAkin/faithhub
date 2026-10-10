@@ -238,6 +238,7 @@ function DeclarationRow({ d, onSaved, onDeleted }) {
             <>
               <p className="leading-relaxed text-brand-ink">{d.declaration_text}</p>
               <div className="mt-2 flex flex-wrap gap-1.5">
+                {d.in_library === false && <Chip tone="outline">Kept off the Declarations page</Chip>}
                 {(d.topic_tags || []).map((t) => (
                   <Chip key={t}>{THEMES.find((x) => x.slug === t)?.name || t}</Chip>
                 ))}
@@ -287,11 +288,16 @@ function Declarations({ sermon }) {
       </div>
     );
   }
+  const kept = list.filter((d) => d.in_library === false).length;
   return (
     <section className={card} aria-label="Declarations">
       <header className="flex flex-wrap items-center justify-between gap-2 px-6 pt-5">
         <p className="text-sm text-slate-500">
           {list.length} declarations, in the order they were spoken. Editing the wording keeps it searchable.
+          {kept > 0 &&
+            (kept === list.length
+              ? " All are kept off the Declarations page (a guest or a celebration video); they show on this message's own page."
+              : ` ${kept} are kept off the Declarations page.`)}
         </p>
         {saved && <Chip tone="good">{saved}</Chip>}
       </header>

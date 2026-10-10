@@ -20,6 +20,7 @@ const slim = (m) => ({
   video_status: m.video_status,
   published: m.published,
   word_studies_none: m.word_studies_none,
+  declarations_none: m.declarations_none,
   series_id: m.series_id,
   series_title: m.series_title,
   part_number: m.part_number,
@@ -29,6 +30,7 @@ const slim = (m) => ({
   scriptures: m.scriptures,
   word_studies: m.word_studies,
   declarations: m.declarations,
+  declarations_kept: m.declarations_kept,
   notes: m.notes,
   job_status: m.job_status,
 });

@@ -13,7 +13,7 @@ export async function GET(req) {
   try {
     const { data, error } = await adminDb()
       .from('declarations')
-      .select('id, declaration_text, timestamp_seconds, topic_tags, youtube_url_with_timestamp, created_at')
+      .select('id, declaration_text, timestamp_seconds, topic_tags, youtube_url_with_timestamp, in_library, created_at')
       .eq('sermon_id', sermonId)
       .order('timestamp_seconds', { ascending: true })
       .limit(500);
