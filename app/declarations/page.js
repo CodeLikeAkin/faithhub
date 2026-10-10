@@ -7,7 +7,7 @@ import ToolShell from "@/components/shell/ToolShell";
 import { copyText, useToast } from "@/components/shell/Toast";
 import Composer from "@/components/ask/Composer";
 import Button from "@/components/Button";
-import VideoModal from "@/components/VideoModal";
+import { usePlayer } from "@/components/player/PlayerProvider";
 import Masthead from "@/components/shell/Masthead";
 import DeclarationLine from "@/components/declarations/DeclarationLine";
 import SpeakMode from "@/components/declarations/SpeakMode";
@@ -87,7 +87,7 @@ export default function DeclarationsPage() {
   const [today, setToday] = useState(undefined); // undefined = loading, null = unavailable
   const [facing, setFacing] = useState(null); // { query, status, response, items, hasMore, loadingMore, error }
   const [speak, setSpeak] = useState(null); // { key, title, items }
-  const [watching, setWatching] = useState(null);
+  const { watch } = usePlayer();
   const [toast, showToast] = useToast();
   const saved = useSavedDeclarations();
   const streak = useStreak();
@@ -337,7 +337,7 @@ export default function DeclarationsPage() {
                         {todayParsed && (
                           <button
                             type="button"
-                            onClick={() => setWatching({ ...todayParsed, sermon_title: today.sermon_title })}
+                            onClick={() => watch({ ...todayParsed, sermon_title: today.sermon_title })}
                             aria-label="Watch the moment this was preached"
                             title="Watch"
                             className="grid h-11 w-11 place-items-center rounded-full border border-white/40 text-white transition hover:bg-white/10 active:scale-[0.94] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
@@ -445,7 +445,7 @@ export default function DeclarationsPage() {
                   </div>
                   <ol className="mt-2 divide-y divide-brand-navy/10 border-y border-brand-navy/10">
                     {facing.items.map((d, i) => (
-                      <DeclarationLine key={d.id || i} declaration={d} index={i} onWatch={setWatching} onCopy={copy} />
+                      <DeclarationLine key={d.id || i} declaration={d} index={i} onWatch={watch} onCopy={copy} />
                     ))}
                   </ol>
                   {facing.hasMore && (
@@ -549,7 +549,7 @@ export default function DeclarationsPage() {
               ) : themeItems.length ? (
                 <ol key={theme} className="fh-stagger mt-4 divide-y divide-brand-navy/10 border-t border-brand-navy/10">
                   {themeItems.map((d, i) => (
-                    <DeclarationLine key={d.id || i} declaration={d} index={i} onWatch={setWatching} onCopy={copy} />
+                    <DeclarationLine key={d.id || i} declaration={d} index={i} onWatch={watch} onCopy={copy} />
                   ))}
                 </ol>
               ) : (
@@ -574,7 +574,6 @@ export default function DeclarationsPage() {
         </div>
       </div>
 
-      <VideoModal seg={watching} onClose={() => setWatching(null)} />
     </ToolShell>
   );
 }

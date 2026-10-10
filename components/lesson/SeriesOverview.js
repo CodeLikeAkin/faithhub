@@ -7,7 +7,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import ToolShell, { HeaderButton } from "@/components/shell/ToolShell";
 import { copyText, useToast } from "@/components/shell/Toast";
 import DeclarationLine from "@/components/declarations/DeclarationLine";
-import VideoModal from "@/components/VideoModal";
+import { usePlayer } from "@/components/player/PlayerProvider";
 import VerseCard, { TranslationToggle } from "@/components/VerseCard";
 import { DotGrid, Rings } from "@/components/Decor";
 import YtThumb from "@/components/YtThumb";
@@ -68,7 +68,7 @@ export default function SeriesOverview({ seriesId }) {
   } = useSeriesBundle(entry, { withSeriesExtras: true, withSummary: true });
 
   const [panelOpen, setPanelOpen] = useState(null);
-  const [watching, setWatching] = useState(null);
+  const { watch } = usePlayer();
   const [translation, setTranslation] = useState("KJV");
   const [showAllDecls, setShowAllDecls] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
@@ -127,7 +127,7 @@ export default function SeriesOverview({ seriesId }) {
         openStudy={panelStudy}
         defaultScopeType="series"
         suggestions={summarySuggestions}
-        onCite={(seg) => setWatching({ ...seg })}
+        onCite={(seg) => watch({ ...seg })}
         onClose={() => setPanelOpen(false)}
         describeMoment={describeMoment}
       />
@@ -341,7 +341,7 @@ export default function SeriesOverview({ seriesId }) {
                         <DeclarationLine
                           key={d.id}
                           declaration={{ ...d, sermon_title: p?.title || series.title }}
-                          onWatch={setWatching}
+                          onWatch={watch}
                           onCopy={(text) => copyText(text, showToast)}
                           sourceLabel={p ? `Part ${p.part_number} · ${partTitle(p.title, series.title)}` : null}
                         />
@@ -379,7 +379,6 @@ export default function SeriesOverview({ seriesId }) {
         </button>
       )}
 
-      <VideoModal seg={watching} onClose={() => setWatching(null)} />
     </ToolShell>
   );
 }

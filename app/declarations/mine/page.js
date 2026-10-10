@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Bookmark, Flame } from "lucide-react";
 import ToolShell from "@/components/shell/ToolShell";
 import { copyText, useToast } from "@/components/shell/Toast";
-import VideoModal from "@/components/VideoModal";
+import { usePlayer } from "@/components/player/PlayerProvider";
 import DeclarationLine from "@/components/declarations/DeclarationLine";
 import SpeakMode from "@/components/declarations/SpeakMode";
 import SpeakAllBar from "@/components/declarations/SpeakAllBar";
@@ -21,7 +21,7 @@ export default function MyDeclarationsPage() {
   const saved = useSavedDeclarations();
   const streak = useStreak();
   const [speaking, setSpeaking] = useState(false);
-  const [watching, setWatching] = useState(null);
+  const { watch } = usePlayer();
   const [toast, showToast] = useToast();
   const wantSpeak = useRef(false);
 
@@ -117,7 +117,7 @@ export default function MyDeclarationsPage() {
                     key={d.id}
                     declaration={d}
                     index={i}
-                    onWatch={setWatching}
+                    onWatch={watch}
                     onCopy={copy}
                     onSaveChange={onSaveChange}
                   />
@@ -129,7 +129,6 @@ export default function MyDeclarationsPage() {
           {saved.length === 0 && <div className="h-24" />}
         </div>
       </div>
-      <VideoModal seg={watching} onClose={() => setWatching(null)} />
     </ToolShell>
   );
 }

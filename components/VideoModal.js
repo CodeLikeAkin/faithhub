@@ -43,21 +43,18 @@ const project = (velocity, decel = 0.998) => ((velocity / 1000) * decel) / (1 - 
 // reposition" values) so the mini-player settles onto its edge with no bounce.
 const SPRING_RESPONSE = 0.4;
 
-export default function VideoModal({ seg, onClose, initialMinimized = false }) {
-  const [minimized, setMinimized] = useState(false);
+export default function VideoModal({ seg, onClose, minimized, onMinimizedChange }) {
   const [pos, setPos] = useState(null); // {x,y} once dragged; null = default corner
   const cardRef = useRef(null);
   const dragRef = useRef(null); // { dx, dy, startX, startY, moved } while a drag is live
   const samplesRef = useRef([]); // recent {t,x,y} pointer samples → release velocity
   const animRef = useRef(null); // rAF id of a running snap, so a new grab cancels it
 
-  // A citation clicked while the player is closed opens in the surface's
-  // default size — full-screen normally, or the corner mini-player where the
-  // reader is meant to keep studying alongside it (Ask, `initialMinimized`).
-  // But if the player is already open — including minimized — clicking a
-  // different citation just swaps the video in place and keeps whatever state
-  // (minimized, dragged position) it had, so playback keeps going in the
-  // mini-player instead of popping back open.
+  // Whether it opens full-size or as the corner mini-player is decided by the
+  // PlayerProvider (components/player/), which also owns `minimized` so a page
+  // change can shrink the player. Here: a fresh open starts in the default
+  // corner. If the player is already open, a different citation just swaps the
+  // video in place and keeps the dragged position.
   const wasOpenRef = useRef(false);
   useEffect(() => {
     const isFreshOpen = !!seg && !wasOpenRef.current;
@@ -66,11 +63,10 @@ export default function VideoModal({ seg, onClose, initialMinimized = false }) {
         cancelAnimationFrame(animRef.current);
         animRef.current = null;
       }
-      setMinimized(initialMinimized);
       setPos(null);
     }
     wasOpenRef.current = !!seg;
-  }, [seg?.video_id, seg?.start_seconds, initialMinimized]);
+  }, [seg?.video_id, seg?.start_seconds]);
 
   // A dragged-to position is absolute, so a resize (or a phone rotating) can
   // strand the player off-screen. Pull it back inside.
@@ -422,7 +418,7 @@ export default function VideoModal({ seg, onClose, initialMinimized = false }) {
             {minimized ? (
               <button
                 type="button"
-                onClick={() => setMinimized(false)}
+                onClick={() => onMinimizedChange(false)}
                 aria-label="Expand"
                 className="relative w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition active:scale-90 before:content-[''] before:absolute before:-inset-2"
               >
@@ -431,7 +427,7 @@ export default function VideoModal({ seg, onClose, initialMinimized = false }) {
             ) : (
               <button
                 type="button"
-                onClick={() => setMinimized(true)}
+                onClick={() => onMinimizedChange(true)}
                 aria-label="Minimize — keep watching while you study"
                 title="Minimize — keep watching while you study"
                 className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition active:scale-90"

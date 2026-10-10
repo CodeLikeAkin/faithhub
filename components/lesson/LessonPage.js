@@ -7,7 +7,7 @@ import { ArrowRight, Loader2, Sparkles } from "lucide-react";
 import ToolShell, { HeaderButton } from "@/components/shell/ToolShell";
 import { copyText, useToast } from "@/components/shell/Toast";
 import DeclarationLine from "@/components/declarations/DeclarationLine";
-import VideoModal from "@/components/VideoModal";
+import { usePlayer } from "@/components/player/PlayerProvider";
 import VerseExplorer from "@/components/VerseExplorer";
 import WordStudy from "@/components/WordStudy";
 import { DotGrid, QuoteGlyph, Rings } from "@/components/Decor";
@@ -91,7 +91,7 @@ export default function LessonPage({ sermonId }) {
   const [panelOpen, setPanelOpen] = useState(null); // null → docked from xl, closed below
   const [seek, setSeek] = useState(null); // { videoId, t, n }
   const [startAt, setStartAt] = useState(0);
-  const [watching, setWatching] = useState(null); // moments outside this series → modal
+  const { watch } = usePlayer();
   const [tab, setTab] = useState(null); // the open panel; null until the data says which exist
   const [toast, showToast] = useToast({ offset: "5.5rem" }); // clears the Ask button
   const docked = useMediaQuery(PANEL_DOCKED_QUERY);
@@ -155,7 +155,7 @@ export default function LessonPage({ sermonId }) {
   const playMoment = (seg) => {
     const p = seg?.video_id ? parts.find((x) => x.youtube_video_id === seg.video_id) : null;
     if (!p) {
-      setWatching({ ...seg });
+      watch({ ...seg });
       return;
     }
     if (!docked && panelOpen === true) setPanelOpen(null); // close the sheet so the video shows
@@ -552,7 +552,6 @@ export default function LessonPage({ sermonId }) {
         </button>
       )}
 
-      <VideoModal seg={watching} onClose={() => setWatching(null)} />
     </ToolShell>
   );
 }
