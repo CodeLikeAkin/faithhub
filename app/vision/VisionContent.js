@@ -18,7 +18,7 @@ import {
   Target,
   UsersRound,
 } from "lucide-react";
-import VideoModal from "@/components/VideoModal";
+import { usePlayer } from "@/components/player/PlayerProvider";
 import Button from "@/components/Button";
 import { cn } from "@/lib/utils";
 
@@ -480,7 +480,7 @@ function SonshipPoint({ index, heading, children }) {
 /* ── page ────────────────────────────────────────────────────────── */
 
 export default function VisionContent() {
-  const [watching, setWatching] = useState(null);
+  const { watch } = usePlayer();
   const scrollRef = useRef(null);
 
   return (
@@ -591,7 +591,7 @@ export default function VisionContent() {
 
                 <button
                   type="button"
-                  onClick={() => setWatching(moment(ANCHOR, 7286, ANCHOR_TITLE))}
+                  onClick={() => watch(moment(ANCHOR, 7286, ANCHOR_TITLE))}
                   className="group absolute -bottom-6 -left-3 flex items-center gap-3 rounded-2xl border border-brand-navy/10 bg-white/95 py-2.5 pl-2.5 pr-5 text-left shadow-xl shadow-brand-navy/15 backdrop-blur transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy focus-visible:ring-offset-2 sm:-left-10"
                 >
                   <span className="relative grid h-11 w-11 flex-shrink-0 place-items-center rounded-full bg-brand-navy text-white">
@@ -656,7 +656,7 @@ export default function VisionContent() {
               </div>
               <button
                 type="button"
-                onClick={() => setWatching(moment(ANCHOR, 7286, ANCHOR_TITLE))}
+                onClick={() => watch(moment(ANCHOR, 7286, ANCHOR_TITLE))}
                 className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.06] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand-deep"
               >
                 <Play className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
@@ -784,7 +784,7 @@ export default function VisionContent() {
                 the Holy Ghost is a lifeless practice.
               </p>
 
-              <WatchButton seg={moment(ANCHOR, 2108, ANCHOR_TITLE)} onWatch={setWatching} />
+              <WatchButton seg={moment(ANCHOR, 2108, ANCHOR_TITLE)} onWatch={watch} />
             </Mark>
 
             <Mark
@@ -873,7 +873,7 @@ export default function VisionContent() {
                 too big to serve.
               </p>
 
-              <WatchButton seg={moment(ANCHOR, 4218, ANCHOR_TITLE)} onWatch={setWatching} />
+              <WatchButton seg={moment(ANCHOR, 4218, ANCHOR_TITLE)} onWatch={watch} />
             </Mark>
 
             <Mark
@@ -908,7 +908,7 @@ export default function VisionContent() {
               </p>
               <p>We all have the same rights and privileges as new creation.</p>
 
-              <WatchButton seg={moment(ANCHOR, 4989, ANCHOR_TITLE)} onWatch={setWatching} />
+              <WatchButton seg={moment(ANCHOR, 4989, ANCHOR_TITLE)} onWatch={watch} />
             </Mark>
 
             <Mark
@@ -941,7 +941,7 @@ export default function VisionContent() {
                 will do something bigger than himself.
               </p>
 
-              <WatchButton seg={moment(ANCHOR, 10786, ANCHOR_TITLE)} onWatch={setWatching} />
+              <WatchButton seg={moment(ANCHOR, 10786, ANCHOR_TITLE)} onWatch={watch} />
             </Mark>
 
             <Mark
@@ -969,7 +969,7 @@ export default function VisionContent() {
                 your head.
               </p>
 
-              <WatchButton seg={moment(DOER_VIDEO, 9559, DOER_TITLE)} onWatch={setWatching} />
+              <WatchButton seg={moment(DOER_VIDEO, 9559, DOER_TITLE)} onWatch={watch} />
             </Mark>
           </div>
         </div>
@@ -1293,7 +1293,6 @@ export default function VisionContent() {
         before reproducing in print.
       </p>
 
-      <VideoModal seg={watching} onClose={() => setWatching(null)} />
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { Languages, ChevronDown, ChevronUp, Info, Play, Loader2 } from "lucide-r
 import { supabase } from "@/lib/supabase";
 import { parseYoutubeUrl } from "@/lib/youtube";
 import { fetchPassage, parseReference } from "@/lib/bible";
-import VideoModal from "@/components/VideoModal";
+import { usePlayer } from "@/components/player/PlayerProvider";
 
 const LANGUAGE_LABEL = {
   greek: "Greek",
@@ -61,7 +61,7 @@ export default function WordStudy({ sermonId, words: wordsProp, embedded = false
   const [fetchedWords, setFetchedWords] = useState([]);
   const [open, setOpen] = useState(embedded); // embedded → always expanded (a tab is the toggle)
   const [expandedId, setExpandedId] = useState(null);
-  const [watching, setWatching] = useState(null); // segment currently open in the video modal
+  const { watch } = usePlayer();
   const [verseText, setVerseText] = useState({}); // word id -> { loading }|{ verses }|{ error }
   const [openVerseId, setOpenVerseId] = useState(null); // word id whose verse is expanded
 
@@ -210,7 +210,7 @@ export default function WordStudy({ sermonId, words: wordsProp, embedded = false
             type="button"
             // A lesson page passes onWatch to play the moment in its own
             // player; everywhere else it opens in the video modal.
-            onClick={() => (onWatch || setWatching)({ ...parsed, sermon_title: w.word })}
+            onClick={() => (onWatch || watch)({ ...parsed, sermon_title: w.word })}
             className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-navy bg-white border border-brand-navy/15 rounded-full px-3 py-1.5 hover:bg-brand-sky/70 transition-colors"
           >
             <Play className="w-3 h-3 fill-current" />
@@ -239,7 +239,6 @@ export default function WordStudy({ sermonId, words: wordsProp, embedded = false
     return (
       <>
         {list}
-        <VideoModal seg={watching} onClose={() => setWatching(null)} />
       </>
     );
 
@@ -277,7 +276,6 @@ export default function WordStudy({ sermonId, words: wordsProp, embedded = false
       </button>
 
       {open && list}
-      <VideoModal seg={watching} onClose={() => setWatching(null)} />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import './globals.css'
 import { Roboto, Newsreader } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import Navbar from '@/components/Navbar'
+import PlayerProvider from '@/components/player/PlayerProvider'
 import PwaRoot from '@/components/pwa/PwaRoot'
 import { INSTALL_CAPTURE_SCRIPT } from '@/lib/pwa'
 import { SITE_DESCRIPTION, SITE_NAME, THEME_COLOR } from '@/lib/site'
@@ -62,7 +63,9 @@ export default function RootLayout({ children }) {
           Skip to main content
         </a>
         <Navbar />
-        {children}
+        {/* The one video player lives here, above every page, so a video
+            keeps playing (shrunk to the corner) when you move around the app. */}
+        <PlayerProvider>{children}</PlayerProvider>
         <PwaRoot />
         <Analytics />
       </body>

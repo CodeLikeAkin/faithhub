@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ChevronDown, ChevronLeft, ChevronRight, Play } from "lucide-react";
-import VideoModal from "@/components/VideoModal";
+import { usePlayer } from "@/components/player/PlayerProvider";
 import { TranslationToggle } from "@/components/VerseCard";
 import { bookFromSlug, passageLabel } from "@/lib/canon";
 import { loadBookRows, loadChapterText, useLoad } from "@/lib/word-data";
@@ -214,7 +214,7 @@ export default function ChapterView({ slug, chapter }) {
   const ch = parseInt(chapter, 10);
   const valid = book && ch >= 1 && ch <= book.chapters;
   const [translation, setTranslation] = useState("KJV");
-  const [watching, setWatching] = useState(null);
+  const { watch } = usePlayer();
   // List first: the chapter's passages are what you came to scan, and a wall of
   // KJV text pushed the later ones off the screen. Remembered per browser.
   const [view, setView] = useState("list");
@@ -429,7 +429,7 @@ export default function ChapterView({ slug, chapter }) {
                 book={book}
                 group={g}
                 text={text}
-                onWatch={setWatching}
+                onWatch={watch}
                 open={opened.has(groupKey(g))}
                 onToggle={() => toggle(groupKey(g))}
               />
@@ -442,13 +442,12 @@ export default function ChapterView({ slug, chapter }) {
       {groups?.length > 0 && view === "read" && (
         <div className="mt-5">
           {groups.map((g) => (
-            <PassageArticle key={groupKey(g)} book={book} group={g} text={text} onWatch={setWatching} />
+            <PassageArticle key={groupKey(g)} book={book} group={g} text={text} onWatch={watch} />
           ))}
           <div className="flex justify-end border-t border-brand-navy/10 pt-6">{pager}</div>
         </div>
       )}
 
-      <VideoModal seg={watching} onClose={() => setWatching(null)} />
     </div>
   );
 }

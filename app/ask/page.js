@@ -9,7 +9,7 @@ import { deleteStudyWithUndo, useToast } from "@/components/shell/Toast";
 import StudyDocument from "@/components/ask/StudyDocument";
 import Composer from "@/components/ask/Composer";
 import AskEmptyState from "@/components/ask/AskEmptyState";
-import VideoModal from "@/components/VideoModal";
+import { usePlayer } from "@/components/player/PlayerProvider";
 import {
   askQuestion,
   forgetOpenStudy,
@@ -137,7 +137,7 @@ function AskView() {
 
   const [scopeType, setScopeType] = useState(null); // null → follow the study's latest question
   const [activeBlockId, setActiveBlockId] = useState(null);
-  const [watching, setWatching] = useState(null); // moment playing in the video modal
+  const { play } = usePlayer(); // Ask opens a moment as the corner mini-player, beside the answer
   // Raised clear of the docked composer.
   const [toast, showToast] = useToast({ offset: "5rem" });
   const docRef = useRef(null);
@@ -297,7 +297,7 @@ function AskView() {
             study={study}
             density="page"
             busy={busy}
-            onCite={(seg) => setWatching({ ...seg })}
+            onCite={(seg) => play({ ...seg }, { minimized: true })}
             onAsk={ask}
             onRetry={(b) => retryBlock(study.id, b.id)}
             onActiveBlockChange={setActiveBlockId}
@@ -330,7 +330,6 @@ function AskView() {
       {/* Ask is a read-along document — a citation opens as the corner
           mini-player so it doesn't take over the page you're reading. Expand
           is one tap away. */}
-      <VideoModal seg={watching} onClose={() => setWatching(null)} initialMinimized />
     </ToolShell>
   );
 }

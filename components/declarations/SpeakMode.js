@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Bookmark, ChevronLeft, ChevronRight, Copy, Loader2, Pause, Play, Plus, X } from "lucide-react";
-import VideoModal from "@/components/VideoModal";
+import { usePlayer } from "@/components/player/PlayerProvider";
 import { cleanTitle } from "@/lib/titles";
 import { parseYoutubeUrl } from "@/lib/youtube";
 import { recordSpeakDay, toggleSaved, useSavedDeclarations } from "@/lib/declarations";
@@ -37,7 +37,7 @@ export default function SpeakMode({ title, items, startAt = 0, onClose, onCopy, 
   const [i, setI] = useState(Math.min(startAt, Math.max(0, items.length - 1)));
   const [playing, setPlaying] = useState(false);
   const [speedIdx, setSpeedIdx] = useState(1);
-  const [watching, setWatching] = useState(null);
+  const { watch, seg: playerSeg, minimized: playerMini } = usePlayer();
   const closeRef = useRef(null);
   const saved = useSavedDeclarations();
   const speed = SPEEDS[speedIdx];
@@ -69,7 +69,7 @@ export default function SpeakMode({ title, items, startAt = 0, onClose, onCopy, 
 
   useEffect(() => {
     const onKey = (e) => {
-      if (watching) return; // the video modal owns the keys while it's open
+      if (playerSeg && !playerMini) return; // the full-size video owns the keys while it's open
       if (e.key === "ArrowRight") move(1);
       else if (e.key === "ArrowLeft") move(-1);
       // Space is play/pause — unless a control has keyboard focus, where
@@ -82,7 +82,7 @@ export default function SpeakMode({ title, items, startAt = 0, onClose, onCopy, 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [count, watching, onClose]);
+  }, [count, playerSeg, playerMini, onClose]);
 
   // Auto-advance at a reading-aloud pace; restarts on any manual move or
   // speed change so a skip never gets cut short by a stale timer.
@@ -159,7 +159,7 @@ export default function SpeakMode({ title, items, startAt = 0, onClose, onCopy, 
                 type="button"
                 onClick={() => {
                   setPlaying(false);
-                  setWatching({ ...parsed, sermon_title: d.sermon_title });
+                  watch({ ...parsed, sermon_title: d.sermon_title });
                 }}
                 className="inline-flex h-10 items-center gap-1.5 rounded-full bg-white px-4 text-sm font-bold text-brand-navy transition-colors hover:bg-brand-sky"
               >
@@ -241,7 +241,6 @@ export default function SpeakMode({ title, items, startAt = 0, onClose, onCopy, 
       </div>
 
       {/* Inside this overlay's stacking context, so it opens above it. */}
-      <VideoModal seg={watching} onClose={() => setWatching(null)} />
     </div>
   );
 }

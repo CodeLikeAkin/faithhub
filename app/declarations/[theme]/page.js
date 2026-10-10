@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { ArrowRight, Loader2, RotateCcw } from "lucide-react";
 import ToolShell from "@/components/shell/ToolShell";
 import { copyText, useToast } from "@/components/shell/Toast";
-import VideoModal from "@/components/VideoModal";
+import { usePlayer } from "@/components/player/PlayerProvider";
 import DeclarationLine from "@/components/declarations/DeclarationLine";
 import SpeakMode from "@/components/declarations/SpeakMode";
 import SpeakAllBar from "@/components/declarations/SpeakAllBar";
@@ -29,7 +29,7 @@ export default function ThemePage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [count, setCount] = useState(null);
   const [speaking, setSpeaking] = useState(false);
-  const [watching, setWatching] = useState(null);
+  const { watch } = usePlayer();
   const [toast, showToast] = useToast();
   const wantSpeak = useRef(false);
 
@@ -164,7 +164,7 @@ export default function ThemePage() {
                 <>
                   <ol className="mt-6 divide-y divide-brand-navy/10 border-t border-brand-navy/10">
                     {items.map((d, i) => (
-                      <DeclarationLine key={d.id} declaration={d} index={i} onWatch={setWatching} onCopy={copy} />
+                      <DeclarationLine key={d.id} declaration={d} index={i} onWatch={watch} onCopy={copy} />
                     ))}
                   </ol>
                   <div className="border-t border-brand-navy/10 pt-6 text-center">
@@ -189,7 +189,6 @@ export default function ThemePage() {
           )}
         </div>
       </div>
-      <VideoModal seg={watching} onClose={() => setWatching(null)} />
     </ToolShell>
   );
 }
