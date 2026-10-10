@@ -1,0 +1,83 @@
+<!doctype html>
+<!--
+  Shown by public/sw.js when a page is opened offline and no copy of it is
+  saved on the device. Deliberately plain HTML with its own styles (brand-*
+  values from tailwind.config.js): it has to render with nothing else
+  cached, and it's served at whatever URL was asked for, so every link is
+  absolute and "Try again" reloads that URL.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#173A68" />
+    <meta name="robots" content="noindex" />
+    <title>You're offline · FaithHub</title>
+    <style>
+      :root {
+        --navy: #173a68;
+        --deep: #102a4e;
+        --ink: #17233b;
+        --sky: #eaf2fb;
+        --gray: #717171;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; }
+      body {
+        background: #ffffff;
+        color: var(--ink);
+        font-family: Roboto, system-ui, -apple-system, "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: max(1.5rem, env(safe-area-inset-top)) 1rem max(1.5rem, env(safe-area-inset-bottom));
+      }
+      main { width: 100%; max-width: 28rem; text-align: center; }
+      .logo { display: block; width: 104px; height: 73px; margin: 0 auto 2rem; }
+      h1 { margin: 0; font-size: 1.875rem; line-height: 2.25rem; font-weight: 700; letter-spacing: -0.01em; }
+      p { margin: 0.75rem 0 0; font-size: 1rem; line-height: 1.625; color: var(--gray); }
+      .actions { margin-top: 2rem; display: grid; gap: 0.75rem; }
+      a, button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 3rem;
+        padding: 0 1.5rem;
+        border-radius: 9999px;
+        font: inherit;
+        font-size: 1rem;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+        transition: background-color 150ms;
+      }
+      .primary { background: var(--navy); color: #ffffff; border: 0; }
+      .primary:hover { background: var(--deep); }
+      .secondary { background: var(--sky); color: var(--navy); border: 0; }
+      .secondary:hover { background: #dce9f7; }
+      .quiet { background: transparent; color: var(--navy); border: 1px solid rgba(23, 58, 104, 0.2); }
+      .quiet:hover { background: var(--sky); }
+      a:focus-visible, button:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+      .note { margin-top: 1.5rem; font-size: 0.875rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img class="logo" src="/hofng-logo.svg" alt="Heritage of Faith" width="104" height="73" />
+      <h1>You&rsquo;re offline</h1>
+      <p>This page isn&rsquo;t saved on this device yet. Your saved declarations and studies are, so you can keep going without a connection.</p>
+      <div class="actions">
+        <a class="primary" href="/declarations/mine">My declarations</a>
+        <a class="secondary" href="/ask">Your studies</a>
+        <button class="quiet" type="button" onclick="location.reload()">Try again</button>
+      </div>
+      <p class="note">This page reloads by itself when you&rsquo;re back online.</p>
+    </main>
+    <script>
+      window.addEventListener("online", function () {
+        location.reload();
+      });
+    </script>
+  </body>
+</html>

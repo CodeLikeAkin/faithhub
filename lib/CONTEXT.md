@@ -112,6 +112,16 @@ The declarations library: `THEMES` (the 10 biggest `topic_tags`), `fetchThemePag
 (`useSavedDeclarations`, `toggleSaved`, `restoreSaved`; localStorage `hof-decl-saved-v1`) and the
 speaking streak (`useStreak`, `recordSpeakDay`; same `hof-decl-streak` key as the old visit streak).
 
+### `pwa.js`, `useInstall.js`, `site.js`
+The installable app. `pwa.js` has no React in it (the server layout imports its
+`INSTALL_CAPTURE_SCRIPT`, which holds Chrome's `beforeinstallprompt` before hydration):
+`installKind()` ("prompt" / "ios" / null), `installApp()`, the iOS sheet's open state, the Home
+nudge's 30-day quiet period, and `registerServiceWorker()` — production only, as
+`/sw.js?v=<NEXT_PUBLIC_BUILD_ID>` so each deploy installs a fresh worker; in `next dev` it removes
+any worker and `fh-` caches instead. `useInstall.js` is the hooks (`useInstallKind`,
+`useIosSheetOpen`). `site.js` is the name / description / theme colour shared by the layout's
+metadata and `app/manifest.js`.
+
 ### `canon.js`, `word-data.js`, `recent.js`
 The Bible's shape for The Word (canon sections, chapter counts, `/word/<slug>` ↔ book), The
 Word's session-cached data loaders (`loadBookStats`, `loadBookRows` — paged, ordered chapter+id —

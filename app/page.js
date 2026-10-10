@@ -5,6 +5,7 @@ import ContinueCard from "@/components/home/ContinueCard";
 import LatestShelf from "@/components/home/LatestShelf";
 import GoDeeper from "@/components/home/GoDeeper";
 import VisionStrip from "@/components/home/VisionStrip";
+import InstallNudge from "@/components/pwa/InstallNudge";
 import { DotGrid } from "@/components/Decor";
 
 /**
@@ -36,6 +37,7 @@ export default function Home() {
           <VisionStrip style={{ "--i": 8 }} />
         </div>
       </div>
+      <InstallNudge />
     </ToolShell>
   );
 }

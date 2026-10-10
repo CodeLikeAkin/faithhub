@@ -2,6 +2,9 @@ import './globals.css'
 import { Roboto, Newsreader } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import Navbar from '@/components/Navbar'
+import PwaRoot from '@/components/pwa/PwaRoot'
+import { INSTALL_CAPTURE_SCRIPT } from '@/lib/pwa'
+import { SITE_DESCRIPTION, SITE_NAME, THEME_COLOR } from '@/lib/site'
 
 const roboto = Roboto({
   subsets: ['latin'],
@@ -23,8 +26,17 @@ const newsreader = Newsreader({
 
 export const metadata = {
   title: 'FaithHub — Heritage of Faith Church',
-  description:
-    "Study Rev. Peter Ayo Alabi's teaching and speak God's Word over your life. Declarations, series study, and scripture — grounded in the messages of Heritage of Faith Church.",
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  // Opened from the iOS home screen: full screen, "FaithHub" under the icon,
+  // a plain status bar. The icon is app/apple-icon.png; the rest of the
+  // installable app is app/manifest.js + public/sw.js.
+  appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: 'default' },
+}
+
+// Next 14 takes the theme colour here, not in `metadata`.
+export const viewport = {
+  themeColor: THEME_COLOR,
 }
 
 export default function RootLayout({ children }) {
@@ -32,6 +44,10 @@ export default function RootLayout({ children }) {
     // suppressHydrationWarning: browser extensions routinely add attributes to
     // <html> before React hydrates, which React would otherwise flag.
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
+      <head>
+        {/* Catches Chrome's install prompt before hydration (lib/pwa.js). */}
+        <script dangerouslySetInnerHTML={{ __html: INSTALL_CAPTURE_SCRIPT }} />
+      </head>
       <body className={`${roboto.variable} ${newsreader.variable} font-sans antialiased`}>
         {/* The brand splash is parked for launch — the navy-background version
             didn't read right. Nothing is deleted: the markup lives in
@@ -47,6 +63,7 @@ export default function RootLayout({ children }) {
         </a>
         <Navbar />
         {children}
+        <PwaRoot />
         <Analytics />
       </body>
     </html>

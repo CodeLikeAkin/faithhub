@@ -17,7 +17,8 @@ the answer stream live in `lib/studies.js`, not in these components.
   (rail from the left, panel as a bottom sheet), `inert` on the columns behind them,
   body-scroll lock, Escape. Also exports `HeaderButton`.
 - `ToolRail.js` — logo, links between tools, the user's saved studies (the open study
-  unfolds into its question outline). Collapses to a 72px icon strip.
+  unfolds into its question outline). Collapses to a 72px icon strip. Its foot is Vision,
+  About, and "Install app" while the browser can install (see `pwa/`).
 
 ### `ask/` — the grounded answer, laid out as a research brief
 - `Composer.js` — the one composer. `variant="hero"` (empty states) or `"docked"`
@@ -68,6 +69,14 @@ the answer stream live in `lib/studies.js`, not in these components.
 - `ThisWeek.js` (latest message, today's declaration, current series), `ContinueRow.js` (last
   lesson + recent studies), `FeatureCards.js`. The quick-ask search lives in `Navbar.js` now
   (→ `/ask?q=`), not a home-page component.
+
+### `pwa/` — the installable app
+- `PwaRoot.js` — mounted once in `app/layout.js`: registers the service worker
+  (`lib/pwa.js`) and renders the iOS sheet at the top level when something opens it.
+- `IosInstallSheet.js` — Share → Add to Home Screen → Add, for iPhone/iPad (iOS has no
+  install prompt a page can trigger). Same frame as `ask/VerseSheet`.
+- `InstallNudge.js` — Home only: a floating card offering install, once per 30 days
+  (`hof-install-nudge`). Portalled to `<body>` so Home's layout never moves for it.
 
 ---
 

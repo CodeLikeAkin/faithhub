@@ -7,6 +7,7 @@ import {
   BookMarked,
   BookOpen,
   Compass,
+  Download,
   Flame,
   Home,
   MessageSquareHeart,
@@ -20,6 +21,8 @@ import {
 import { fmtDate } from "@/lib/ask-format";
 import { displayTitle } from "@/lib/titles";
 import { byRecent, useStudies } from "@/lib/studies";
+import { installApp } from "@/lib/pwa";
+import { useInstallKind } from "@/lib/useInstall";
 import { cn } from "@/lib/utils";
 import { Rings } from "@/components/Decor";
 
@@ -81,6 +84,30 @@ function RailLink({ link, mode, pathname, onNavigate, compact = false }) {
         {name}
       </span>
     </Link>
+  );
+}
+
+/** "Install app", in the foot beside Vision / About — only while this browser can install. */
+function InstallItem({ mode, onNavigate }) {
+  const kind = useInstallKind();
+  if (!kind) return null;
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => {
+          onNavigate?.();
+          installApp();
+        }}
+        title="Install app"
+        className="flex h-9 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+      >
+        <Download size={18} aria-hidden="true" className="flex-shrink-0" />
+        <span className={cn("overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-200 ease-out", LABEL[mode])}>
+          Install app
+        </span>
+      </button>
+    </li>
   );
 }
 
@@ -267,7 +294,7 @@ export default function ToolRail({
         )}
       </div>
 
-      {/* Foot: Vision and About, in both modes; expand control on the icon strip */}
+      {/* Foot: Vision and About (and Install, when offered), in both modes; expand control on the icon strip */}
       <div className="flex-shrink-0 border-t border-white/10 px-3 py-2">
         <ul className="space-y-0.5">
           {ABOUT_LINKS.map((link) => (
@@ -275,6 +302,7 @@ export default function ToolRail({
               <RailLink link={link} mode={mode} pathname={pathname} onNavigate={onNavigate} compact />
             </li>
           ))}
+          <InstallItem mode={mode} onNavigate={onNavigate} />
           {onToggleCollapse && (
             <li className={ONLY_COLLAPSED_FLEX[mode]}>
               <button
