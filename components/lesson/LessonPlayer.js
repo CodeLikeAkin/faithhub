@@ -5,6 +5,7 @@ import { ExternalLink, Play } from "lucide-react";
 import { fmtTime } from "@/lib/ask-format";
 import { cleanTitle } from "@/lib/titles";
 import { DotGrid, Rings } from "@/components/Decor";
+import { usePlayer } from "@/components/player/PlayerProvider";
 
 /**
  * The lesson's own video, played in the page (the old workspace sent people
@@ -31,6 +32,9 @@ const buildSrc = (videoId, start) => {
 };
 
 export default function LessonPlayer({ videoId, title, startAt = 0, seek }) {
+  // Only one video plays at a time. This player starting closes the app-wide
+  // corner player (components/player/); the corner player starting pauses this.
+  const { seg: cornerSeg, stop: stopCorner } = usePlayer();
   const [src, setSrc] = useState(null); // null → facade
   const [thumb, setThumb] = useState("maxresdefault"); // → hqdefault → none
   const [failed, setFailed] = useState(false);
@@ -44,6 +48,7 @@ export default function LessonPlayer({ videoId, title, startAt = 0, seek }) {
   const post = (message) => iframeRef.current?.contentWindow?.postMessage(JSON.stringify(message), YT_ORIGIN);
   const command = (func, args = []) => post({ event: "command", func, args });
   const seekNow = (t) => {
+    stopCorner();
     command("seekTo", [t, true]);
     command("playVideo");
   };
@@ -56,6 +61,7 @@ export default function LessonPlayer({ videoId, title, startAt = 0, seek }) {
   };
 
   const mount = (t) => {
+    stopCorner();
     ready.current = false;
     queued.current = null;
     setFailed(false);
@@ -94,6 +100,12 @@ export default function LessonPlayer({ videoId, title, startAt = 0, seek }) {
     } else queued.current = seek.t;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoId, seek]);
+
+  // The corner player started a video: pause this one.
+  useEffect(() => {
+    if (cornerSeg) command("pauseVideo");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cornerSeg]);
 
   // Events from the player (after the "listening" handshake sent on load).
   useEffect(() => {
