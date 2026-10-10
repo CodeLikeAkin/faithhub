@@ -377,8 +377,8 @@ function Pieces({ m, onChange, onProcess, processing }) {
               <span
                 className={cn(
                   "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl",
-                  state === "have" && "bg-brand-navy text-white",
-                  state === "na" && "bg-brand-sky text-brand-navy/60",
+                  // Navy means nothing to do: it has it, or it was checked as needing none.
+                  (state === "have" || state === "na") && "bg-brand-navy text-white",
                   state === "missing" && "border-2 border-dashed border-slate-300 text-slate-400"
                 )}
               >

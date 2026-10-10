@@ -83,8 +83,8 @@ function Pieces({ m }) {
               title={text}
               className={cn(
                 "flex h-7 w-7 items-center justify-center rounded-full",
-                state === "have" && "bg-brand-navy text-white",
-                (state === "none" || state === "na" || state === "kept") && "bg-brand-sky text-brand-navy/50",
+                // Navy means nothing to do: it has it, or it isn't needed. The tooltip says which.
+                state !== "missing" && "bg-brand-navy text-white",
                 state === "missing" && "border border-dashed border-slate-300 text-slate-400"
               )}
             >

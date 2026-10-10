@@ -19,7 +19,7 @@ export default async function SeriesDetailPage({ params }) {
     db.from("series").select("id, title, study_summary, start_date, end_date").eq("id", params.id).maybeSingle(),
     db
       .from("series_sermons")
-      .select("part_number, sermons ( id, title, youtube_video_id, sermon_date, video_status, published )")
+      .select("part_number, sermons ( id, title, youtube_video_id, sermon_date, video_status, published, word_studies_none )")
       .eq("series_id", params.id),
   ]);
   if (!series) notFound();
@@ -40,7 +40,9 @@ export default async function SeriesDetailPage({ params }) {
   let pieces = null;
   if (parts.length) {
     const { data, error } = await db.rpc("admin_sermon_pieces", { p_ids: parts.map((p) => p.sermon_id) });
-    if (!error) pieces = Object.fromEntries((data || []).map((r) => [r.sermon_id, r]));
+    // The "no word studies needed" mark lives on the sermon row, not in the RPC.
+    const noneNeeded = new Set((links || []).filter((l) => l.sermons?.word_studies_none).map((l) => l.sermons.id));
+    if (!error) pieces = Object.fromEntries((data || []).map((r) => [r.sermon_id, { ...r, word_studies_none: noneNeeded.has(r.sermon_id) }]));
   }
 
   return (

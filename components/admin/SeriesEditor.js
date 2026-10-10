@@ -24,7 +24,12 @@ function PiecePips({ p }) {
   return (
     <ul className="flex gap-1">
       {PIECES.map(({ key, label, icon: Icon }) => {
-        const ok = key === "declarations" ? declarationState(p) !== "missing" : !!p[key];
+        const ok =
+          key === "declarations"
+            ? declarationState(p) !== "missing"
+            : key === "word_studies"
+              ? p.word_studies || p.word_studies_none
+              : !!p[key];
         return (
           <li
             key={key}
