@@ -267,7 +267,7 @@ export default function ToolShell({
             aria-label="FaithHub home"
             className="-ml-1 flex h-10 flex-shrink-0 items-center rounded-lg px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy lg:hidden"
           >
-            <Image src="/hofng-logo.png" alt="" width={208} height={146} className="h-7 w-auto" />
+            <Image src="/hofng-logo.png" alt="" width={208} height={146} className="h-7 w-auto" data-splash-logo />
           </Link>
           <button
             type="button"

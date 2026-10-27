@@ -110,6 +110,7 @@ export default function Navbar() {
               height={146}
               className="h-7 w-auto"
               priority
+              data-splash-logo
             />
           </Link>
 
