@@ -136,7 +136,10 @@ export default function ToolRail({
   const navLinks = [...TOOLS, ...trailingLinks];
 
   return (
-    <div className="relative isolate flex h-full min-h-0 flex-col overflow-hidden text-white">
+    // Scrolls as a whole on short screens (a phone on its side): the fixed rows
+    // above and below the studies list can add up to the full height, which
+    // used to squeeze the list to nothing and draw the footer links over it.
+    <div className="relative isolate flex h-full min-h-0 flex-col overflow-y-auto overflow-x-hidden text-white">
       {/* Admin's rings, behind everything. Anchored to the left edge so they
           don't slide as the rail widens; off on the icon strip, where they'd
           only show as a cropped sliver. */}
@@ -193,7 +196,7 @@ export default function ToolRail({
       </nav>
 
       {/* Studies — expanded rail */}
-      <div className={cn("mt-7 min-h-0 flex-1 flex-col", SHOW_FLEX[mode])}>
+      <div className={cn("mt-7 min-h-[10rem] flex-1 flex-col [@media(max-height:480px)]:mt-3", SHOW_FLEX[mode])}>
         <div className="flex items-center justify-between px-5">
           <h2 className="text-xs font-bold uppercase tracking-[0.12em] text-white/55">Your studies</h2>
           <Link

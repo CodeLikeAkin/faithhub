@@ -63,7 +63,7 @@ function OutlineMenu({ study, activeBlockId, onJump }) {
   }, [open]);
 
   return (
-    <div ref={wrapRef} className="relative lg:hidden">
+    <div ref={wrapRef} className="lg:hidden">
       <HeaderButton
         icon={ListOrdered}
         label="Outline"
@@ -71,12 +71,14 @@ function OutlineMenu({ study, activeBlockId, onJump }) {
         aria-haspopup="true"
         onClick={() => setOpen((o) => !o)}
       />
+      {/* Pinned to the screen, not the button: the button sits mid-header, so a
+          button-anchored panel ran off the left edge on narrow and landscape phones. */}
       {open && (
-        <div className="absolute right-0 top-full z-30 mt-2 w-[min(20rem,calc(100vw-1.5rem))] rounded-2xl border border-brand-navy/10 bg-white p-1.5 shadow-xl shadow-brand-navy/15">
+        <div className="fixed right-3 top-[3.75rem] z-30 w-[min(20rem,calc(100vw-1.5rem))] rounded-2xl border border-brand-navy/10 bg-white p-1.5 shadow-xl shadow-brand-navy/15 sm:top-[4.25rem]">
           <p className="px-3 pb-1 pt-2 text-xs text-brand-gray">
             {study.blocks.length} questions in this study
           </p>
-          <ol className="max-h-[60vh] overflow-y-auto custom-scrollbar">
+          <ol className="max-h-[calc(100dvh-8rem)] overflow-y-auto custom-scrollbar">
             {study.blocks.map((b, i) => {
               const current = String(b.id) === String(activeBlockId);
               return (

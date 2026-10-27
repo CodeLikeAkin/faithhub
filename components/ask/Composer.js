@@ -251,7 +251,7 @@ export default function Composer({
           {send}
         </div>
         {/* Hidden on phones so the composer stays one line there. */}
-        {hint && <p className="mt-1.5 hidden text-center text-xs text-brand-gray sm:block">{hint}</p>}
+        {hint && <p className="mt-1.5 hidden text-center text-xs text-brand-gray sm:block [@media(max-height:480px)]:!hidden">{hint}</p>}
       </form>
     </div>
   );
