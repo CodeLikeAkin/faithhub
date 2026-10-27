@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  Download,
   ExternalLink,
   Feather,
   LayoutDashboard,
@@ -17,6 +18,8 @@ import {
 } from "lucide-react";
 import { Rings } from "@/components/Decor";
 import { cn } from "@/lib/utils";
+import { installApp } from "@/lib/pwa";
+import { useInstallKind } from "@/lib/useInstall";
 
 // An item with `soon: true` shows the plan without linking to a dead end.
 const NAV = [
@@ -85,7 +88,9 @@ function useSignOut() {
 export default function AdminShell({ children }) {
   const pathname = usePathname();
   const [signOut, leaving] = useSignOut();
-
+  // Null once installed or where the browser can't install; the manifest on
+  // /admin pages is the console's own, so this installs the console.
+  const installKind = useInstallKind();
   return (
     <div className="min-h-[100dvh] lg:pl-72">
       {/* Sidebar (desktop) */}
@@ -116,6 +121,16 @@ export default function AdminShell({ children }) {
             <ExternalLink size={18} aria-hidden="true" />
             View the live site
           </a>
+          {installKind && (
+            <button
+              type="button"
+              onClick={installApp}
+              className="flex w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-left text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <Download size={18} aria-hidden="true" />
+              Install app
+            </button>
+          )}
           <button
             type="button"
             onClick={signOut}
@@ -133,6 +148,16 @@ export default function AdminShell({ children }) {
         <div className="flex h-16 items-center gap-3 px-4">
           <Image src="/hofng-logo-white.png" alt="Heritage of Faith" width={208} height={146} className="h-7 w-auto" priority />
           <span className="flex-1 text-sm font-bold">FaithHub Admin</span>
+          {installKind && (
+            <button
+              type="button"
+              onClick={installApp}
+              className="inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-sm font-bold text-brand-navy transition-colors hover:bg-brand-sky active:scale-[0.98]"
+            >
+              <Download size={14} aria-hidden="true" />
+              Install
+            </button>
+          )}
           <button
             type="button"
             onClick={signOut}

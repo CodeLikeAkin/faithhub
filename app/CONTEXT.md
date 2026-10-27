@@ -39,10 +39,15 @@ The main entry point. Links users to the two core features: Faith Declarations a
 
 ## Installable app (PWA)
 
-- `manifest.js` — the web app manifest (`/manifest.webmanifest`, linked by Next): standalone,
-  theme `#173A68`, white launch screen, icons in `public/icons/`. Orientation deliberately unlocked.
-- `apple-icon.png` — the iOS home-screen icon (180px; Next emits the apple-touch-icon link).
-  Regenerate it and `public/icons/*` with `node scripts/pwa-icons.mjs`.
+- `manifest.webmanifest/route.js` — the web app manifest (`/manifest.webmanifest`, linked from
+  `layout.js` metadata): standalone, theme `#173A68`, white launch screen, icons in
+  `public/icons/`. Orientation deliberately unlocked. A route + explicit `icons` metadata, not
+  Next's `manifest.js` / `apple-icon.png` / `icon.png` files, because those can't be overridden
+  by a nested layout.
+- `admin/manifest.webmanifest/route.js` — the admin console's own installable app (scope and
+  start `/admin`, white-on-deep-navy icons `public/icons/admin-*.png`). `admin/layout.js`
+  swaps it in; AdminShell has the Install button. Same service worker as the member app.
+- Regenerate all icons (member + admin) with `node scripts/pwa-icons.mjs`.
 - `layout.js` — `appleWebApp` metadata, `viewport.themeColor`, the inline install-prompt
   script, and `<PwaRoot />` (registers `public/sw.js`).
 - The service worker never touches `/api/*` or non-GET requests; it caches pages network-first,
