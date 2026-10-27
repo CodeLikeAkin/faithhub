@@ -6,7 +6,8 @@
 //   node scripts/pwa-icons.mjs
 //
 // Writes public/icons/icon-192.png, icon-512.png, icon-maskable-512.png and
-// app/apple-icon.png (180, which Next links as the apple-touch-icon). Re-run
+// apple-180.png (the apple-touch-icon, linked from app/layout.js), plus the
+// admin console's set (admin-*.png, app/admin/layout.js). Re-run
 // it if the logo file ever changes.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { deflateSync } from "node:zlib";
@@ -34,16 +35,25 @@ const framed = (size) => ({ size, scale: (size * 0.74) / width });
 // radius 40%; keep every point of the logo inside 38%.
 const maskable = (size) => ({ size, scale: (size * 0.38) / reach });
 
+// The member app: navy logo on white. The admin app is the reverse (white logo
+// on the console's deep navy) so the two icons can't be mixed up on a home screen.
+const MEMBER = { ink: fill, bg: [255, 255, 255] };
+const ADMIN = { ink: [255, 255, 255], bg: [0x10, 0x2a, 0x4e] };
+
 const outputs = [
-  ["public/icons/icon-192.png", framed(192)],
-  ["public/icons/icon-512.png", framed(512)],
-  ["public/icons/icon-maskable-512.png", maskable(512)],
-  ["app/apple-icon.png", framed(180)],
+  ["public/icons/icon-192.png", framed(192), MEMBER],
+  ["public/icons/icon-512.png", framed(512), MEMBER],
+  ["public/icons/icon-maskable-512.png", maskable(512), MEMBER],
+  ["public/icons/apple-180.png", framed(180), MEMBER],
+  ["public/icons/admin-192.png", framed(192), ADMIN],
+  ["public/icons/admin-512.png", framed(512), ADMIN],
+  ["public/icons/admin-maskable-512.png", maskable(512), ADMIN],
+  ["public/icons/admin-apple-180.png", framed(180), ADMIN],
 ];
 
 mkdirSync("public/icons", { recursive: true });
-for (const [file, { size, scale }] of outputs) {
-  writeFileSync(file, encodePng(size, draw(size, scale)));
+for (const [file, { size, scale }, colours] of outputs) {
+  writeFileSync(file, encodePng(size, draw(size, scale, colours)));
   console.log(`${file}  ${size}x${size}`);
 }
 
@@ -83,8 +93,8 @@ function parsePath(d) {
   return subpaths;
 }
 
-/** RGB pixels: white, with each shape filled (even-odd) in the logo colour. */
-function draw(size, scale) {
+/** RGB pixels: the background colour, with each shape filled (even-odd) in the ink colour. */
+function draw(size, scale, { ink: inkColour, bg }) {
   const toPixel = ([x, y]) => [size / 2 + (x - centre[0]) * scale, size / 2 + (y - centre[1]) * scale];
   const clear = new Float32Array(size * size).fill(1); // how much white shows through
   const SAMPLES = 16;
@@ -113,7 +123,7 @@ function draw(size, scale) {
   const rgb = Buffer.alloc(size * size * 3);
   for (let i = 0; i < clear.length; i++) {
     const ink = 1 - clear[i];
-    for (let c = 0; c < 3; c++) rgb[i * 3 + c] = Math.round(255 + (fill[c] - 255) * ink);
+    for (let c = 0; c < 3; c++) rgb[i * 3 + c] = Math.round(bg[c] + (inkColour[c] - bg[c]) * ink);
   }
   return rgb;
 }

@@ -30,8 +30,11 @@ export const metadata = {
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
   // Opened from the iOS home screen: full screen, "FaithHub" under the icon,
-  // a plain status bar. The icon is app/apple-icon.png; the rest of the
-  // installable app is app/manifest.js + public/sw.js.
+  // a plain status bar. The installable app is the manifest route + public/sw.js.
+  // Declared here, not as app/manifest.js / app/apple-icon.png, so /admin's
+  // layout can swap in the console's own manifest and icon.
+  manifest: '/manifest.webmanifest',
+  icons: { icon: '/icons/favicon-256.png', apple: '/icons/apple-180.png' },
   appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: 'default' },
 }
 

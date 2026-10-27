@@ -120,7 +120,7 @@ nudge's 30-day quiet period, and `registerServiceWorker()` — production only, 
 `/sw.js?v=<NEXT_PUBLIC_BUILD_ID>` so each deploy installs a fresh worker; in `next dev` it removes
 any worker and `fh-` caches instead. `useInstall.js` is the hooks (`useInstallKind`,
 `useIosSheetOpen`). `site.js` is the name / description / theme colour shared by the layout's
-metadata and `app/manifest.js`.
+metadata and `app/manifest.webmanifest/route.js`.
 
 ### `canon.js`, `word-data.js`, `recent.js`
 The Bible's shape for The Word (canon sections, chapter counts, `/word/<slug>` ↔ book), The
