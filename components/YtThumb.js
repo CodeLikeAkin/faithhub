@@ -59,7 +59,9 @@ export default function YtThumb({ ids, quality = "hqdefault", className, fallbac
         judged.current = key;
         setIndex((i) => i + 1);
       }}
-      className={cn(className, !ok && "invisible")}
+      // opacity, not visibility: iOS WebKit never starts a lazy load for a
+      // visibility:hidden image, so the thumbnail would stay unconfirmed forever.
+      className={cn(className, !ok && "opacity-0")}
     />
   );
 }
