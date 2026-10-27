@@ -4,6 +4,8 @@ import { Analytics } from '@vercel/analytics/next'
 import Navbar from '@/components/Navbar'
 import PlayerProvider from '@/components/player/PlayerProvider'
 import PwaRoot from '@/components/pwa/PwaRoot'
+import SplashScreen, { SPLASH_SCRIPT } from '@/components/splash/SplashScreen'
+import { STARTUP_IMAGES } from '@/lib/startup-images'
 import { INSTALL_CAPTURE_SCRIPT } from '@/lib/pwa'
 import { SITE_DESCRIPTION, SITE_NAME, THEME_COLOR } from '@/lib/site'
 
@@ -33,9 +35,11 @@ export const metadata = {
   // a plain status bar. The installable app is the manifest route + public/sw.js.
   // Declared here, not as app/manifest.js / app/apple-icon.png, so /admin's
   // layout can swap in the console's own manifest and icon.
+  // startupImage: iOS shows plain white while an installed app opens unless it
+  // has a launch image for that exact screen; these match the splash's first frame.
   manifest: '/manifest.webmanifest',
   icons: { icon: '/icons/favicon-256.png', apple: '/icons/apple-180.png' },
-  appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: 'default' },
+  appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: 'default', startupImage: STARTUP_IMAGES },
 }
 
 // Next 14 takes the theme colour here, not in `metadata`.
@@ -51,14 +55,12 @@ export default function RootLayout({ children }) {
       <head>
         {/* Catches Chrome's install prompt before hydration (lib/pwa.js). */}
         <script dangerouslySetInnerHTML={{ __html: INSTALL_CAPTURE_SCRIPT }} />
+        {/* Decides whether the splash plays. Must run before the body paints. */}
+        <script dangerouslySetInnerHTML={{ __html: SPLASH_SCRIPT }} />
       </head>
       <body className={`${roboto.variable} ${newsreader.variable} font-sans antialiased`}>
-        {/* The brand splash is parked for launch — the navy-background version
-            didn't read right. Nothing is deleted: the markup lives in
-            components/splash/, the animation in globals.css ("Splash screen").
-            To bring it back, re-import SplashScreen and SPLASH_SCRIPT, render
-            <SplashScreen /> here, and put SPLASH_SCRIPT back in a <head> script
-            (it must run before the body paints, or a repeat visit flashes it). */}
+        {/* The launch splash, installed app only (components/splash/). */}
+        <SplashScreen />
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-white focus:text-brand-navy focus:font-bold focus:text-sm focus:rounded-full focus:border focus:border-brand-navy focus:shadow-lg"
