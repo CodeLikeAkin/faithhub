@@ -153,6 +153,7 @@ export function Notice({ tone = "info", children, className }) {
         tone === "error" && "bg-[#b42318]/[0.07] font-medium text-[#912018]",
         tone === "success" && "bg-[#0ca30c]/[0.08] font-medium text-[#0a6b0a]",
         tone === "info" && "bg-brand-sky text-brand-ink",
+        tone === "warn" && "bg-[#fab219]/15 text-[#7a4f00]",
         className
       )}
     >

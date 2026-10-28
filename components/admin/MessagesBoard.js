@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { BookOpen, Captions, ChevronRight, Eye, EyeOff, FileText, Flame, Languages, RotateCw, Search, X } from "lucide-react";
+import { BookOpen, Captions, ChevronRight, Eye, EyeOff, FileText, Flame, Languages, Library, RotateCw, Search, X } from "lucide-react";
 import YtThumb from "@/components/YtThumb";
 import { Btn, Chip, ConfirmBtn, Input, Notice, Select } from "@/components/admin/controls";
+import MakeSeriesDialog from "@/components/admin/MakeSeriesDialog";
 import { adminFetch } from "@/lib/admin-client";
 import { declarationState } from "@/lib/admin-format";
 import { askStatus, isDeadVideo, preachedOn, speakerOf, splitTitle } from "@/lib/admin-titles";
@@ -204,6 +205,7 @@ export default function MessagesBoard({ messages, initial }) {
   const [picked, setPicked] = useState(() => new Set());
   const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState(null);
+  const [makingSeries, setMakingSeries] = useState(false);
 
   // Keep the address bar in step, so a view can be bookmarked or linked to.
   useEffect(() => {
@@ -242,6 +244,7 @@ export default function MessagesBoard({ messages, initial }) {
   const chosen = rows.filter((m) => picked.has(m.id));
   const toPublish = chosen.filter((m) => !m.published);
   const toHide = chosen.filter((m) => m.published);
+  const canMakeSeries = chosen.filter((m) => !m.series_id).length >= 2;
   const allVisiblePicked = visible.length > 0 && visible.every((m) => picked.has(m.id));
 
   const toggle = (id) =>
@@ -279,6 +282,20 @@ export default function MessagesBoard({ messages, initial }) {
       setNotice({ tone: "error", text: e.message });
     }
     setBusy("");
+  }
+
+  function seriesCreated({ id, title, parts }) {
+    const number = new Map(parts.map((p) => [p.sermon_id, p.part_number]));
+    setRows((all) =>
+      all.map((m) => (number.has(m.id) ? { ...m, series_id: id, series_title: title, part_number: number.get(m.id), series_links: 1 } : m))
+    );
+    setPicked(new Set());
+    setMakingSeries(false);
+    setNotice({
+      tone: "success",
+      text: `Created the series "${title}" with ${fmt(parts.length)} messages. Study notes now count as missing for them.`,
+      seriesId: id,
+    });
   }
 
   async function processAgain() {
@@ -421,7 +438,17 @@ export default function MessagesBoard({ messages, initial }) {
 
         {notice && (
           <div className="px-4 pb-3 sm:px-6">
-            <Notice tone={notice.tone}>{notice.text}</Notice>
+            <Notice tone={notice.tone}>
+              {notice.text}
+              {notice.seriesId && (
+                <>
+                  {" "}
+                  <Link href={`/admin/series/${notice.seriesId}`} className="font-bold underline">
+                    Open the series
+                  </Link>
+                </>
+              )}
+            </Notice>
           </div>
         )}
 
@@ -491,6 +518,17 @@ export default function MessagesBoard({ messages, initial }) {
                 Hide {fmt(toHide.length)}
               </ConfirmBtn>
             )}
+            {canMakeSeries && (
+              <Btn
+                variant="ghost"
+                size="sm"
+                icon={Library}
+                className="text-white ring-1 ring-inset ring-white/30 hover:bg-white/10"
+                onClick={() => setMakingSeries(true)}
+              >
+                Make a series
+              </Btn>
+            )}
             <Btn
               variant="ghost"
               size="sm"
@@ -508,6 +546,8 @@ export default function MessagesBoard({ messages, initial }) {
           </div>
         </div>
       )}
+
+      {makingSeries && <MakeSeriesDialog messages={chosen} onClose={() => setMakingSeries(false)} onCreated={seriesCreated} />}
     </div>
   );
 }
