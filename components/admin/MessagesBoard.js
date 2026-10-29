@@ -7,7 +7,7 @@ import YtThumb from "@/components/YtThumb";
 import { Btn, Chip, ConfirmBtn, Input, Notice, Select } from "@/components/admin/controls";
 import MakeSeriesDialog from "@/components/admin/MakeSeriesDialog";
 import { adminFetch } from "@/lib/admin-client";
-import { declarationState } from "@/lib/admin-format";
+import { declarationState, pieceMissing } from "@/lib/admin-format";
 import { askStatus, isDeadVideo, preachedOn, speakerOf, splitTitle } from "@/lib/admin-titles";
 import { cn } from "@/lib/utils";
 
@@ -25,13 +25,14 @@ const GROUPS = [
 ];
 
 // What needs work: one at a time. Study notes are only wanted in a series.
+// Past "No transcript", a piece only counts once the message has a transcript (pieceMissing).
 const PROBLEMS = [
   { key: "transcript", label: "No transcript", test: (m) => !m.transcript },
-  { key: "search", label: "Not searchable", test: (m) => !m.search },
-  { key: "scriptures", label: "No scripture list", test: (m) => !m.scriptures },
-  { key: "declarations", label: "No declarations", test: (m) => declarationState(m) === "missing" },
-  { key: "notes", label: "No study notes", test: (m) => !!m.series_id && !m.notes },
-  { key: "words", label: "No word studies", test: (m) => !m.word_studies && !m.word_studies_none },
+  { key: "search", label: "Not searchable", test: (m) => pieceMissing("search", m) },
+  { key: "scriptures", label: "No scripture list", test: (m) => pieceMissing("scriptures", m) },
+  { key: "declarations", label: "No declarations", test: (m) => pieceMissing("declarations", m) },
+  { key: "notes", label: "No study notes", test: (m) => pieceMissing("notes", m) },
+  { key: "words", label: "No word studies", test: (m) => pieceMissing("words", m) },
   { key: "video", label: "Video won't play", test: (m) => isDeadVideo(m.video_status) },
 ];
 
@@ -42,8 +43,14 @@ const SORTS = [
   { key: "gaps", label: "Most pieces missing first" },
 ];
 
-/** The six study pieces, each "have", "none" (checked, none needed), "na" / "kept" (not wanted here) or "missing". */
+/** The six study pieces, each "have", "none" (checked, none needed), "na" / "kept" (not wanted here), "waiting" (no transcript yet) or "missing". */
 function piecesOf(m) {
+  const pieces = rawPieces(m);
+  if (m.transcript) return pieces;
+  return pieces.map((p) => (p.key !== "transcript" && p.state === "missing" ? { ...p, state: "waiting" } : p));
+}
+
+function rawPieces(m) {
   return [
     { key: "transcript", label: "Transcript", icon: Captions, state: m.transcript ? "have" : "missing" },
     { key: "search", label: "Searchable in Ask the Word", icon: Search, state: m.search ? "have" : "missing" },
@@ -67,6 +74,7 @@ const STATE_TEXT = {
   none: "checked, none needed",
   na: "not needed outside a series",
   kept: "kept off the Declarations page (guest or celebration video)",
+  waiting: "waiting for the transcript",
   missing: "missing",
 };
 
@@ -85,8 +93,9 @@ function Pieces({ m }) {
               className={cn(
                 "flex h-7 w-7 items-center justify-center rounded-full",
                 // Navy means nothing to do: it has it, or it isn't needed. The tooltip says which.
-                state !== "missing" && "bg-brand-navy text-white",
-                state === "missing" && "border border-dashed border-slate-300 text-slate-400"
+                state !== "missing" && state !== "waiting" && "bg-brand-navy text-white",
+                state === "missing" && "border border-dashed border-slate-300 text-slate-400",
+                state === "waiting" && "border border-dashed border-slate-200 text-slate-300"
               )}
             >
               <Icon size={13} aria-hidden="true" />

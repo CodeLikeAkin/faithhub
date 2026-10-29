@@ -57,6 +57,11 @@ function systemRows(d) {
 function attentionItems(d) {
   const c = d.coverage;
   const items = [];
+  // Same rule as the Messages board: a message with no transcript isn't also "waiting" for pieces made from it.
+  const g = d.gaps?.catalog;
+  const noDeclarations = g ? g.declarations : c.catalog_no_declarations;
+  const noNotes = g ? g.notes : c.catalog_no_notes;
+  const noScriptures = g ? g.scriptures : c.catalog_no_scriptures;
   if (c.dead_videos_in_catalog > 0)
     items.push({
       tone: "critical",
@@ -68,14 +73,14 @@ function attentionItems(d) {
     items.push({ tone: "warning", n: c.unpublished, text: "new messages are waiting for you to publish them", href: "/admin/messages?filter=unpublished" });
   if (d.worker.state !== "online")
     items.push({ tone: "warning", text: "The processing computer isn't connected, so new links can't be processed yet", href: "/admin/processing" });
-  if (c.catalog_no_declarations > 0)
-    items.push({ tone: "warning", n: c.catalog_no_declarations, text: "catalog messages are waiting for declarations", href: "/admin/careful-pass" });
-  if (c.catalog_no_notes > 0)
-    items.push({ tone: "warning", n: c.catalog_no_notes, text: "catalog messages are waiting for study notes", href: "/admin/careful-pass" });
-  if (c.catalog_no_scriptures > 0)
+  if (noDeclarations > 0)
+    items.push({ tone: "warning", n: noDeclarations, text: "catalog messages are waiting for declarations", href: "/admin/careful-pass" });
+  if (noNotes > 0)
+    items.push({ tone: "warning", n: noNotes, text: "catalog messages are waiting for study notes", href: "/admin/careful-pass" });
+  if (noScriptures > 0)
     items.push({
       tone: "warning",
-      n: c.catalog_no_scriptures,
+      n: noScriptures,
       text: "catalog messages have no scripture list",
       href: "/admin/messages?filter=catalog&missing=scriptures",
     });
@@ -215,6 +220,7 @@ export default async function AdminOverview() {
               segmentGaps={d.segmentGaps}
               extractions={d.extractions}
               declarationsTotal={d.declarationsTotal}
+              gaps={d.gaps}
               className="xl:col-span-2"
             />
 

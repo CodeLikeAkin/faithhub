@@ -39,8 +39,16 @@ const declarationsNote = (onPage, kept, none) =>
 // "N missing" opens exactly those messages on the Messages page.
 const missingHref = (filter, piece) => `/admin/messages?filter=${filter}&missing=${piece}`;
 
-function catalogView({ coverage: c, segmentGaps, extractions: x }) {
+// Everything but the transcript is made from it, so with the Messages board's counts
+// (`g`, lib/admin-dashboard.js) a piece is counted out of the messages that have one
+// and "missing" matches the board. Without them, the plain counts.
+const NEEDS_TRANSCRIPT = "The other pieces are counted out of the messages that have one.";
+const fromTranscripts = (g, key, plain) =>
+  g ? { have: g.texts - g[key], total: g.texts } : plain;
+
+function catalogView({ coverage: c, segmentGaps, extractions: x, gaps }) {
   const n = c.catalog_sermons;
+  const g = gaps?.catalog;
   const rows = x?.rows.catalog;
   const href = (piece) => missingHref("catalog", piece);
   return {
@@ -48,19 +56,33 @@ function catalogView({ coverage: c, segmentGaps, extractions: x }) {
     ringLabel: "of catalog pieces in place",
     description: `The ${fmt(n)} published messages visitors can browse, and which study pieces each one has.`,
     pieces: [
-      { label: "Transcript", have: x ? n - x.catalogNoTranscript : null, href: href("transcript") },
-      { label: "Searchable in Ask the Word", have: typeof segmentGaps === "number" ? n - segmentGaps : null, href: href("search") },
-      { label: "Scripture list", have: n - c.catalog_no_scriptures, note: inAll(rows?.scriptures, "verse references"), href: href("scriptures") },
+      {
+        label: "Transcript",
+        have: g ? g.texts : x ? n - x.catalogNoTranscript : null,
+        note: g ? NEEDS_TRANSCRIPT : null,
+        href: href("transcript"),
+      },
+      {
+        label: "Searchable in Ask the Word",
+        ...fromTranscripts(g, "search", { have: typeof segmentGaps === "number" ? n - segmentGaps : null }),
+        href: href("search"),
+      },
+      {
+        label: "Scripture list",
+        ...fromTranscripts(g, "scriptures", { have: n - c.catalog_no_scriptures }),
+        note: inAll(rows?.scriptures, "verse references"),
+        href: href("scriptures"),
+      },
       {
         label: "Declarations",
-        have: n - c.catalog_no_declarations,
+        ...fromTranscripts(g, "declarations", { have: n - c.catalog_no_declarations }),
         note: declarationsNote(rows?.declarations, c.catalog_declarations_kept || 0, c.catalog_declarations_none || 0),
         href: href("declarations"),
       },
-      { label: "Study notes", have: n - c.catalog_no_notes, href: href("notes") },
+      { label: "Study notes", ...fromTranscripts(g, "notes", { have: n - c.catalog_no_notes }), href: href("notes") },
       {
         label: "Word studies",
-        have: n - c.catalog_no_word_studies,
+        ...fromTranscripts(g, "words", { have: n - c.catalog_no_word_studies }),
         note: join(inAll(rows?.words, "word studies"), noneNeeded(c.catalog_word_studies_none || 0)),
         href: href("words"),
       },
@@ -68,8 +90,9 @@ function catalogView({ coverage: c, segmentGaps, extractions: x }) {
   };
 }
 
-function libraryView({ coverage: c, extractions: x, declarationsTotal }) {
+function libraryView({ coverage: c, extractions: x, declarationsTotal, gaps }) {
   const n = c.sermons_total;
+  const g = gaps?.library;
   const have = x.library;
   const href = (piece) => missingHref("all", piece);
   return {
@@ -77,25 +100,29 @@ function libraryView({ coverage: c, extractions: x, declarationsTotal }) {
     ringLabel: "of library pieces in place",
     description: `All ${fmt(n)} messages, including the ${fmt(n - c.catalog_sermons)} outside the public catalog.`,
     pieces: [
-      { label: "Transcript", have: have.transcript, note: "Nothing else can be made without one.", href: href("transcript") },
-      { label: "Searchable in Ask the Word", have: have.search, href: href("search") },
-      { label: "Scripture list", have: have.scriptures, note: inAll(x.rows.library.scriptures, "verse references"), href: href("scriptures") },
+      { label: "Transcript", have: g ? g.texts : have.transcript, note: "Nothing else can be made without one.", href: href("transcript") },
+      { label: "Searchable in Ask the Word", ...fromTranscripts(g, "search", { have: have.search }), href: href("search") },
+      {
+        label: "Scripture list",
+        ...fromTranscripts(g, "scriptures", { have: have.scriptures }),
+        note: inAll(x.rows.library.scriptures, "verse references"),
+        href: href("scriptures"),
+      },
       {
         label: "Declarations",
-        have: have.declarations + have.declarationsNone,
+        ...fromTranscripts(g, "declarations", { have: have.declarations + have.declarationsNone }),
         note: declarationsNote(declarationsTotal, have.declarationsKept, have.declarationsNone),
         href: href("declarations"),
       },
       {
         label: "Study notes",
-        have: have.seriesWithNotes,
-        total: have.seriesMessages,
+        ...(g ? { have: g.seriesTexts - g.notes, total: g.seriesTexts } : { have: have.seriesWithNotes, total: have.seriesMessages }),
         note: `Only written for messages in a series, so this counts the ${fmt(have.seriesMessages)} that are.`,
         href: href("notes"),
       },
       {
         label: "Word studies",
-        have: have.words + have.wordsNone,
+        ...fromTranscripts(g, "words", { have: have.words + have.wordsNone }),
         note: join(inAll(x.rows.library.words, "word studies"), noneNeeded(have.wordsNone)),
         href: href("words"),
       },
@@ -205,13 +232,13 @@ function ScopeSwitch({ scope, onChange }) {
   );
 }
 
-export default function ReadinessCard({ coverage, segmentGaps, extractions, declarationsTotal, order = 0, className }) {
+export default function ReadinessCard({ coverage, segmentGaps, extractions, declarationsTotal, gaps, order = 0, className }) {
   const [scope, setScope] = useState("catalog");
   const canSwitch = !!extractions;
   const view =
     scope === "library" && canSwitch
-      ? libraryView({ coverage, extractions, declarationsTotal })
-      : catalogView({ coverage, segmentGaps, extractions });
+      ? libraryView({ coverage, extractions, declarationsTotal, gaps })
+      : catalogView({ coverage, segmentGaps, extractions, gaps });
 
   // A piece may count against its own total (study notes: series messages only).
   const pieces = view.pieces.map((p) => ({ ...p, total: p.total ?? view.total }));
